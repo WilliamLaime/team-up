@@ -1,0 +1,64 @@
+<%# Partial réutilisé par new.html.erb et edit.html.erb %>
+<%# La variable @match est passée automatiquement par le controller %>
+
+<%= form_with model: @match, class: "row g-3" do |f| %>
+
+  <%# Affiche les erreurs de validation si le formulaire est invalide %>
+  <% if @match.errors.any? %>
+    <div class="col-12">
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% @match.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Titre du match %>
+  <div class="col-12">
+    <%= f.label :title, "Titre", class: "form-label" %>
+    <%= f.text_field :title, class: "form-control", placeholder: "Ex: Match foot samedi matin" %>
+  </div>
+
+  <%# Description %>
+  <div class="col-12">
+    <%= f.label :description, "Description", class: "form-label" %>
+    <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Décris ton match..." %>
+  </div>
+
+  <%# Date et heure sur la même ligne %>
+  <div class="col-md-6">
+    <%= f.label :date, "Date", class: "form-label" %>
+    <%= f.date_field :date, class: "form-control" %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :time, "Heure", class: "form-label" %>
+    <%= f.time_field :time, class: "form-control" %>
+  </div>
+
+  <%# Lieu %>
+  <div class="col-12">
+    <%= f.label :place, "Lieu", class: "form-label" %>
+    <%= f.text_field :place, class: "form-control", placeholder: "Ex: Stade Jean Bouin, Paris" %>
+  </div>
+
+  <%# Niveau et nombre de joueurs sur la même ligne %>
+  <div class="col-md-6">
+    <%= f.label :level, "Niveau", class: "form-label" %>
+    <%= f.select :level, ["Débutant", "Intermédiaire", "Avancé"], { include_blank: "Choisir un niveau" }, class: "form-select" %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :player_left, "Places disponibles", class: "form-label" %>
+    <%= f.number_field :player_left, class: "form-control", min: 1, placeholder: "Ex: 5" %>
+  </div>
+
+  <%# Bouton de soumission %>
+  <div class="col-12">
+    <%= f.submit class: "btn btn-primary" %>
+  </div>
+
+<% end %>

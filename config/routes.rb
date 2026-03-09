@@ -1,16 +1,24 @@
 Rails.application.routes.draw do
   devise_for :users
+
+  # Page d'accueil
   root to: "pages#home"
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  # Routes pour les matchs (CRUD complet)
+  # Exemple : GET /matches => liste, GET /matches/1 => détail, etc.
+  resources :matches do
+    # Routes imbriquées pour rejoindre/quitter un match
+    # POST   /matches/:match_id/match_users     => rejoindre
+    # DELETE /matches/:match_id/match_users/:id => quitter
+    resources :match_users, only: [:create, :destroy]
+  end
+
+  # Route pour le profil de l'utilisateur connecté (ressource singulière)
+  # GET  /profil      => voir mon profil
+  # GET  /profil/edit => modifier mon profil
+  # PUT  /profil      => sauvegarder les modifications
+  resource :profil, only: [:show, :edit, :update]
+
+  # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
-
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-
-  # Defines the root path route ("/")
-  # root "posts#index"
 end

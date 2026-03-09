@@ -1,2 +1,58 @@
-<h1>Pages#home</h1>
-<p>Find me in app/views/pages/home.html.erb</p>
+<%# Page d'accueil de Team Up %>
+
+<div class="container my-5 text-center">
+
+  <%# Section hero %>
+  <h1 class="display-4 fw-bold mb-3">Bienvenue sur Team Up ⚽</h1>
+  <p class="lead text-muted mb-4">
+    Trouve des joueurs, organise des matchs, joue ensemble.
+  </p>
+
+  <%# Boutons d'appel à l'action %>
+  <div class="d-flex justify-content-center gap-3 mb-5">
+    <% if user_signed_in? %>
+      <%# Si connecté, on va directement aux matchs %>
+      <%= link_to "Voir les matchs", matches_path, class: "btn btn-primary btn-lg" %>
+      <%= link_to "Créer un match", new_match_path, class: "btn btn-outline-primary btn-lg" %>
+    <% else %>
+      <%# Si visiteur, on invite à s'inscrire %>
+      <%= link_to "Commencer", new_user_registration_path, class: "btn btn-primary btn-lg" %>
+      <%= link_to "Se connecter", new_user_session_path, class: "btn btn-outline-primary btn-lg" %>
+    <% end %>
+  </div>
+
+  <%# Section "Comment ça marche" %>
+  <div class="row justify-content-center g-4 mt-3">
+
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="card-body text-center">
+          <div class="display-5 mb-3">📋</div>
+          <h5 class="card-title">Crée un match</h5>
+          <p class="card-text text-muted">Définis la date, le lieu, le niveau et le nombre de joueurs.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="card-body text-center">
+          <div class="display-5 mb-3">🤝</div>
+          <h5 class="card-title">Rejoins un match</h5>
+          <p class="card-text text-muted">Parcours les matchs disponibles et inscris-toi en un clic.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="card-body text-center">
+          <div class="display-5 mb-3">⚽</div>
+          <h5 class="card-title">Joue !</h5>
+          <p class="card-text text-muted">Retrouve tes coéquipiers sur le terrain et profite du match.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
