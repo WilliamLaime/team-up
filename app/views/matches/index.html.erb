@@ -1,0 +1,57 @@
+<%# Liste de tous les matchs disponibles %>
+
+<div class="container my-4">
+
+  <%# En-tête avec titre et bouton de création %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Les matchs</h1>
+    <%= link_to "Créer un match", new_match_path, class: "btn btn-primary" %>
+  </div>
+
+  <%# Si aucun match n'existe encore %>
+  <% if @matches.empty? %>
+    <div class="alert alert-info">
+      Aucun match disponible pour le moment. Sois le premier à en créer un !
+    </div>
+  <% else %>
+
+    <%# Grille de cartes Bootstrap — 3 colonnes sur grand écran, 1 sur mobile %>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      <% @matches.each do |match| %>
+        <div class="col">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+
+              <%# Titre et niveau du match %>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="card-title"><%= match.title %></h5>
+                <%# Badge coloré selon le niveau %>
+                <span class="badge <%= match.level == 'Débutant' ? 'bg-success' : match.level == 'Intermédiaire' ? 'bg-warning text-dark' : 'bg-danger' %>">
+                  <%= match.level %>
+                </span>
+              </div>
+
+              <%# Description courte (tronquée à 100 caractères) %>
+              <p class="card-text text-muted"><%= truncate(match.description, length: 100) %></p>
+
+              <%# Infos du match %>
+              <ul class="list-unstyled small mb-3">
+                <li>📅 <%= match.date&.strftime("%d/%m/%Y") || "Date non définie" %></li>
+                <li>🕐 <%= match.time&.strftime("%H:%M") || "Heure non définie" %></li>
+                <li>📍 <%= match.place || "Lieu non défini" %></li>
+                <li>👥 <%= match.player_left || 0 %> place(s) disponible(s)</li>
+              </ul>
+
+            </div>
+
+            <%# Lien vers le détail du match %>
+            <div class="card-footer bg-transparent">
+              <%= link_to "Voir le match", match_path(match), class: "btn btn-outline-primary btn-sm w-100" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+  <% end %>
+</div>

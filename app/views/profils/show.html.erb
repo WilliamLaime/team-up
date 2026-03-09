@@ -1,0 +1,93 @@
+<%# Page de visualisation du profil de l'utilisateur connecté %>
+
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+
+          <%# En-tête du profil %>
+          <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+              <h2 class="mb-1"><%= @profil.name || current_user.email %></h2>
+              <p class="text-muted mb-0"><%= current_user.email %></p>
+            </div>
+            <%# Bouton pour modifier le profil %>
+            <%= link_to "Modifier mon profil", edit_profil_path, class: "btn btn-outline-primary" %>
+          </div>
+
+          <hr>
+
+          <%# Informations du profil %>
+          <div class="row g-3">
+
+            <%# Niveau %>
+            <div class="col-md-6">
+              <strong>Niveau</strong>
+              <p class="text-muted"><%= @profil.level || "Non renseigné" %></p>
+            </div>
+
+            <%# Rôle préféré %>
+            <div class="col-md-6">
+              <strong>Rôle préféré</strong>
+              <p class="text-muted"><%= @profil.role || "Non renseigné" %></p>
+            </div>
+
+            <%# Téléphone %>
+            <div class="col-md-6">
+              <strong>Téléphone</strong>
+              <p class="text-muted"><%= @profil.phone || "Non renseigné" %></p>
+            </div>
+
+            <%# Adresse %>
+            <div class="col-md-6">
+              <strong>Adresse</strong>
+              <p class="text-muted"><%= @profil.address || "Non renseignée" %></p>
+            </div>
+
+            <%# Description %>
+            <% if @profil.description.present? %>
+              <div class="col-12">
+                <strong>À propos</strong>
+                <p class="text-muted"><%= @profil.description %></p>
+              </div>
+            <% end %>
+
+          </div>
+
+          <%# Si le profil est vide, on invite l'utilisateur à le compléter %>
+          <% if @profil.new_record? || @profil.name.blank? %>
+            <div class="alert alert-warning mt-3">
+              Ton profil est vide ! <%= link_to "Complète-le maintenant", edit_profil_path, class: "alert-link" %>.
+            </div>
+          <% end %>
+
+        </div>
+      </div>
+
+      <%# Matchs de l'utilisateur %>
+      <div class="card shadow-sm mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">Mes matchs</h5>
+        </div>
+        <ul class="list-group list-group-flush">
+          <% if current_user.matchs.any? %>
+            <% current_user.matchs.order(date: :asc).each do |match| %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <%= match.title %>
+                <div>
+                  <small class="text-muted me-2"><%= match.date&.strftime("%d/%m/%Y") %></small>
+                  <%= link_to "Voir", match_path(match), class: "btn btn-sm btn-outline-primary" %>
+                </div>
+              </li>
+            <% end %>
+          <% else %>
+            <li class="list-group-item text-muted">Tu n'es inscrit à aucun match.</li>
+          <% end %>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
