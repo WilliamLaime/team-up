@@ -16,7 +16,7 @@
                 <%= image_tag @profil.avatar,
                     class: "rounded-circle",
                     style: "width:80px;height:80px;object-fit:cover;",
-                    alt: "Photo de profil de #{@profil.name || current_user.email}" %>
+                    alt: "Photo de profil de #{[@profil.first_name, @profil.last_name].compact.join(' ').presence || current_user.email}" %>
               <% else %>
                 <%# Pas encore de photo — icône générique Lucide %>
                 <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
@@ -26,7 +26,8 @@
               <% end %>
 
               <div>
-                <h2 class="mb-1"><%= @profil.name || current_user.email %></h2>
+                <%# Affiche "Prénom Nom" ou l'email si le profil n'est pas encore rempli %>
+                <h2 class="mb-1"><%= [@profil.first_name, @profil.last_name].compact.join(' ').presence || current_user.email %></h2>
                 <p class="text-muted mb-0"><%= current_user.email %></p>
               </div>
             </div>
@@ -75,7 +76,7 @@
           </div>
 
           <%# Si le profil est vide, on invite l'utilisateur à le compléter %>
-          <% if @profil.new_record? || @profil.name.blank? %>
+          <% if @profil.new_record? || @profil.first_name.blank? %>
             <div class="alert alert-warning mt-3">
               Ton profil est vide ! <%= link_to "Complète-le maintenant", edit_profil_path, class: "alert-link" %>.
             </div>

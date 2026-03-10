@@ -115,7 +115,7 @@
               <ul class="list-group list-group-flush">
                 <% pending_users.each do |match_user| %>
                   <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <%= match_user.user.email %>
+                    <%= match_user.user.display_name %>
                     <div class="d-flex gap-2">
                       <%# Bouton pour approuver le joueur %>
                       <%= button_to "✅ Accepter",
@@ -151,7 +151,7 @@
           <% if approved_users.any? %>
             <% approved_users.each do |match_user| %>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <%= match_user.user.email %>
+                <%= match_user.user.display_name %>
                 <% if match_user.role == "organisateur" %>
                   <span class="badge bg-primary">Organisateur</span>
                 <% else %>

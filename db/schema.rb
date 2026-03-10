@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_09_155905) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_102618) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -63,7 +63,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_155905) do
     t.time "time"
     t.string "title"
     t.datetime "updated_at", null: false
+    t.bigint "user_id"
     t.string "validation_mode", default: "automatic"
+    t.index ["user_id"], name: "index_matches_on_user_id"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -80,9 +82,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_155905) do
     t.string "address"
     t.datetime "created_at", null: false
     t.string "description"
+    t.string "first_name"
+    t.string "last_name"
     t.string "level"
     t.decimal "localisation"
-    t.string "name"
     t.string "phone"
     t.string "role"
     t.datetime "time_available"
@@ -107,6 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_155905) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "match_users", "matches"
   add_foreign_key "match_users", "users"
+  add_foreign_key "matches", "users"
   add_foreign_key "notifications", "users"
   add_foreign_key "profils", "users"
 end

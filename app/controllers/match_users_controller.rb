@@ -7,13 +7,15 @@ class MatchUsersController < ApplicationController
   # POST /matches/:match_id/match_users
   # Rejoindre un match
   def create
+    @match_user = @match.match_users.new(user: current_user, role: "joueur")
+    # Vérifie avec Pundit que l'utilisateur a le droit de rejoindre
+    authorize @match_user
+
     # Vérifie si l'utilisateur est déjà inscrit à ce match
     if @match.match_users.exists?(user: current_user)
       redirect_to @match, alert: "Tu es déjà inscrit à ce match."
       return
     end
-
-    @match_user = @match.match_users.new(user: current_user, role: "joueur")
 
     if @match.manual_validation?
       # Mode manuel : le joueur est en attente de validation par l'organisateur
@@ -21,7 +23,7 @@ class MatchUsersController < ApplicationController
       @match_user.save
 
       # Notifie l'organisateur qu'un joueur veut rejoindre
-      notify_organizer("#{current_user.email} veut rejoindre votre match \"#{@match.title}\"")
+      notify_organizer("#{current_user.display_name} veut rejoindre votre match \"#{@match.title}\"")
 
       redirect_to @match, notice: "Ta demande a été envoyée à l'organisateur !"
     else
@@ -32,7 +34,7 @@ class MatchUsersController < ApplicationController
         @match.decrement!(:player_left)
 
         # Notifie l'organisateur qu'un joueur a rejoint
-        notify_organizer("#{current_user.email} a rejoint votre match \"#{@match.title}\"")
+        notify_organizer("#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
 
         redirect_to @match, notice: "Tu as rejoint le match !"
       else
@@ -44,11 +46,8 @@ class MatchUsersController < ApplicationController
   # DELETE /matches/:match_id/match_users/:id
   # Quitter un match
   def destroy
-    # Vérifie que l'utilisateur peut seulement quitter sa propre inscription
-    unless @match_user.user == current_user
-      redirect_to @match, alert: "Action non autorisée."
-      return
-    end
+    # Pundit vérifie que l'utilisateur ne peut quitter que sa propre inscription
+    authorize @match_user
 
     # Si le joueur était approuvé, on lui restitue sa place
     if @match_user.approved?
@@ -62,10 +61,8 @@ class MatchUsersController < ApplicationController
   # PATCH /matches/:match_id/match_users/:id/approve
   # Approuver un joueur (réservé à l'organisateur)
   def approve
-    unless current_user_is_organizer?
-      redirect_to @match, alert: "Seul l'organisateur peut approuver des joueurs."
-      return
-    end
+    # Pundit vérifie que seul l'organisateur peut approuver
+    authorize @match_user
 
     @match_user.update(status: "approved")
     @match.decrement!(:player_left)
@@ -73,23 +70,21 @@ class MatchUsersController < ApplicationController
     # Notifie le joueur que sa demande a été acceptée
     notify_player(@match_user.user, "✅ Ta demande pour \"#{@match.title}\" a été acceptée !")
 
-    redirect_to @match, notice: "#{@match_user.user.email} a été approuvé !"
+    redirect_to @match, notice: "#{@match_user.user.display_name} a été approuvé !"
   end
 
   # PATCH /matches/:match_id/match_users/:id/reject
   # Rejeter un joueur (réservé à l'organisateur)
   def reject
-    unless current_user_is_organizer?
-      redirect_to @match, alert: "Seul l'organisateur peut rejeter des joueurs."
-      return
-    end
+    # Pundit vérifie que seul l'organisateur peut rejeter
+    authorize @match_user
 
     @match_user.update(status: "rejected")
 
     # Notifie le joueur que sa demande a été refusée
     notify_player(@match_user.user, "❌ Ta demande pour \"#{@match.title}\" a été refusée.")
 
-    redirect_to @match, notice: "#{@match_user.user.email} a été refusé."
+    redirect_to @match, notice: "#{@match_user.user.display_name} a été refusé."
   end
 
   private
@@ -102,11 +97,6 @@ class MatchUsersController < ApplicationController
   # Retrouve l'inscription spécifique via l'id dans l'URL
   def set_match_user
     @match_user = @match.match_users.find(params[:id])
-  end
-
-  # Vérifie si l'utilisateur connecté est l'organisateur du match
-  def current_user_is_organizer?
-    @match.match_users.exists?(user: current_user, role: "organisateur")
   end
 
   # Envoie une notification à l'organisateur du match

@@ -5,16 +5,22 @@ class ProfilsController < ApplicationController
   # GET /profil
   # Affiche le profil de l'utilisateur connecté
   def show
+    # Pundit vérifie que l'utilisateur ne peut voir que son propre profil
+    authorize @profil
   end
 
   # GET /profil/edit
   # Affiche le formulaire de modification du profil
   def edit
+    # Pundit vérifie que l'utilisateur ne peut modifier que son propre profil
+    authorize @profil
   end
 
   # PATCH/PUT /profil
   # Met à jour le profil de l'utilisateur connecté
   def update
+    # Pundit vérifie l'autorisation avant de sauvegarder
+    authorize @profil
     if @profil.update(profil_params)
       redirect_to profil_path, notice: "Profil mis à jour avec succès !"
     else
@@ -34,7 +40,7 @@ class ProfilsController < ApplicationController
   def profil_params
     # :avatar est le champ Active Storage pour la photo de profil
     params.require(:profil).permit(
-      :name, :address, :description, :level, :phone, :role, :localisation, :time_available, :avatar
+      :first_name, :last_name, :address, :description, :level, :phone, :role, :localisation, :time_available, :avatar
     )
   end
 end

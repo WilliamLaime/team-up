@@ -2,14 +2,17 @@ class NotificationsController < ApplicationController
   # GET /notifications
   # Affiche toutes les notifications de l'utilisateur connecté
   def index
-    # Récupère toutes les notifs, les plus récentes en premier
-    @notifications = current_user.notifications.recent
+    # policy_scope filtre pour ne retourner que les notifs de l'utilisateur connecté
+    @notifications = policy_scope(Notification).order(created_at: :desc)
   end
 
   # PATCH /notifications/:id/mark_read
   # Marque une notification comme lue et redirige vers son lien
   def mark_read
-    @notification = current_user.notifications.find(params[:id])
+    @notification = Notification.find(params[:id])
+    # Pundit vérifie que la notification appartient bien à l'utilisateur connecté
+    authorize @notification
+
     @notification.update(read: true)
 
     # Redirige vers le lien associé à la notification (ex: la page du match)
@@ -19,6 +22,9 @@ class NotificationsController < ApplicationController
   # PATCH /notifications/mark_all_read
   # Marque toutes les notifications de l'utilisateur comme lues
   def mark_all_read
+    # On utilise authorize avec un symbole car il n'y a pas de record unique ici
+    authorize :notification, :mark_all_read?
+
     current_user.notifications.unread.update_all(read: true)
     redirect_to notifications_path, notice: "Toutes les notifications ont été marquées comme lues."
   end

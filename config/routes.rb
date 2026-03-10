@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
-  devise_for :users
+  # controllers: indique à Devise d'utiliser notre controller personnalisé pour l'inscription
+  devise_for :users, controllers: { registrations: "users/registrations" }
 
   # Page d'accueil
   root to: "pages#home"

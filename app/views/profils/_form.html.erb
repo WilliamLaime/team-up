@@ -17,10 +17,21 @@
     </div>
   <% end %>
 
-  <%# Nom affiché %>
+  <%# Prénom — obligatoire %>
   <div class="col-md-6">
-    <%= f.label :name, "Nom", class: "form-label" %>
-    <%= f.text_field :name, class: "form-control", placeholder: "Ton prénom ou pseudo" %>
+    <%# La * rouge indique que le champ est obligatoire %>
+    <%= f.label :first_name, class: "form-label" do %>
+      Prénom <span class="text-danger">*</span>
+    <% end %>
+    <%= f.text_field :first_name, class: "form-control", placeholder: "Ton prénom", required: true %>
+  </div>
+
+  <%# Nom de famille — obligatoire %>
+  <div class="col-md-6">
+    <%= f.label :last_name, class: "form-label" do %>
+      Nom <span class="text-danger">*</span>
+    <% end %>
+    <%= f.text_field :last_name, class: "form-control", placeholder: "Ton nom de famille", required: true %>
   </div>
 
   <%# Téléphone %>
@@ -85,6 +96,11 @@
            style="width:80px;height:80px;object-fit:cover;">
       <small class="text-muted ms-2">Aperçu</small>
     </div>
+  </div>
+
+  <%# Légende des champs obligatoires %>
+  <div class="col-12">
+    <small class="text-muted"><span class="text-danger">*</span> Champs obligatoires</small>
   </div>
 
   <%# Bouton de soumission %>
