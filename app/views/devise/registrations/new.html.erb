@@ -1,24 +1,44 @@
-<h2>Sign up</h2>
+<h2>Créer un compte</h2>
 
 <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
   <%= f.error_notification %>
 
   <div class="form-inputs">
-    <%= f.input :email,
+    <%# Prénom — obligatoire %>
+    <%= f.input :first_name,
+                label: "Prénom",
                 required: true,
                 autofocus: true,
-                input_html: { autocomplete: "email" }%>
+                input_html: { autocomplete: "given-name" } %>
+
+    <%# Nom de famille — obligatoire %>
+    <%= f.input :last_name,
+                label: "Nom",
+                required: true,
+                input_html: { autocomplete: "family-name" } %>
+
+    <%# Email %>
+    <%= f.input :email,
+                required: true,
+                input_html: { autocomplete: "email" } %>
+
+    <%# Mot de passe %>
     <%= f.input :password,
                 required: true,
-                hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
+                hint: ("#{@minimum_password_length} caractères minimum" if @minimum_password_length),
                 input_html: { autocomplete: "new-password" } %>
+
+    <%# Confirmation du mot de passe %>
     <%= f.input :password_confirmation,
                 required: true,
                 input_html: { autocomplete: "new-password" } %>
   </div>
 
-  <div class="form-actions">
-    <%= f.button :submit, "Sign up" %>
+  <%# Légende des champs obligatoires %>
+  <small class="text-muted"><span class="text-danger">*</span> Champs obligatoires</small>
+
+  <div class="form-actions mt-3">
+    <%= f.button :submit, "S'inscrire" %>
   </div>
 <% end %>
 

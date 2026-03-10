@@ -106,7 +106,7 @@
               <% if current_user.profil&.avatar&.attached? %>
                 <%= image_tag current_user.profil.avatar,
                     class: "avatar",
-                    alt: "Photo de #{current_user.profil.name || current_user.email}",
+                    alt: "Photo de #{[current_user.profil.first_name, current_user.profil.last_name].compact.join(' ').presence || current_user.email}",
                     style: "object-fit:cover;" %>
               <% else %>
                 <%= image_tag "https://kitt.lewagon.com/placeholder/users/ssaunier", class: "avatar", alt: "menu utilisateur" %>
