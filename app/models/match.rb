@@ -4,6 +4,14 @@ class Match < ApplicationRecord
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 
+  # ── ActionCable : mises à jour en temps réel ─────────────────────────────
+  # Diffuse automatiquement sur le canal "matches" :
+  #   - création  → ajoute la carte en bas de la liste (append)
+  #   - mise à jour → remplace la carte existante (replace)
+  #   - suppression → retire la carte de la page (remove)
+  # La vue s'abonne avec <%= turbo_stream_from "matches" %>
+  broadcasts_to ->(match) { "matches" }
+
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze
 
