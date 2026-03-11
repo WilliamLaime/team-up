@@ -10,6 +10,8 @@ class MatchesController < ApplicationController
       .where("(date + time) > ?", Time.current)
       .order(date: :asc, time: :asc)
 
+    # Recherche full-text — titre, ville, description ou email du créateur
+    @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
     # Filtre "Mes matchs" — seulement les matchs créés par l'utilisateur connecté
     @matches = @matches.where(user: current_user) if params[:mine].present? && user_signed_in?
 
