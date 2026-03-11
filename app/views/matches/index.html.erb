@@ -1,76 +1,132 @@
 <%# Liste de tous les matchs disponibles %>
 
+<%#
+  Abonnement au canal ActionCable "matches".
+  Quand un match est créé/modifié/supprimé, la page se met à jour automatiquement
+  sans rechargement grâce à Turbo Stream (WebSocket).
+%>
+<%= turbo_stream_from "matches" %>
+
 <div class="container my-4">
 
-  <%# En-tête avec titre et bouton de création %>
+  <%# ── Bouton retour ──────────────────────────────────────────────────────── %>
+  <%= link_to :back, class: "btn btn-outline-secondary btn-sm mb-3" do %>
+    ← Retour
+  <% end %>
+
+  <%# ── En-tête avec titre et bouton de création ───────────────────────────── %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Les matchs</h1>
     <%= link_to "Créer un match", new_match_path, class: "btn btn-primary" %>
   </div>
 
-  <%# Si aucun match n'existe encore %>
+  <%# ── Formulaire de filtres ──────────────────────────────────────────────── %>
+  <%# Méthode GET pour que les filtres apparaissent dans l'URL (pratique pour partager) %>
+  <%= form_with url: matches_path, method: :get, local: true, class: "mb-4" do |f| %>
+    <div class="row g-2 align-items-end">
+
+      <%# Filtre : Date (impossible de choisir une date déjà passée) %>
+      <div class="col-12 col-md-2">
+        <%= f.label :date, "Date", class: "form-label small fw-semibold mb-1" %>
+        <%= f.date_field :date,
+            value: params[:date],
+            min: Date.today,
+            class: "form-control form-control-sm" %>
+      </div>
+
+      <%# Filtre : Heure minimum — uniquement les créneaux toutes les 15 minutes %>
+      <div class="col-12 col-md-2">
+        <%= f.label :time_from, "Heure (à partir de)", class: "form-label small fw-semibold mb-1" %>
+        <%#
+          On génère les options : 00:00, 00:15, 00:30, 00:45, 01:00, ..., 23:45
+          (0..23) → chaque heure
+          [0, 15, 30, 45] → les 4 créneaux par heure
+        %>
+        <%= f.select :time_from,
+            [["Toutes heures", ""]] + (0..23).flat_map { |h|
+              [0, 15, 30, 45].map { |m| "%02d:%02d" % [h, m] }
+            },
+            { selected: params[:time_from] },
+            class: "form-select form-select-sm" %>
+      </div>
+
+      <%# Filtre : Niveau %>
+      <div class="col-12 col-md-2">
+        <%= f.label :level, "Niveau", class: "form-label small fw-semibold mb-1" %>
+        <%= f.select :level,
+            [["Tous les niveaux", ""]] + Match::LEVELS,
+            { selected: params[:level] },
+            class: "form-select form-select-sm" %>
+      </div>
+
+      <%# Filtre : Ville %>
+      <div class="col-12 col-md-2">
+        <%= f.label :place, "Ville", class: "form-label small fw-semibold mb-1" %>
+        <%= f.text_field :place,
+            value: params[:place],
+            placeholder: "Ex : Paris",
+            class: "form-control form-control-sm" %>
+      </div>
+
+      <%# Filtre : Places disponibles (minimum) %>
+      <div class="col-12 col-md-2">
+        <%= f.label :player_left, "Places dispo (min)", class: "form-label small fw-semibold mb-1" %>
+        <%= f.number_field :player_left,
+            value: params[:player_left],
+            min: 1,
+            placeholder: "Ex : 2",
+            class: "form-control form-control-sm" %>
+      </div>
+
+      <%# Boutons Filtrer + Réinitialiser %>
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <%= f.submit "Filtrer", class: "btn btn-primary btn-sm" %>
+        <%= link_to "Réinitialiser", matches_path, class: "btn btn-outline-secondary btn-sm" %>
+      </div>
+
+    </div>
+  <% end %>
+
+  <%# ── Liste des matchs ───────────────────────────────────────────────────── %>
   <% if @matches.empty? %>
+    <%# Message si aucun match ne correspond aux filtres %>
     <div class="alert alert-info">
       Aucun match disponible pour le moment. Sois le premier à en créer un !
     </div>
   <% else %>
 
-    <%# Grille de cartes Bootstrap — 3 colonnes sur grand écran, 1 sur mobile %>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-      <% @matches.each do |match| %>
-        <div class="col">
-          <div class="card h-100 shadow-sm">
-            <div class="card-body">
+    <%#
+      Stimulus controller "load-more" :
+      - data-controller="load-more"          → active le controller JS
+      - data-load-more-step-value="6"        → nombre de cartes révélées par clic
+      Chaque carte a data-load-more-target="card"
+      Le bouton a data-load-more-target="button" et data-action="load-more#more"
+    %>
+    <div data-controller="load-more" data-load-more-step-value="6">
 
-              <%# Ligne titre + badges %>
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <h5 class="card-title me-2"><%= match.title %></h5>
-                <div class="d-flex flex-wrap gap-1 justify-content-end">
-                  <%# Badge "Urgent" si le match commence dans moins de 2h %>
-                  <% if match.urgent? %>
-                    <span class="badge bg-danger">🔥 Urgent</span>
-                  <% end %>
-                  <%# Badge niveau — couleur selon le niveau %>
-                  <%
-                    level_class = case match.level
-                      when "Débutant"      then "bg-success"
-                      when "Intermédiaire" then "bg-warning text-dark"
-                      when "Avancé"        then "bg-danger"
-                      else "bg-info text-dark"
-                    end
-                  %>
-                  <span class="badge <%= level_class %>"><%= match.level %></span>
-                </div>
-              </div>
+      <%#
+        Grille de cartes Bootstrap — 3 colonnes sur grand écran, 1 sur mobile.
+        id="matches" est OBLIGATOIRE : c'est la cible du broadcast ActionCable.
+        Quand un nouveau match est créé, Turbo l'ajoute automatiquement ici (append).
+      %>
+      <div id="matches" class="row row-cols-1 row-cols-md-3 g-4">
+        <%# render @matches appelle automatiquement le partial _match.html.erb pour chaque match %>
+        <%= render @matches %>
+      </div>
 
-              <%# Description courte (tronquée à 100 caractères) %>
-              <p class="card-text text-muted"><%= truncate(match.description, length: 100) %></p>
+      <%# ── Bouton "Afficher plus de matchs" ──────────────────────────────── %>
+      <%# data-load-more-target="button" → le controller le cache quand tout est visible %>
+      <%# data-action="load-more#more"   → appelle la méthode more() au clic %>
+      <div class="text-center mt-4">
+        <button
+          class="btn btn-outline-primary"
+          data-load-more-target="button"
+          data-action="click->load-more#more">
+          Afficher plus de matchs
+        </button>
+      </div>
 
-              <%# Infos du match %>
-              <ul class="list-unstyled small mb-3">
-                <li>📅 <%= match.date&.strftime("%d/%m/%Y") || "Date non définie" %></li>
-                <li>🕐 <%= match.time&.strftime("%H:%M") || "Heure non définie" %></li>
-                <li>📍 <%= match.place || "Lieu non défini" %></li>
-                <%# Affiche "Complet" si plus aucune place %>
-                <li>
-                  <% if match.full? %>
-                    <span class="text-danger fw-semibold">🔴 Complet</span>
-                  <% else %>
-                    👥 <%= match.player_left %> place(s) disponible(s)
-                  <% end %>
-                </li>
-              </ul>
-
-            </div>
-
-            <%# Lien vers le détail du match %>
-            <div class="card-footer bg-transparent">
-              <%= link_to "Voir le match", match_path(match), class: "btn btn-outline-primary btn-sm w-100" %>
-            </div>
-          </div>
-        </div>
-      <% end %>
     </div>
-
   <% end %>
+
 </div>
