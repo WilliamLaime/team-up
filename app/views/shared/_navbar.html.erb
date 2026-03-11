@@ -117,6 +117,24 @@
               </div>
 
             </div>
+          <%# ====== CLOCHE DE NOTIFICATIONS ====== %>
+          <%#
+            turbo_stream_from : s'abonne au canal ActionCable personnel de l'utilisateur.
+            Canal unique : [current_user, :notifications] → "notifications_user_42"
+            Quand une notification est créée, Turbo remplace automatiquement
+            le turbo_frame "notification_bell" ci-dessous.
+          %>
+          <%= turbo_stream_from current_user, :notifications %>
+
+          <%#
+            turbo_frame_tag "notification_bell" : le seul fragment remplacé en temps réel.
+            Contenu = partial _notification_bell.html.erb
+            À chaque nouvelle notif, Turbo remplace uniquement ce <turbo-frame> sans rechargement.
+          %>
+          <li class="nav-item dropdown">
+            <%= turbo_frame_tag "notification_bell" do %>
+              <%= render "shared/notification_bell" %>
+            <% end %>
           </li>
           <%# ── Fin cloche ── %>
 

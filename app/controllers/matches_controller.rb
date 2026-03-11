@@ -4,10 +4,26 @@ class MatchesController < ApplicationController
 
   # GET /matches
   # Affiche uniquement les matchs à venir (passés exclus), triés par date puis heure
+  # Accepte des paramètres de filtre : level, place, date, time, player_left
   def index
     @matches = policy_scope(Match)
       .where("(date + time) > ?", Time.current)
       .order(date: :asc, time: :asc)
+
+    # Filtre par niveau (ex: "Débutant", "Intermédiaire", "Avancé")
+    @matches = @matches.where(level: params[:level]) if params[:level].present?
+
+    # Filtre par ville — recherche insensible à la casse (ILIKE = like sans casse en PostgreSQL)
+    @matches = @matches.where("place ILIKE ?", "%#{params[:place]}%") if params[:place].present?
+
+    # Filtre par date exacte (format attendu : YYYY-MM-DD)
+    @matches = @matches.where(date: params[:date]) if params[:date].present?
+
+    # Filtre par heure de début minimum (ex: afficher seulement les matchs à partir de 18h)
+    @matches = @matches.where("time >= ?", params[:time_from]) if params[:time_from].present?
+
+    # Filtre par nombre de places disponibles minimum
+    @matches = @matches.where("player_left >= ?", params[:player_left].to_i) if params[:player_left].present?
   end
 
   # GET /matches/:id
