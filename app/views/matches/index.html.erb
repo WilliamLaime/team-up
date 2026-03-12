@@ -18,6 +18,13 @@
       </p>
     </div>
 
+    <%# ── Bouton créer — au-dessus des filtres, aligné à droite ────────────── %>
+    <% if user_signed_in? %>
+      <div class="d-flex justify-content-end mb-3">
+        <%= link_to "Créer un match", new_match_path, class: "btn btn-primary btn-sm" %>
+      </div>
+    <% end %>
+
     <%# ── Barre de filtres ────────────────────────────────────────────────── %>
     <%# GET → les paramètres apparaissent dans l'URL (partageables) %>
     <%= form_with url: matches_path, method: :get, local: true do |f| %>
@@ -73,14 +80,6 @@
                 placeholder: "Rechercher un match...",
                 class: "filter-search-input" %>
           </div>
-
-          <%# Bouton créer un match %>
-          <% if user_signed_in? %>
-            <%= link_to new_match_path, class: "btn btn-primary btn-sm matches-create-btn" do %>
-              <i data-lucide="plus" style="width:15px;height:15px;"></i>
-              Créer
-            <% end %>
-          <% end %>
 
           <%# Submit caché — déclenché par JS au changement des selects/date %>
           <%= f.submit "Filtrer", id: "filter-submit-btn", class: "d-none" %>

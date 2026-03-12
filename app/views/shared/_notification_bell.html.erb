@@ -33,9 +33,11 @@
     <% end %>
   </div>
 
-  <%# Liste des 5 dernières notifications %>
-  <% recent_notifs = current_user.notifications.recent.limit(5) %>
+  <%# Liste des dernières notifications avec scroll interne %>
+  <% recent_notifs = current_user.notifications.recent.limit(10) %>
   <% if recent_notifs.any? %>
+    <%# Conteneur scrollable : max-height 280px, scroll vertical uniquement %>
+    <div style="max-height: 280px; overflow-y: auto;">
     <% recent_notifs.each do |notif| %>
       <%# Cliquer marque la notif comme lue — classe "unread" = fond vert léger %>
       <%# turbo_frame: "_top" force Turbo à naviguer au niveau de la page entière
@@ -63,6 +65,7 @@
         </div>
       <% end %>
     <% end %>
+    </div><%# fin conteneur scrollable %>
   <% else %>
     <%# État vide — aucune notification %>
     <div class="text-center py-3" style="color:rgba(255,255,255,0.5);">
@@ -71,10 +74,5 @@
     </div>
   <% end %>
 
-  <%# Pied de dropdown : lien vers toutes les notifications %>
-  <div class="notif-footer text-center py-1">
-    <%= link_to "Voir toutes les notifications", notifications_path,
-        class: "dropdown-item notif-see-all text-center small py-2" %>
-  </div>
 
 </div>
