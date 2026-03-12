@@ -135,10 +135,7 @@
           Les prochaines séances disponibles près de vous.
         </p>
       </div>
-      <%= link_to matches_path, class: "matches-see-all mt-1" do %>
-        Tout voir
-        <i data-lucide="arrow-right" style="width:15px;height:15px;"></i>
-      <% end %>
+      <%= render "shared/nav_button", url: matches_path, label: "Tout voir", direction: "forward", extra_class: "mt-1" %>
     </div>
 
     <% if @matches.any? %>

@@ -51,10 +51,7 @@
   <div class="container match-banner-container">
 
     <%# Bouton retour %>
-    <%= link_to matches_path, class: "match-banner-back" do %>
-      <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
-      Retour
-    <% end %>
+    <%= render "shared/nav_button", url: matches_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
 
     <div class="match-banner-content">
 
@@ -68,7 +65,7 @@
           <% end %>
           <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
           <% if @match.full? %>
-            <span class="match-badge-level" style="background:rgba(255,100,100,0.18);color:#ff6b6b;">Complet</span>
+            <span class="match-badge-level" style="background:rgba(255,100,100,0.15);color:#ff6b6b;border:1px solid rgba(255,100,100,0.40);">Complet</span>
           <% end %>
         </div>
 
@@ -88,8 +85,15 @@
           time_str = t ? t.strftime('%H:%M') : "—"
         %>
         <div class="match-banner-datetime">
-          <i data-lucide="calendar" style="width:14px;height:14px;"></i>
-          <%= date_str %> · <%= time_str %>
+          <%# Icône horloge avec fond vert arrondi %>
+          <div class="match-banner-datetime-icon">
+            <i data-lucide="clock" style="width:16px;height:16px;"></i>
+          </div>
+          <%# Label + valeur %>
+          <div>
+            <div class="match-banner-datetime-label">Date &amp; Heure</div>
+            <div class="match-banner-datetime-value"><%= date_str %> · <%= time_str %></div>
+          </div>
         </div>
 
       </div>
@@ -176,6 +180,12 @@
               <i data-lucide="map-pin" style="width:15px;height:15px;"></i>
               Lieu du match
             </h5>
+            <%# Nom de l'établissement en vert en haut à droite
+                On prend la partie avant " - " pour ne pas afficher l'adresse
+                Ex: "Le Five Bordeaux - Rue Dumont..." → "Le Five Bordeaux" %>
+            <% if @match.place.present? %>
+              <span class="match-map-venue-name"><%= @match.place.split(' - ').first %></span>
+            <% end %>
           </div>
 
           <%# Iframe Google Maps centré sur l'adresse %>
@@ -328,12 +338,24 @@
             ────────────────────────────────────── %>
         <div class="match-block match-block-join">
 
-          <%# Compteur de places %>
+          <%# Phrase accrocheuse selon le nombre de places restantes %>
+          <% if @match.player_left == 1 %>
+            <p class="match-spots-hook match-spots-hook--urgent">Dernière chance !</p>
+          <% elsif @match.player_left == 2 %>
+            <p class="match-spots-hook match-spots-hook--warning">Presque complet !</p>
+          <% elsif @match.player_left == 3 %>
+            <p class="match-spots-hook match-spots-hook--notice">Dépêchez-vous !</p>
+          <% end %>
+
+          <%# Compteur de places
+              Five = 10 joueurs max
+              Places prises = 10 - player_left (places restantes à remplir) %>
+          <% spots_taken = 10 - @match.player_left.to_i %>
           <div class="match-spots-display">
             <div class="match-spots-fraction">
-              <%= approved_users.count %>
+              <%= spots_taken %>
               <span class="match-spots-sep">/</span>
-              <%= approved_users.count + @match.player_left.to_i %>
+              10
             </div>
             <div class="match-spots-label">
               <% if @match.full? %>
@@ -451,7 +473,11 @@
               <strong style="color:#fff;">Match Chat</strong>
             </div>
             <% if is_participant %>
+              <%# Pastille "Connecté" pour les participants %>
               <span class="match-chat-online-dot">Connecté</span>
+            <% elsif @match.messages.count > 0 %>
+              <%# Badge avec le nombre de messages pour les non-participants %>
+              <span class="match-chat-new-badge"><%= @match.messages.count %> NOUVEAUX</span>
             <% end %>
           </div>
 
@@ -501,24 +527,58 @@
             </div>
 
           <% else %>
-            <%# Chat verrouillé pour les non-participants %>
-            <div class="match-chat-locked">
-              <i data-lucide="lock" style="width:26px;height:26px;"></i>
-              <p>Le chat est réservé aux joueurs acceptés dans ce match.</p>
-            </div>
+            <%# Chat flouté pour les non-participants — aperçu des derniers messages %>
+            <div class="match-chat-blur-wrapper">
 
-            <% if user_signed_in? && !@current_match_user %>
-              <%# Bouton qui déclenche aussi la modal de rejoindre %>
-              <button class="btn btn-primary w-100 mt-3"
-                      data-bs-toggle="modal"
-                      data-bs-target="#joinModal">
-                Accéder au chat
-              </button>
-            <% elsif !user_signed_in? %>
-              <%= link_to "Se connecter pour rejoindre",
-                  new_user_session_path,
-                  class: "btn btn-outline-secondary w-100 mt-3" %>
-            <% end %>
+              <%# Contenu flouté : mêmes messages que pour les participants %>
+              <div class="match-chat-blur-content">
+                <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
+                <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
+                <% if preview_messages.any? %>
+                  <div class="match-chat-preview-list">
+                    <% preview_messages.each do |msg| %>
+                      <div class="match-chat-preview-item">
+                        <div class="match-chat-preview-avatar"
+                             style="background-color:<%= avatar_colors[msg.user_id % avatar_colors.length] %>;">
+                          <%= msg.user.display_name.split.map(&:first).join.upcase.first(2) %>
+                        </div>
+                        <div class="match-chat-preview-content">
+                          <span class="match-chat-preview-name"><%= msg.user.display_name %></span>
+                          <span class="match-chat-preview-text"><%= truncate(msg.content, length: 55) %></span>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <%# Placeholder si aucun message encore %>
+                  <div class="match-chat-preview-list">
+                    <div class="match-chat-preview-item">
+                      <div class="match-chat-preview-avatar" style="background-color:#2E7D32;">JD</div>
+                      <div class="match-chat-preview-content">
+                        <span class="match-chat-preview-name">Joueur</span>
+                        <span class="match-chat-preview-text">Rejoins le match pour discuter !</span>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+
+              <%# Overlay avec le bouton centré par-dessus le flou %>
+              <div class="match-chat-blur-overlay">
+                <% if user_signed_in? && !@current_match_user %>
+                  <button class="match-chat-access-btn"
+                          data-bs-toggle="modal"
+                          data-bs-target="#joinModal">
+                    Accéder au chat
+                  </button>
+                <% elsif !user_signed_in? %>
+                  <%= link_to new_user_session_path, class: "match-chat-access-btn" do %>
+                    Accéder au chat
+                  <% end %>
+                <% end %>
+              </div>
+
+            </div>
           <% end %>
 
         </div>
@@ -567,19 +627,19 @@
             class: "d-none" do |f| %>
         <% end %>
 
-        <%# Boutons Oui / Non %>
+        <%# Boutons Oui / Non — Oui en premier à gauche, Non à droite %>
         <div class="d-flex gap-3 mt-4">
-          <%# Non → ferme la modal sans soumettre %>
-          <button type="button"
-                  class="btn btn-outline-secondary flex-fill join-modal-btn-no"
-                  data-bs-dismiss="modal">
-            Non
-          </button>
           <%# Oui → soumet le formulaire caché %>
           <button type="submit"
                   form="join-form"
                   class="btn btn-primary flex-fill join-modal-btn-yes">
             Oui
+          </button>
+          <%# Non → ferme la modal sans soumettre %>
+          <button type="button"
+                  class="btn btn-outline-secondary flex-fill join-modal-btn-no"
+                  data-bs-dismiss="modal">
+            Non
           </button>
         </div>
 

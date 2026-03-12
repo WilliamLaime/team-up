@@ -40,21 +40,6 @@
   }
 }
 
-// Bouton retour dans la banner
-.match-banner-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: $green;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
-  margin-bottom: 1.5rem;
-  transition: gap 0.2s, color 0.2s;
-
-  &:hover { gap: 0.5rem; color: #fff; }
-}
-
 // Disposition gauche / droite dans la banner
 .match-banner-content {
   display: flex;
@@ -86,14 +71,44 @@
   margin-bottom: 0.85rem;
 }
 
-// Date + heure
+// Date + heure — bloc icône + label + valeur
 .match-banner-datetime {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
-  color: rgba(255,255,255,0.55);
-  font-weight: 500;
+  gap: 0.75rem; // espace entre l'icône et le texte
+
+  // Carré arrondi avec fond vert pour l'icône horloge
+  &-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: rgba($green, 0.15);
+    border: 1px solid rgba($green, 0.35);
+    border-radius: 10px;
+    color: $green;
+    flex-shrink: 0; // ne se réduit pas si le texte est long
+  }
+
+  // Petit label au-dessus : "Date & Heure"
+  &-label {
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.50);
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+
+  // Valeur principale : date et heure en blanc bien visible
+  &-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+  }
 }
 
 .match-banner-right {
@@ -136,7 +151,7 @@
 .match-block {
   background: $dark-card-bg;
   border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 1.25rem 1.35rem;
   margin-bottom: 1.25rem;
   color: $dark-text;
@@ -210,6 +225,18 @@
     display: block; // supprime l'espace blanc sous l'iframe
     border-radius: 10px;
   }
+}
+
+// Nom de l'établissement — haut droite de la card map
+.match-map-venue-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $green;
+  text-align: right;
+  max-width: 160px;       // évite que le texte écrase le titre si long
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 // Rappel de l'adresse sous la carte
@@ -297,33 +324,57 @@
 // ── 8. BLOC REJOINDRE (colonne droite) ────────────
 
 .match-block-join {
-  // Compteur de places (ex : "8 / 10")
+  // Fond blanc avec bordure verte — override du thème sombre
+  background: #fff;
+  border: 1.5px solid $green;
+  color: #111; // texte sombre sur fond blanc
+
+  // ── Phrase accrocheuse selon les places restantes ──
+  .match-spots-hook {
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin-bottom: 0.6rem;
+
+    &--urgent  { color: #ef4444; } // 1 place  → rouge
+    &--warning { color: #f97316; } // 2 places → orange
+    &--notice  { color: #ca8a04; } // 3 places → jaune foncé (lisible sur blanc)
+  }
+
+  // ── Compteur de places (ex : "8 / 10") ──
   .match-spots-display {
     text-align: center;
     padding: 0.75rem 0 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(0,0,0,0.08); // séparateur adapté au fond blanc
     margin-bottom: 1rem;
   }
 
   .match-spots-fraction {
     font-size: 2rem;
     font-weight: 800;
-    color: #fff;
+    color: $green; // vert
     line-height: 1;
     margin-bottom: 0.25rem;
   }
 
   .match-spots-sep {
-    color: $dark-muted;
+    color: #aaa; // gris neutre lisible sur blanc
     font-weight: 400;
     font-size: 1.5rem;
     margin: 0 0.15rem;
   }
 
   .match-spots-label {
-    font-size: 0.82rem;
-    color: $green;
-    font-weight: 600;
+    font-size: 1.2rem;
+    color: #111; // noir
+    font-weight: 700; // gras
+  }
+
+  // ── Indicateur validation : adapté au fond blanc ──
+  .match-validation-badge {
+    color: #888;
+    border-top: 1px solid rgba(0,0,0,0.08); // séparateur adapté au fond blanc
   }
 }
 
@@ -487,22 +538,64 @@
   &:hover { opacity: 0.75; }
 }
 
-// État verrouillé du chat (non-participant)
-.match-chat-locked {
-  text-align: center;
-  padding: 1.5rem 0;
-  color: $dark-muted;
+// Badge "X NOUVEAUX" dans le header pour les non-participants
+.match-chat-new-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: $green;
+  background: rgba($green, 0.12);
+  border: 1px solid rgba($green, 0.35);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
 
-  i {
-    display: block;
-    margin: 0 auto 0.75rem;
-    opacity: 0.4;
-  }
+// Wrapper relatif pour positionner l'overlay par-dessus le flou
+.match-chat-blur-wrapper {
+  position: relative;
+}
 
-  p {
-    font-size: 0.82rem;
-    margin: 0;
-    line-height: 1.5;
+// Contenu flouté — on empêche l'interaction
+.match-chat-blur-content {
+  filter: blur(4px);
+  pointer-events: none; // empêche les clics sur le contenu flouté
+  user-select: none;    // empêche la sélection du texte
+}
+
+// Overlay centré par-dessus le flou
+.match-chat-blur-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // Léger dégradé sombre pour renforcer la lisibilité du bouton
+  background: linear-gradient(
+    to bottom,
+    rgba($dark-card-bg, 0.10) 0%,
+    rgba($dark-card-bg, 0.55) 100%
+  );
+}
+
+// Bouton "Accéder au chat" — pill vert outlined
+.match-chat-access-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.4rem;
+  border-radius: 999px;
+  border: 1.5px solid $green;
+  background: transparent;
+  color: $green;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover {
+    background: $green;
+    color: $dark-bg; // texte sombre sur fond vert au survol
   }
 }
 
@@ -512,7 +605,7 @@
 .join-modal-content {
   background: $dark-card-bg;
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 2rem 1.75rem 1.75rem;
   color: $dark-text;
   text-align: center;
