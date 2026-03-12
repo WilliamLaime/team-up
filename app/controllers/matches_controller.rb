@@ -48,19 +48,11 @@ class MatchesController < ApplicationController
     @match = Match.new
     authorize @match
 
-    # Date par défaut : aujourd'hui
-    @match.date = Date.today
-
-    # Heure par défaut : maintenant + 30 min, arrondie au prochain quart d'heure (00/15/30/45)
-    future = Time.current + 30.minutes
-    rounded_minutes = (future.min / 15.0).ceil * 15
-
-    if rounded_minutes >= 60
-      # Si le résultat dépasse 59 min, on passe à l'heure suivante
-      @match.time = future.change(hour: future.hour + 1, min: 0, sec: 0)
-    else
-      @match.time = future.change(min: rounded_minutes, sec: 0)
-    end
+    # Valeurs par défaut explicites
+    @match.date            = Date.today        # Date : aujourd'hui
+    @match.player_left     = 4                 # Joueurs manquants : 4 par défaut
+    @match.validation_mode = "automatic"       # Validation : automatique par défaut
+    @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
   end
 
   # POST /matches
@@ -108,6 +100,18 @@ class MatchesController < ApplicationController
   end
 
   private
+
+  # Calcule l'heure par défaut : maintenant + 30 min, arrondie au prochain quart d'heure
+  def default_match_time
+    future = Time.current + 30.minutes
+    rounded_minutes = (future.min / 15.0).ceil * 15
+
+    if rounded_minutes >= 60
+      future.change(hour: future.hour + 1, min: 0, sec: 0)
+    else
+      future.change(min: rounded_minutes, sec: 0)
+    end
+  end
 
   # Retrouve le match par son id dans les paramètres de l'URL
   def set_match
