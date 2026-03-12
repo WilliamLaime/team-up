@@ -10,9 +10,7 @@
 <div class="container my-4">
 
   <%# ── Bouton retour ──────────────────────────────────────────────────────── %>
-  <%= link_to :back, class: "btn btn-outline-secondary btn-sm mb-3" do %>
-    ← Retour
-  <% end %>
+  <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-3" %>
 
   <%# ── En-tête avec titre et bouton de création ───────────────────────────── %>
   <div class="d-flex justify-content-between align-items-center mb-4">

@@ -39,7 +39,7 @@ export default class extends Controller {
     "recapTime",         // Zone affichant l'heure (ex: 21h15)
     "recapPlayers",      // Zone affichant le nombre de joueurs
     "recapLevel",        // Zone affichant le niveau
-    "recapValidation"    // Zone affichant "Automatique" ou "Manuelle"
+    "recapValidation"    // Zone affichant le mode de validation (Manuel / Automatique)
   ]
 
   // ── connect() : appelé automatiquement au chargement de la page ──
@@ -175,18 +175,24 @@ export default class extends Controller {
     this.recapLevelTarget.textContent = val || "—"
   }
 
-  // ── Validation : Manuel / Automatique ────────────────────
+  // ── Validation : Manuel / Automatique ───────────────────
+  // Le toggle est dans la Section 4 du formulaire
+  // Ordre des labels : "Manuel" à gauche (index 0), "Automatique" à droite (index 1)
+  // checked = Automatique, unchecked = Manuel
   updateValidation() {
-    const isManual = this.validationToggleTarget.checked
-    this.recapValidationTarget.textContent = isManual ? "Manuelle" : "Automatique"
+    // checked = Automatique → isManual est l'inverse
+    const isManual = !this.validationToggleTarget.checked
 
-    // Met aussi à jour les labels "Manuel" / "Automatique" à côté du toggle
+    // Met à jour les labels "Manuel" / "Automatique" autour du toggle
     const labels = this.element.querySelectorAll(".toggle-label")
     if (labels.length === 2) {
-      // Premier label = "Manuel" → actif si coché
+      // Premier label = "Manuel" → actif si mode manuel
       labels[0].classList.toggle("active-label", isManual)
-      // Deuxième label = "Automatique" → actif si décoché
+      // Deuxième label = "Automatique" → actif si mode automatique
       labels[1].classList.toggle("active-label", !isManual)
     }
+
+    // Met à jour la ligne "Validation" dans le récapitulatif
+    this.recapValidationTarget.textContent = isManual ? "Manuel" : "Automatique"
   }
 }
