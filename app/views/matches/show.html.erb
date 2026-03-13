@@ -48,6 +48,11 @@
   <%# Calque sombre semi-transparent pour lisibilité du texte %>
   <div class="match-banner-overlay"></div>
 
+  <%# Bandeau "COMPLET" centré sur l'image — affiché uniquement quand le match est plein %>
+  <% if @match.full? %>
+    <div class="match-banner-full-overlay">COMPLET</div>
+  <% end %>
+
   <div class="container match-banner-container">
 
     <%# ── Ligne haute : Retour (gauche) + Partager (droite) ── %>
@@ -70,9 +75,7 @@
             <span class="match-badge-urgent">🔥 Urgent</span>
           <% end %>
           <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
-          <% if @match.full? %>
-            <span class="match-badge-level" style="background:rgba(255,100,100,0.15);color:#ff6b6b;border:1px solid rgba(255,100,100,0.40);">Complet</span>
-          <% end %>
+<%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
         </div>
 
         <%# Titre %>
