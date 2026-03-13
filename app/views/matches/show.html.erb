@@ -40,9 +40,9 @@
     ══════════════════════════════════════════════════ %>
 <section class="match-banner">
 
-  <%# Image de fond (placeholder terrain — pas encore de champ image en BDD) %>
+  <%# Image de fond — image aléatoire assignée à la création du match %>
   <div class="match-banner-bg"
-       style="background-image: url('https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1400&q=80')">
+       style="background-image: url('<%= asset_path(@match.image.presence || "Img_illu_foot/declan-sun-9WvJsfdqjSc-unsplash.jpg") %>')">
   </div>
 
   <%# Calque sombre semi-transparent pour lisibilité du texte %>

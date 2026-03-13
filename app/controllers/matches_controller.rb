@@ -2,6 +2,16 @@ class MatchesController < ApplicationController
   # Retrouver le match avant les actions qui en ont besoin
   before_action :set_match, only: [:show, :edit, :update, :destroy]
 
+  # Liste des images d'illustration foot disponibles dans app/assets/images/Img_illu_foot/
+  MATCH_IMAGES = [
+    "Img_illu_foot/alfonso-scarpa-jNGcyd4ME-E-unsplash.jpg",
+    "Img_illu_foot/bayu-syaits-p9l4ZJVZi40-unsplash.jpg",
+    "Img_illu_foot/declan-sun-9WvJsfdqjSc-unsplash.jpg",
+    "Img_illu_foot/jorgen-hendriksen-OuzaPRzOM6E-unsplash.jpg",
+    "Img_illu_foot/jorgen-hendriksen-eeE1UkPRm_M-unsplash.jpg",
+    "Img_illu_foot/jorgen-hendriksen-f1OzAuhpQo4-unsplash.jpg"
+  ].freeze
+
   # GET /matches
   # Affiche uniquement les matchs à venir (passés exclus), triés par date puis heure
   # Accepte des paramètres de filtre : level, place, date, time, player_left, mine
@@ -60,6 +70,8 @@ class MatchesController < ApplicationController
   def create
     @match = Match.new(match_params)
     @match.user = current_user
+    # Assigne une image aléatoire parmi les photos de terrain disponibles
+    @match.image = MATCH_IMAGES.sample
     authorize @match
 
 

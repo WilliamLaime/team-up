@@ -36,3 +36,15 @@ fr:
       almost_x_years:
         one: "presque 1 an"
         other: "presque %{count} ans"
+
+  # Traductions des attributs et modèles ActiveRecord
+  activerecord:
+    errors:
+      models:
+        match:
+          attributes:
+            level:
+              blank: "Veuillez choisir un niveau"
+              inclusion: "Le niveau choisi n'est pas valide"
+            player_left:
+              greater_than: "doit être supérieur à %{count}"
