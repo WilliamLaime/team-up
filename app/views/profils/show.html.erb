@@ -191,13 +191,15 @@
               <% upcoming_matches.each do |match| %>
                 <%
                   foot_images = %w[
-                    Img_illu_foot/alfonso-scarpa-jNGcyd4ME-E-unsplash.jpg
-                    Img_illu_foot/bayu-syaits-p9l4ZJVZi40-unsplash.jpg
-                    Img_illu_foot/declan-sun-9WvJsfdqjSc-unsplash.jpg
+                    Img_illu_foot/ballon.jpg
+                    Img_illu_foot/citytoulouse.jpg
+                    Img_illu_foot/bresil.jpg
                     Img_illu_foot/herbe.jpg
-                    Img_illu_foot/jorgen-hendriksen-eeE1UkPRm_M-unsplash.jpg
-                    Img_illu_foot/jorgen-hendriksen-f1OzAuhpQo4-unsplash.jpg
-                    Img_illu_foot/jorgen-hendriksen-OuzaPRzOM6E-unsplash.jpg
+                    Img_illu_foot/city1.jpg
+                    Img_illu_foot/citydrone.jpg
+                    Img_illu_foot/Duel.jpg
+                    Img_illu_foot/Medellin.jpg
+                    Img_illu_foot/terrainight.jpg
                   ]
                   cover = foot_images[match.id % foot_images.length]
 
@@ -241,7 +243,6 @@
                     </div>
                   </div>
 
-<<<<<<< profil
                   <%# Bouton détails %>
                   <%= link_to "Détails", match_path(match),
                       style: "flex-shrink:0; font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:999px; padding:0.25rem 0.8rem; text-decoration:none; white-space:nowrap;" %>
@@ -255,12 +256,6 @@
               <i data-lucide="calendar-x" style="width:28px; height:28px; opacity:0.3;"></i>
               <p style="font-size:0.88rem; margin:0;">Aucun match à venir.</p>
               <%= link_to "Trouver un match", matches_path, class: "btn btn-primary btn-sm btn-cta-primary mt-2" %>
-=======
-          <%# Alerte "profil vide" uniquement sur son propre profil %>
-          <% if is_own_profile && (@profil.new_record? || @profil.first_name.blank?) %>
-            <div class="alert alert-warning mt-3">
-              Ton profil est vide ! <%= link_to "Complète-le maintenant", edit_profil_path, class: "alert-link" %>.
->>>>>>> master
             </div>
           <% end %>
 
@@ -274,7 +269,6 @@
       <%# ════════════════════════ COLONNE DROITE (5/12) ════════════════════════ %>
       <div class="col-lg-5">
 
-<<<<<<< profil
         <%# ── 4. Description — en-tête hors card ─────────────────────────────── %>
         <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
           <i data-lucide="file-text" style="width:14px; height:14px;"></i>
@@ -290,28 +284,6 @@
               Pas encore de description.
               <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
             </p>
-=======
-      <%# Matchs de l'utilisateur affiché %>
-      <div class="card shadow-sm mt-4">
-        <div class="card-header">
-          <h5 class="mb-0"><%= is_own_profile ? "Mes matchs" : "Ses matchs" %></h5>
-        </div>
-        <ul class="list-group list-group-flush">
-          <% if @profil_user.matchs.any? %>
-            <% @profil_user.matchs.order(date: :asc).each do |match| %>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <%= match.title %>
-                <div>
-                  <small class="text-muted me-2"><%= match.date&.strftime("%d/%m/%Y") %></small>
-                  <%= link_to "Voir", match_path(match), class: "btn btn-sm btn-outline-primary" %>
-                </div>
-              </li>
-            <% end %>
-          <% else %>
-            <li class="list-group-item text-muted">
-              <%= is_own_profile ? "Tu n'es inscrit à aucun match." : "Pas encore inscrit à un match." %>
-            </li>
->>>>>>> master
           <% end %>
         </div>
 
