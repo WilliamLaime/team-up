@@ -42,6 +42,23 @@
   }
 }
 
+// Bandeau "COMPLET" centré sur l'image de la bannière
+// z-index: 1 = même niveau que le container → le texte s'affiche dans la bannière
+// pointer-events: none → les clics passent à travers
+.match-banner-full-overlay {
+  position: absolute;         // positionné par rapport à .match-banner (position: relative)
+  inset: 0;                   // couvre toute la bannière
+  z-index: 1;                 // même plan que le container — s'affiche comme watermark
+  display: flex;
+  align-items: center;        // centrage vertical
+  justify-content: center;    // centrage horizontal
+  font-size: 5rem;            // très grand
+  font-weight: 900;           // ultra-bold
+  letter-spacing: 0.15em;     // espacement des lettres pour l'effet impactant
+  color: rgba(255, 255, 255, 0.22); // blanc semi-transparent — watermark visible sur l'image
+  pointer-events: none;       // le texte ne bloque pas les clics sur les éléments derrière
+}
+
 // Ligne haute — Retour (gauche) + Partager (droite)
 .match-banner-topbar {
   display: flex;
