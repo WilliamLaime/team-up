@@ -108,17 +108,12 @@
       <%# Droite : prix en haut, boutons organisateur en dessous, collés en bas %>
       <div class="match-banner-right">
 
-        <%# Prix au-dessus des boutons %>
+        <%# Prix au-dessus des boutons — affiché uniquement si un prix a été défini %>
         <% if @match.price_per_player.present? && @match.price_per_player.to_f > 0 %>
           <div class="match-banner-price">
             <i data-lucide="euro" style="width:15px;height:15px;"></i>
             <span class="match-banner-price-amount"><%= number_to_currency(@match.price_per_player, unit: "€", format: "%n %u", precision: 0) %></span>
             <span class="match-banner-price-label">par joueur</span>
-          </div>
-        <% else %>
-          <div class="match-banner-price">
-            <i data-lucide="euro" style="width:15px;height:15px;"></i>
-            <span class="match-banner-price-amount">Gratuit</span>
           </div>
         <% end %>
 
