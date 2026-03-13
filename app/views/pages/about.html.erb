@@ -6,20 +6,30 @@
 <div class="about-page">
 
   <%# ── BANNER / HERO ─────────────────────────────────────────────────────── %>
-  <%# Fond sombre avec image abstract_perso en arrière-plan %>
+  <%# position: relative + overflow: visible pour que le SVG absolu déborde en bas %>
   <section class="about-banner">
     <div class="container">
-      <h1 class="about-banner-title">Qui sommes-nous ?</h1>
+      <%# "nous" en vert comme les mots-clés des autres sections %>
+      <h1 class="about-banner-title">Qui sommes-<span class="about-mission-label">nous</span> ?</h1>
       <p class="about-banner-subtitle">
         Une équipe qui en avait marre <br> de chercher un remplaçant à la dernière minute.
       </p>
     </div>
+
+    <%# SVG positionné en absolu au bas de la banner, translateY(50%) le centre sur la jointure %>
+    <%# La moitié haute est sur la photo herbe, la moitié basse sur la photo fragmenter %>
+    <div class="about-qsn-banner">
+      <%= image_tag "elements_graphiques/composant_qsn.svg",
+          alt: "Qui sommes-nous",
+          class: "about-qsn-banner-img" %>
+    </div>
   </section>
 
   <%# ── SECTION 1 : Le problème ────────────────────────────────────────────── %>
-  <section class="about-section about-section--dark about-section--center about-section--fragmenter">
+  <%# padding-top compensé pour que le texte ne soit pas caché derrière le SVG %>
+  <section class="about-section about-section--dark about-section--right about-section--fragmenter">
     <div class="container">
-      <h2 class="about-section-title">Le sport <span class="about-mission-label">amateur</span> est fragmenté.</h2>
+      <h2 class="about-section-title">Le sport <span class="about-mission-label">amateur</span><br> est fragmenté.</h2>
       <p class="about-section-text">
         Un groupe WhatsApp par équipe. Un canal Discord pour les amis. Un post Instagram pour trouver quelqu'un.
         Et au final — <span class="about-mission-label">terrain vide, match annulé.</span>
