@@ -38,6 +38,14 @@
 
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Appelé en bas de body pour que le DOM soit chargé %>
-    <script>lucide.createIcons();</script>
+    <script>
+      // Initialisation au premier chargement de la page
+      lucide.createIcons();
+
+      // Ré-initialisation après chaque mise à jour Turbo (navigation, turbo_frame, turbo_stream)
+      // Sans ça, les icônes dans les frames remplacées par Turbo disparaissent
+      document.addEventListener("turbo:render", () => lucide.createIcons());
+      document.addEventListener("turbo:frame-render", () => lucide.createIcons());
+    </script>
   </body>
 </html>
