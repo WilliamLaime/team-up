@@ -12,26 +12,28 @@ class PagesController < ApplicationController
   end
 
   def home
-    # Compte total de tous les matchs disponibles (pas complets, dans le futur)
-    # Utilisé pour le badge "X matchs disponibles" dans le hero
-    @available_matches_count = Match
-      .where("(date + time) > ?", Time.current)
-      .where("player_left > 0")
-      .count
+    @available_matches_count = load_available_matches_count
+    @matches = load_upcoming_matches
+    @hero_match = load_hero_match
+  end
 
-    # Récupère les 3 prochains matchs à venir (passés exclus), triés par date puis heure
-    @matches = Match
-      .where("(date + time) > ?", Time.current)
-      .order(date: :asc, time: :asc)
-      .limit(3)
+  private
 
-    # Match affiché dans la carte hero (droite) :
-    # - jamais complet (player_left > 0)
-    # - le plus proche dans le temps
-    @hero_match = Match
-      .where("(date + time) > ?", Time.current)
-      .where("player_left > 0")
-      .order(date: :asc, time: :asc)
-      .first
+  # Compte total de tous les matchs disponibles (pas complets, dans le futur)
+  # Utilisé pour le badge "X matchs disponibles" dans le hero
+  def load_available_matches_count
+    Match.upcoming.where("player_left > 0").count
+  end
+
+  # Récupère les 3 prochains matchs à venir, triés par date puis heure
+  def load_upcoming_matches
+    Match.upcoming.order(date: :asc, time: :asc).limit(3)
+  end
+
+  # Match affiché dans la carte hero (droite) :
+  # - jamais complet (player_left > 0)
+  # - le plus proche dans le temps
+  def load_hero_match
+    Match.upcoming.where("player_left > 0").order(date: :asc, time: :asc).first
   end
 end
