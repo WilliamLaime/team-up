@@ -25,7 +25,10 @@
     - @match existant    → action="/matches/:id"    method="PATCH"
     data-controller="match-form" → connecte le contrôleur Stimulus %>
 <%= form_with model: @match,
-    data: { controller: "match-form" } do |f| %>
+    data: {
+      controller: "match-form",
+      action: "sport-picker:sport-selected->match-form#updateSport"
+    } do |f| %>
 
   <div class="container py-4">
 
