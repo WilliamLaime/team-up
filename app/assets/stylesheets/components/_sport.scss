@@ -84,8 +84,15 @@
     border: none;
     cursor: pointer;
     font-size: 0.875rem;
+    // Couleur grisée par défaut — moins agressive que le blanc pur
+    color: rgba(255, 255, 255, 0.55) !important;
 
-    // Sport actif → couleur verte
+    // Au survol : légère luminosité pour guider le clic
+    &:hover {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    // Sport actif → couleur verte pour le mettre en avant
     &.sport-dropdown-item--active {
       color: $green !important;
       font-weight: 600;

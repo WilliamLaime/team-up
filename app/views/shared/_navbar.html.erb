@@ -68,8 +68,8 @@
 
               <li><hr class="dropdown-divider"></li>
               <li>
-                <%# "Gérer mes sports" — même couleur que les autres items du dropdown %>
-                <%= link_to edit_user_registration_path, class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2" do %>
+                <%# "Gérer mes sports" — redirige vers la page de modification du profil %>
+                <%= link_to edit_profil_path, class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2" do %>
                   <i data-lucide="settings" style="width:13px;height:13px;"></i>
                   <span>Gérer mes sports</span>
                 <% end %>
