@@ -25,4 +25,15 @@ class SportsController < ApplicationController
     # Retour à la page précédente (ou liste des matchs si pas de "retour")
     redirect_back fallback_location: matches_path
   end
+
+  # Action multisport : passe en mode "tous les sports" (aucun filtre sport)
+  def multisport
+    # Sentinelle "all" en session → current_sport retournera nil
+    session[:current_sport_id] = "all"
+
+    # Efface le sport sauvegardé en base pour la cohérence
+    current_user.update(current_sport_id: nil)
+
+    redirect_back fallback_location: matches_path
+  end
 end

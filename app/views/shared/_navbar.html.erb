@@ -43,14 +43,34 @@
                     type="button"
                     data-bs-toggle="dropdown"
                     aria-expanded="false">
-              <% if current_sport %>
+              <% if multisport_mode? %>
+                <%# Icône multisport quand le mode "tous les sports" est actif %>
+                <%= image_tag "sports/multisports.png", style: "width:1rem;height:1rem;object-fit:contain;", class: "sport-switcher-icon" %>
+              <% elsif current_sport %>
                 <%= sport_icon(current_sport, size: "1rem", css_class: "sport-switcher-icon") %>
               <% end %>
-              <span class="sport-switcher-name"><%= current_sport&.name || "Sport" %></span>
+              <span class="sport-switcher-name"><%= multisport_mode? ? "Multisport" : (current_sport&.name || "Sport") %></span>
               <i data-lucide="chevron-down" style="width:13px;height:13px;" class="sport-switcher-chevron"></i>
             </button>
 
             <ul class="dropdown-menu sport-dropdown">
+
+              <%# ── Option Multisport (en premier, tous les sports) ── %>
+              <li>
+                <%= button_to multisport_switch_path,
+                    method: :post,
+                    class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
+                    form: { "data-turbo": "false" } do %>
+                  <%= image_tag "sports/multisports.png", style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
+                  <span>Multisport</span>
+                  <% if multisport_mode? %>
+                    <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
+                  <% end %>
+                <% end %>
+              </li>
+
+              <li><hr class="dropdown-divider my-1"></li>
+
               <% Sport.order(:name).each do |sport| %>
                 <li>
                   <%= button_to switch_sport_path(sport),

@@ -60,6 +60,9 @@ Rails.application.routes.draw do
     end
   end
 
+  # Route multisport EN PREMIER — doit être avant /:id sinon "all" est capturé comme un id
+  post "/switch_sport/all", to: "sports#multisport", as: :multisport_switch
+
   # Route pour changer le sport actif de l'utilisateur
   # POST /switch_sport/3 → passe au sport avec l'id 3
   post "/switch_sport/:id", to: "sports#switch", as: :switch_sport
