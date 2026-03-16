@@ -225,7 +225,8 @@
             </div>
 
             <%# Bouton voir profil — redirige vers le profil de l'organisateur %>
-            <%= link_to user_profil_path(organizer), class: "btn btn-sm match-profile-btn" do %>
+            <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
+            <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
               <i data-lucide="user" style="width:13px;height:13px;"></i>
               Voir profil
             <% end %>
@@ -827,7 +828,8 @@
               <div class="pending-modal-row">
 
                 <%# Avatar cliquable → ouvre le profil dans un nouvel onglet %>
-                <%= link_to user_profil_path(mu.user),
+                <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
+                <%= link_to user_profil_path(mu.user, from_match: @match.id),
                     class: "pending-modal-avatar-link",
                     target: "_blank",
                     title: "Voir le profil" do %>
@@ -855,7 +857,8 @@
                     <span class="pending-modal-tag pending-modal-tag--role"><%= role_pref %></span>
                   </div>
                   <%# Lien vers le profil complet (ouvre dans un nouvel onglet) %>
-                  <%= link_to user_profil_path(mu.user),
+                  <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
+                  <%= link_to user_profil_path(mu.user, from_match: @match.id),
                       class: "pending-modal-profile-link",
                       target: "_blank" do %>
                     <i data-lucide="external-link" style="width:11px;height:11px;"></i>

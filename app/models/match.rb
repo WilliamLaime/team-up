@@ -30,6 +30,10 @@ class Match < ApplicationRecord
   # La vue s'abonne avec <%= turbo_stream_from "matches" %>
   broadcasts_to ->(match) { "matches" }
 
+  # Scope réutilisable : matchs à venir (date+heure dans le futur)
+  # Utilisé dans plusieurs controllers pour éviter la duplication du WHERE
+  scope :upcoming, -> { where("(date + time) > ?", Time.current) }
+
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze
 
