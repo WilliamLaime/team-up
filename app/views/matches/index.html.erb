@@ -131,7 +131,8 @@
                 <% Sport.order(:name).each do |sport| %>
                   <%# Pré-coché si ce sport est dans les filtres URL, ou si c'est le sport actif (et aucun filtre URL) %>
                   <% sport_checked = params[:sport_ids]&.include?(sport.id.to_s) ||
-                                     (params[:sport_ids].blank? && current_sport&.id == sport.id) %>
+                                     (params[:sport_ids].blank? && current_sport&.id == sport.id) ||
+                                     (params[:sport_ids].blank? && multisport_mode?) %>
                   <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
                     <input type="checkbox"
                            name="sport_ids[]"

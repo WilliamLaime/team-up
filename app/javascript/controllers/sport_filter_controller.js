@@ -56,11 +56,16 @@ export default class extends Controller {
   }
 
   // Coche toutes les checkboxes si au moins une est décochée, sinon toutes les décoche
+  // Puis ferme le dropdown et soumet le formulaire directement
   selectAll(event) {
     event.stopPropagation()
     const allChecked = this.checkboxTargets.every(cb => cb.checked)
     this.checkboxTargets.forEach(cb => cb.checked = !allChecked)
     this.updateLabel()
+    // Ferme le dropdown
+    this.dropdownTarget.style.display = "none"
+    // Soumet le formulaire pour appliquer le filtre
+    this.element.closest("form").requestSubmit()
   }
 
   // Soumet le formulaire et ferme le dropdown
