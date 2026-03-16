@@ -1,8 +1,9 @@
 // sport_picker_controller.js
 // Dropdown custom pour sélectionner un sport dans le formulaire de match.
 // Remplace le <select> natif pour pouvoir afficher des icônes images (ex: Padel PNG).
-// Il met à jour un <input hidden> (sportInput dans match-form) et déclenche un event
-// "change" pour que match_form_controller réagisse (updateSport).
+// Il met à jour un <input hidden> (sportInput dans match-form) et émet un event
+// Stimulus "sport-picker:sport-selected" qui remonte jusqu'au form pour que
+// match_form_controller#updateSport réagisse.
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
@@ -29,17 +30,19 @@ export default class extends Controller {
   select(event) {
     event.stopPropagation()
     const btn = event.currentTarget
-    const sportId   = btn.dataset.sportId
-    const sportName = btn.dataset.sportName
+    const sportId = btn.dataset.sportId
 
     // 1. Met à jour l'input hidden (match[sport_id]) ciblé par match-form
     const hiddenInput = this.element.closest("form")
       .querySelector("[data-match-form-target='sportInput']")
     if (hiddenInput) {
       hiddenInput.value = sportId
-      // Déclenche "change" pour que match_form_controller#updateSport réagisse
-      hiddenInput.dispatchEvent(new Event("change", { bubbles: true }))
     }
+
+    // 2. Émet un événement Stimulus "sport-picker:sport-selected" qui remonte
+    //    jusqu'au <form data-action="sport-picker:sport-selected->match-form#updateSport">
+    //    → match_form_controller#updateSport est appelé de façon fiable
+    this.dispatch("sport-selected", { bubbles: true, cancelable: false })
 
     // 2. Met à jour le bouton trigger avec l'icône + nom du sport sélectionné
     this.triggerTarget.innerHTML = btn.innerHTML
