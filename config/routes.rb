@@ -29,6 +29,9 @@ Rails.application.routes.draw do
         patch :reject
       end
     end
+
+    # Vote "homme du match" — POST /matches/:match_id/match_votes
+    resources :match_votes, only: [:create]
   end
 
   # Route pour le profil de l'utilisateur connecté (ressource singulière)
@@ -40,6 +43,12 @@ Rails.application.routes.draw do
   # Route pour voir le profil public d'un autre utilisateur
   # GET /users/:id/profil => voir le profil de l'utilisateur avec cet id
   get "users/:id/profil", to: "profils#show_user", as: :user_profil
+
+  # Routes pour les avis (imbriquées sous users)
+  # POST /users/:user_id/avis => laisser un avis à un joueur
+  resources :users, only: [] do
+    resources :avis, only: [:create]
+  end
 
   # Routes pour les notifications
   # GET   /notifications               => liste des notifications

@@ -29,6 +29,13 @@ class Match < ApplicationRecord
   # Un match a plusieurs messages dans son chat de groupe
   has_many :messages, dependent: :destroy
 
+  # Votes "homme du match" pour ce match
+  has_many :match_votes, dependent: :destroy
+
+  # L'élu "homme du match" (calculé automatiquement à partir des votes)
+  # nil si aucun vote n'a encore été soumis pour ce match
+  belongs_to :homme_du_match, class_name: "User", optional: true
+
   # ── ActionCable : mises à jour en temps réel ─────────────────────────────
   # Diffuse automatiquement sur le canal "matches" :
   #   - création  → ajoute la carte en bas de la liste (append)

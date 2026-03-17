@@ -40,6 +40,17 @@
     <%# Doit être EN DEHORS du <main> pour que position:fixed fonctionne correctement %>
     <%= render "shared/sticky_chat" %>
 
+    <%# Modal post-match : s'affiche à la 1ère connexion après un match terminé %>
+    <%# @pending_review_matches est chargé par ApplicationController#load_review_modal_data %>
+    <% if user_signed_in? && @pending_review_matches.present? %>
+      <%= render "shared/review_modal" %>
+    <% end %>
+
+    <%# Modals provenant des vues (ex: modal avis profil) %>
+    <%# Rendus ici — en dehors de tout stacking context — pour que Bootstrap puisse
+        gérer correctement z-index et backdrop sans conflit de positionnement CSS %>
+    <%= yield :modals %>
+
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Appelé en bas de body pour que le DOM soit chargé %>
     <script>

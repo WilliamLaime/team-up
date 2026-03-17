@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_17_120001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "avis", force: :cascade do |t|
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.bigint "match_id", null: false
+    t.integer "rating", null: false
+    t.bigint "reviewed_user_id", null: false
+    t.bigint "reviewer_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["match_id"], name: "index_avis_on_match_id"
+    t.index ["reviewed_user_id"], name: "index_avis_on_reviewed_user_id"
+    t.index ["reviewer_id", "reviewed_user_id", "match_id"], name: "index_avis_on_reviewer_id_and_reviewed_user_id_and_match_id", unique: true
+    t.index ["reviewer_id"], name: "index_avis_on_reviewer_id"
+  end
+
   create_table "match_users", force: :cascade do |t|
     t.datetime "chat_dismissed_at"
     t.datetime "created_at", null: false
@@ -56,11 +70,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
     t.index ["user_id"], name: "index_match_users_on_user_id"
   end
 
+  create_table "match_votes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "match_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "voted_for_id", null: false
+    t.bigint "voter_id", null: false
+    t.index ["match_id"], name: "index_match_votes_on_match_id"
+    t.index ["voted_for_id"], name: "index_match_votes_on_voted_for_id"
+    t.index ["voter_id", "match_id"], name: "index_match_votes_on_voter_id_and_match_id", unique: true
+    t.index ["voter_id"], name: "index_match_votes_on_voter_id"
+  end
+
   create_table "matches", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "date"
     t.string "description"
     t.string "format"
+    t.bigint "homme_du_match_id"
     t.string "level"
     t.string "place"
     t.integer "player_left"
@@ -72,6 +99,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
     t.bigint "user_id"
     t.string "validation_mode", default: "automatic"
     t.bigint "venue_id"
+    t.index ["homme_du_match_id"], name: "index_matches_on_homme_du_match_id"
     t.index ["sport_id"], name: "index_matches_on_sport_id"
     t.index ["user_id"], name: "index_matches_on_user_id"
     t.index ["venue_id"], name: "index_matches_on_venue_id"
@@ -99,9 +127,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
 
   create_table "profils", force: :cascade do |t|
     t.string "address"
+    t.float "average_rating", default: 0.0
+    t.integer "avis_count", default: 0
     t.datetime "created_at", null: false
     t.string "description"
     t.string "first_name"
+    t.integer "homme_du_match_count", default: 0, null: false
     t.string "last_name"
     t.string "level"
     t.decimal "localisation"
@@ -159,10 +190,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "avis", "matches"
+  add_foreign_key "avis", "users", column: "reviewed_user_id"
+  add_foreign_key "avis", "users", column: "reviewer_id"
   add_foreign_key "match_users", "matches"
   add_foreign_key "match_users", "users"
+  add_foreign_key "match_votes", "matches"
+  add_foreign_key "match_votes", "users", column: "voted_for_id"
+  add_foreign_key "match_votes", "users", column: "voter_id"
   add_foreign_key "matches", "sports"
   add_foreign_key "matches", "users"
+  add_foreign_key "matches", "users", column: "homme_du_match_id"
   add_foreign_key "matches", "venues"
   add_foreign_key "messages", "matches"
   add_foreign_key "messages", "users"
