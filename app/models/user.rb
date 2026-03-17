@@ -3,13 +3,20 @@ class User < ApplicationRecord
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
-  has_one :profil
+  # dependent: :destroy supprime le profil automatiquement quand l'user est supprimé
+  has_one :profil, dependent: :destroy
 
   # Attributs virtuels : ils n'existent pas en base sur users,
   # mais permettent au formulaire d'inscription de les recevoir
   # et au controller de les transmettre au Profil.
   attr_accessor :first_name, :last_name
-  has_many :match_users
+
+  # Validations uniquement à la création du compte (on: :create)
+  # Sans ça, Devise crée l'User même si le prénom/nom est vide,
+  # car la validation du Profil arrive trop tard et son erreur est ignorée.
+  validates :first_name, presence: { message: "Le prénom est obligatoire" }, on: :create
+  validates :last_name,  presence: { message: "Le nom est obligatoire" },    on: :create
+  has_many :match_users, dependent: :destroy
   has_many :matchs, through: :match_users
   has_many :notifications, dependent: :destroy
 

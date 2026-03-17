@@ -24,7 +24,9 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   </head>
 
-  <body>
+  <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler
+      automatiquement jusqu'à la première erreur de formulaire si elle existe %>
+  <body data-controller="scroll-to-error">
     <%= render "shared/navbar" %>
     <%= render "shared/flashes" %>
 
