@@ -17,15 +17,9 @@
 
           <%# Avatar — inline styles pour forcer le cercle et les dimensions %>
           <div style="flex-shrink:0;">
-            <% if @profil.avatar.attached? %>
-              <%= image_tag @profil.avatar,
-                  alt: "Photo de #{@profil_user.display_name}",
-                  style: "width:82px; height:82px; border-radius:50%; object-fit:cover; border:3px solid #1EDD88; display:block;" %>
-            <% else %>
-              <div style="width:82px; height:82px; border-radius:50%; border:3px solid rgba(255,255,255,0.12); background:#242624; display:flex; align-items:center; justify-content:center; font-size:1.75rem; font-weight:800; color:rgba(255,255,255,0.4);">
-                <%= @profil.first_name&.first&.upcase || "?" %>
-              </div>
-            <% end %>
+            <%# Avatar ou initiales colorées (Prénom + Nom) %>
+            <%= user_avatar_tag @profil_user,
+                style: "width:82px; height:82px; border-radius:50%; object-fit:cover; border:3px solid #1EDD88; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:400; flex-shrink:0;" %>
           </div>
 
           <%# Infos : nom, rôle, localisation, bouton %>

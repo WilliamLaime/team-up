@@ -141,14 +141,11 @@
               <% if display_name %>
                 <span class="navbar-user-name d-none d-sm-inline"><%= display_name %></span>
               <% end %>
-              <% if current_user.profil&.avatar&.attached? %>
-                <%= image_tag current_user.profil.avatar, class: "avatar",
-                    alt: display_name || current_user.email,
-                    style: "object-fit:cover;" %>
-              <% else %>
-                <%= image_tag "https://kitt.lewagon.com/placeholder/users/ssaunier",
-                    class: "avatar", alt: "avatar" %>
-              <% end %>
+              <%# Affiche l'avatar ou les initiales colorées si pas de photo %>
+              <%= user_avatar_tag current_user,
+                  css_class: "avatar",
+                  style: "object-fit:cover;",
+                  alt: display_name || current_user.email %>
             </button>
 
             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">

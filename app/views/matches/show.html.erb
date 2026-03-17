@@ -283,14 +283,8 @@
 
                 <%# Identité %>
                 <div class="d-flex align-items-center gap-3">
-                  <%# Avatar de l'organisateur %>
-                  <% if organizer&.profil&.avatar&.attached? %>
-                    <%= image_tag organizer.profil.avatar,
-                        class: "match-organizer-avatar", alt: "Avatar organisateur" %>
-                  <% else %>
-                    <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                         class="match-organizer-avatar" alt="avatar">
-                  <% end %>
+                  <%# Avatar de l'organisateur ou initiales colorées si pas de photo %>
+                  <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
 
                   <div>
                     <%# Nom complet ou email si pas de profil %>
@@ -463,14 +457,8 @@
                   class: "match-player-item",
                   style: "text-decoration:none;" do %>
 
-                <%# Avatar du joueur %>
-                <% if mu.user.profil&.avatar&.attached? %>
-                  <%= image_tag mu.user.profil.avatar,
-                      class: "match-player-avatar", alt: "Avatar joueur" %>
-                <% else %>
-                  <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                       class="match-player-avatar" alt="joueur">
-                <% end %>
+                <%# Avatar du joueur ou initiales colorées si pas de photo %>
+                <%= user_avatar_tag mu.user, css_class: "match-player-avatar" %>
 
                 <%# Prénom + 1ère lettre du Nom suivi d'un point
                     Ex : "Marc L." — si pas de profil, on affiche la partie avant @ %>
@@ -493,13 +481,8 @@
 
                 <%# Wrapper relatif pour positionner le badge horloge sur l'avatar %>
                 <div class="match-player-avatar-wrapper">
-                  <% if mu.user.profil&.avatar&.attached? %>
-                    <%= image_tag mu.user.profil.avatar,
-                        class: "match-player-avatar match-player-avatar--pending", alt: "Avatar joueur" %>
-                  <% else %>
-                    <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                         class="match-player-avatar match-player-avatar--pending" alt="joueur">
-                  <% end %>
+                  <%# Avatar joueur en attente ou initiales colorées %>
+                  <%= user_avatar_tag mu.user, css_class: "match-player-avatar match-player-avatar--pending" %>
 
                   <%# Badge horloge en bas à droite %>
                   <span class="match-player-pending-badge">
@@ -1000,13 +983,8 @@
                     class: "pending-modal-avatar-link",
                     target: "_blank",
                     title: "Voir le profil" do %>
-                  <% if mu.user.profil&.avatar&.attached? %>
-                    <%= image_tag mu.user.profil.avatar,
-                        class: "pending-modal-avatar", alt: "Avatar joueur" %>
-                  <% else %>
-                    <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                         class="pending-modal-avatar" alt="joueur">
-                  <% end %>
+                  <%# Avatar dans la modale ou initiales colorées %>
+                  <%= user_avatar_tag mu.user, css_class: "pending-modal-avatar" %>
                 <% end %>
 
                 <%# Infos du joueur : nom + niveau + rôle + lien profil %>

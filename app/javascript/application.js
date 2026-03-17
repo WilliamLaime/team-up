@@ -2,4 +2,12 @@
 import "@hotwired/turbo-rails"
 import "controllers"
 import "@popperjs/core"
-import "bootstrap"
+import * as bootstrap from "bootstrap"
+
+// Initialise les tooltips Bootstrap après chaque navigation Turbo
+// (turbo:load se déclenche aussi au premier chargement de page)
+document.addEventListener("turbo:load", () => {
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+    new bootstrap.Tooltip(el)
+  })
+})

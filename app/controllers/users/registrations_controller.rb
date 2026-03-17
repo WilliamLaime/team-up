@@ -5,6 +5,19 @@ class Users::RegistrationsController < Devise::RegistrationsController
   VALID_PRESET_AVATARS = %w[01 02 3 4 5 6 7 8 9 10 11 12].freeze
 
   def create
+    # ── Validation serveur : au moins un sport requis ─────────────────────────
+    sport_ids = params.dig(:user, :sport_ids).to_a.reject(&:blank?)
+
+    if sport_ids.empty?
+      # Construit le resource sans le sauvegarder pour réafficher le formulaire
+      build_resource(sign_up_params)
+      # Clé :sports → permet à la vue d'afficher l'erreur directement près du champ sport
+      resource.errors.add(:sports, "Sélectionne au moins un sport pour continuer.")
+      clean_up_passwords resource
+      respond_with resource
+      return
+    end
+
     super do |user|
       if user.persisted?
         profil_attrs = {

@@ -1,0 +1,9 @@
+fr:
+  simple_form:
+    "yes": 'Oui'
+    "no": 'Non'
+    required:
+      text: 'obligatoire'
+      mark: '*'
+    error_notification:
+      default_message: "Certains champs contiennent des erreurs, merci de les corriger :"
