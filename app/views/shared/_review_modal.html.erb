@@ -1,0 +1,180 @@
+<%# ── Modal post-match : noter ses coéquipiers ─────────────────────────────── %>
+<%# Cette modal s'affiche automatiquement à la première connexion après un match terminé %>
+<%# Elle liste tous les joueurs non encore notés dans les matchs récents (7 jours) %>
+
+<div class="modal fade"
+     id="review-modal"
+     tabindex="-1"
+     aria-hidden="true"
+     data-controller="review-modal"
+     data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:480px;">
+    <div class="modal-content" style="background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:14px;">
+
+      <%# En-tête de la modal %>
+      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08); padding:1.25rem 1.5rem;">
+        <div>
+          <h5 style="color:#fff; font-size:1rem; font-weight:700; margin:0;">
+            <i data-lucide="star" style="width:16px; height:16px; color:#1EDD88; display:inline; vertical-align:middle; margin-right:0.4rem;"></i>
+            Notez vos coéquipiers
+          </h5>
+          <%# Le compteur est mis à jour dynamiquement en JS (data-pending-count) après chaque soumission %>
+          <% total_pending = @pending_review_matches.sum { |m| m[:users].count } %>
+          <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin:0.2rem 0 0;"
+             data-pending-count="<%= total_pending %>">
+            Suite à vos matchs récents —
+            <span data-pending-label>encore <%= total_pending %> <%= total_pending > 1 ? "joueurs" : "joueur" %> à noter</span>
+          </p>
+        </div>
+        <%# Bouton fermer = "Plus tard", ferme la modal sans noter %>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-action="click->review-modal#dismiss"
+                style="opacity:0.5;">
+        </button>
+      </div>
+
+      <%# Corps : liste des matchs + joueurs à noter %>
+      <div class="modal-body" style="padding:1.25rem 1.5rem; max-height:65vh; overflow-y:auto;">
+
+        <% @pending_review_matches.each do |item| %>
+          <%# Titre du match %>
+          <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#1EDD88; margin-bottom:0.75rem;">
+            <i data-lucide="calendar" style="width:11px; height:11px; display:inline; vertical-align:middle;"></i>
+            <%= item[:match].title %> — <%= item[:match].date&.strftime("%d/%m/%Y") %>
+          </div>
+
+          <%# ── Cards de notation (une par joueur non encore noté) ── %>
+          <% item[:users].each do |player| %>
+            <div class="review-card"
+                 id="review-card-<%= player.id %>-<%= item[:match].id %>"
+                 style="background:#242624; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:0.9rem 1rem; margin-bottom:0.75rem;">
+
+              <%# Identité du joueur %>
+              <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.75rem;">
+                <% if player.profil&.avatar&.attached? %>
+                  <%= image_tag player.profil.avatar,
+                      style: "width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0;",
+                      alt: player.display_name %>
+                <% else %>
+                  <div style="width:38px; height:38px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                    <%= player.display_name.first.upcase %>
+                  </div>
+                <% end %>
+                <div style="font-size:0.85rem; font-weight:700; color:#fff;">
+                  <%= player.display_name %>
+                </div>
+              </div>
+
+              <%# Formulaire d'avis pour ce joueur, soumis en AJAX via Stimulus %>
+              <%= form_with url: user_avis_path(player), method: :post,
+                  html: { style: "display:contents;" },
+                  data: {
+                    controller: "star-rating",
+                    action: "submit->review-modal#submitReview",
+                    "review-modal-player-id-param": player.id,
+                    "review-modal-match-id-param":  item[:match].id
+                  } do |f| %>
+
+                <%# Champ caché : match_id %>
+                <%= hidden_field_tag "avis[match_id]", item[:match].id %>
+                <%# Champ caché : note, rempli par Stimulus star-rating %>
+                <%= hidden_field_tag "avis[rating]", "",
+                    data: { "star-rating-target": "input" } %>
+
+                <%# Étoiles cliquables %>
+                <div style="margin-bottom:0.6rem;">
+                  <div style="display:flex; gap:0.3rem; font-size:1.65rem; cursor:pointer;"
+                       data-star-rating-target="stars">
+                    <% (1..5).each do |i| %>
+                      <span data-action="click->star-rating#select"
+                            data-value="<%= i %>"
+                            style="color:rgba(255,255,255,0.2); transition:color 0.15s; user-select:none;">★</span>
+                    <% end %>
+                  </div>
+                </div>
+
+                <%# Commentaire optionnel %>
+                <textarea name="avis[content]"
+                          placeholder="Un commentaire ? (optionnel)"
+                          rows="2"
+                          style="width:100%; background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:7px; color:#fff; padding:0.5rem 0.65rem; font-size:0.78rem; resize:none; margin-bottom:0.65rem;"></textarea>
+
+                <%# Bouton soumettre %>
+                <button type="submit"
+                        class="btn btn-sm btn-cta-primary"
+                        style="width:100%; border-radius:7px; font-size:0.8rem;"
+                        data-star-rating-target="submit">
+                  Envoyer mon avis
+                </button>
+
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# ── Section vote "Homme du match" ── %>
+          <%# Séparateur visuel entre les reviews et le vote %>
+          <div style="height:1px; background:rgba(255,255,255,0.07); margin:0.75rem 0;"></div>
+
+          <%# En-tête de la section %>
+          <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#f59e0b; margin-bottom:0.65rem;">
+            <i data-lucide="crown" style="width:11px; height:11px; display:inline; vertical-align:middle;"></i>
+            Homme du match
+          </div>
+
+          <%# Section de vote avec son id unique pour être mis à jour en JS après soumission %>
+          <div id="vote-section-<%= item[:match].id %>">
+
+            <% if item[:has_voted] %>
+              <%# Déjà voté : affiche un message de confirmation %>
+              <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.5rem; color:#f59e0b;">
+                <span>🏆</span>
+                <span style="font-size:0.85rem; font-weight:600;">Vote enregistré !</span>
+              </div>
+
+            <% else %>
+              <%# Pas encore voté : affiche les joueurs sélectionnables %>
+              <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.65rem;">
+                <% item[:all_co_players].each do |player| %>
+                  <%# Bouton-pill par joueur — clic le sélectionne via Stimulus %>
+                  <button type="button"
+                          class="vote-candidate-btn"
+                          data-action="click->review-modal#selectVoteCandidate"
+                          data-player-id="<%= player.id %>"
+                          data-match-id="<%= item[:match].id %>"
+                          style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.7rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:999px; color:rgba(255,255,255,0.65); font-size:0.78rem; cursor:pointer; transition:all 0.15s;">
+                    <%= player.display_name %>
+                  </button>
+                <% end %>
+              </div>
+
+              <%# Bouton de soumission du vote — désactivé tant qu'aucun joueur n'est sélectionné %>
+              <button type="button"
+                      class="btn btn-sm"
+                      data-action="click->review-modal#submitVote"
+                      data-match-id="<%= item[:match].id %>"
+                      disabled
+                      style="width:100%; border-radius:7px; font-size:0.78rem; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); color:#f59e0b; opacity:0.5;">
+                Voter pour l'homme du match
+              </button>
+            <% end %>
+
+          </div>
+          <%# / vote section %>
+
+        <% end %>
+
+      </div>
+
+      <%# Pied de modal : bouton "Plus tard" %>
+      <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.08); padding:0.9rem 1.5rem;">
+        <button type="button"
+                data-action="click->review-modal#dismiss"
+                style="font-size:0.78rem; color:rgba(255,255,255,0.4); background:none; border:none; cursor:pointer; padding:0.2rem 0.5rem;">
+          Plus tard →
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

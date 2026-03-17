@@ -15,6 +15,10 @@ class ApplicationController < ActionController::Base
   # Rend current_sport et multisport_mode? accessibles dans toutes les vues
   helper_method :current_sport, :multisport_mode?
 
+  # Avant chaque action : charge les données de la modal de review si le flag est présent
+  # Le flag est posé par after_sign_in_path_for juste après le login
+  before_action :load_review_modal_data
+
   # Retourne true si l'utilisateur est en mode "Multisport" (tous les sports)
   def multisport_mode?
     user_signed_in? && session[:current_sport_id] == "all"
@@ -52,5 +56,78 @@ class ApplicationController < ActionController::Base
   # Ignore Pundit pour Devise et les pages publiques
   def skip_pundit?
     devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)/
+  end
+
+  # ── Système de modal post-match ───────────────────────────────────────────
+
+  # Hook Devise : appelé automatiquement après chaque connexion réussie
+  # On pose un flag en session pour déclencher la modal au prochain chargement de page
+  def after_sign_in_path_for(resource)
+    session[:show_review_modal] = true
+    super
+  end
+
+  # Charge les données de la modal si le flag de session est présent
+  # session.delete retire le flag → la modal ne s'affiche qu'une fois par connexion
+  def load_review_modal_data
+    return unless user_signed_in?
+    return unless session.delete(:show_review_modal)
+
+    # Trouve les matchs terminés récents avec des joueurs non encore notés
+    @pending_review_matches = find_pending_reviews_for_modal
+  end
+
+  # Retourne un tableau de { match:, users: [...] } pour la modal
+  # Chaque élément = 1 match + liste des co-joueurs pas encore notés
+  def find_pending_reviews_for_modal
+    # Matchs où current_user a été approuvé
+    my_match_ids = current_user.match_users.where(status: "approved").pluck(:match_id)
+    return [] if my_match_ids.empty?
+
+    # Filtre : terminé (>1h) ET dans les 7 derniers jours
+    recent_completed_matches = Match.where(id: my_match_ids)
+                                    .where("(date + time) < ?", Time.current - 1.hour)
+                                    .where("(date + time) > ?", Time.current - 7.days - 1.hour)
+
+    return [] if recent_completed_matches.empty?
+
+    # IDs des joueurs déjà notés par current_user (toutes périodes confondues)
+    already_reviewed = Avis.where(reviewer_id: current_user.id)
+                           .pluck(:reviewed_user_id, :match_id)
+                           .map { |uid, mid| "#{uid}-#{mid}" }
+
+    # IDs des matchs pour lesquels current_user a déjà voté pour l'homme du match
+    already_voted_match_ids = MatchVote.where(voter_id: current_user.id).pluck(:match_id)
+
+    result = []
+
+    recent_completed_matches.each do |match|
+      # Co-joueurs approuvés dans ce match (sauf current_user)
+      co_player_ids = match.match_users
+                           .where(status: "approved")
+                           .where.not(user_id: current_user.id)
+                           .pluck(:user_id)
+
+      # Co-joueurs pas encore notés dans CE match
+      pending_ids = co_player_ids.reject { |uid| already_reviewed.include?("#{uid}-#{match.id}") }
+
+      # A-t-on déjà voté pour l'homme du match de ce match ?
+      has_voted = already_voted_match_ids.include?(match.id)
+
+      # On inclut le match si des reviews sont pending OU si le vote homme du match n'est pas fait
+      next unless pending_ids.any? || !has_voted
+
+      pending_users  = User.where(id: pending_ids).includes(:profil)
+      all_co_players = User.where(id: co_player_ids).includes(:profil)
+
+      result << {
+        match:          match,
+        users:          pending_users,   # joueurs à noter (review)
+        all_co_players: all_co_players,  # tous les joueurs (vote homme du match)
+        has_voted:      has_voted        # true si déjà voté pour ce match
+      }
+    end
+
+    result
   end
 end

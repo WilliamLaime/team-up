@@ -113,8 +113,10 @@
   <%# Calque sombre semi-transparent pour lisibilité du texte %>
   <div class="match-banner-overlay"></div>
 
-  <%# Bandeau "COMPLET" centré sur l'image — affiché uniquement quand le match est plein %>
-  <% if @match.full? %>
+  <%# Bandeau centré sur l'image — "TERMINÉ" si le match est fini, "COMPLET" si plein %>
+  <% if @match.completed? %>
+    <div class="match-banner-full-overlay" style="color:rgba(255,255,255,0.18);">TERMINÉ</div>
+  <% elsif @match.full? %>
     <div class="match-banner-full-overlay">COMPLET</div>
   <% end %>
 
@@ -263,48 +265,78 @@
 
 
         <%# ──────────────────────────────────────
-            BLOC ORGANISATEUR (Capitaine)
+            BLOC ORGANISATEUR (Capitaine) + COUNTDOWN
+            Divisé en 2 colonnes : gauche = capitaine, droite = timer
             ────────────────────────────────────── %>
         <div class="match-block">
+          <div class="row g-0 align-items-center">
 
-          <h5 class="match-block-title">
-            <i data-lucide="shield" style="width:15px;height:15px;"></i>
-            Capitaine
-          </h5>
+            <%# ── Colonne gauche : info capitaine ── %>
+            <div class="col-6" style="border-right:1px solid rgba(255,255,255,0.07); padding-right:1.25rem;">
 
-          <div class="d-flex align-items-center justify-content-between gap-3">
+              <h5 class="match-block-title">
+                <i data-lucide="shield" style="width:15px;height:15px;"></i>
+                Capitaine
+              </h5>
 
-            <%# Identité %>
-            <div class="d-flex align-items-center gap-3">
-              <%# Avatar de l'organisateur %>
-              <% if organizer&.profil&.avatar&.attached? %>
-                <%= image_tag organizer.profil.avatar,
-                    class: "match-organizer-avatar", alt: "Avatar organisateur" %>
-              <% else %>
-                <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                     class="match-organizer-avatar" alt="avatar">
-              <% end %>
+              <div class="d-flex align-items-center justify-content-between gap-3">
 
-              <div>
-                <%# Nom complet ou email si pas de profil %>
-                <div class="match-organizer-name">
-                  <% if organizer&.profil %>
-                    <%= [organizer.profil.first_name, organizer.profil.last_name]
-                          .compact.join(" ").presence || organizer.email %>
+                <%# Identité %>
+                <div class="d-flex align-items-center gap-3">
+                  <%# Avatar de l'organisateur %>
+                  <% if organizer&.profil&.avatar&.attached? %>
+                    <%= image_tag organizer.profil.avatar,
+                        class: "match-organizer-avatar", alt: "Avatar organisateur" %>
                   <% else %>
-                    <%= organizer&.email || "Organisateur" %>
+                    <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
+                         class="match-organizer-avatar" alt="avatar">
                   <% end %>
+
+                  <div>
+                    <%# Nom complet ou email si pas de profil %>
+                    <div class="match-organizer-name">
+                      <% if organizer&.profil %>
+                        <%= [organizer.profil.first_name, organizer.profil.last_name]
+                              .compact.join(" ").presence || organizer.email %>
+                      <% else %>
+                        <%= organizer&.email || "Organisateur" %>
+                      <% end %>
+                    </div>
+                    <div class="match-organizer-tag">Organisateur</div>
+                  </div>
                 </div>
-                <div class="match-organizer-tag">Organisateur</div>
+
+                <%# Bouton voir profil %>
+                <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
+                  <i data-lucide="user" style="width:13px;height:13px;"></i>
+                  Voir profil
+                <% end %>
+
               </div>
             </div>
+            <%# / colonne gauche %>
 
-            <%# Bouton voir profil — redirige vers le profil de l'organisateur %>
-            <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
-            <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
-              <i data-lucide="user" style="width:13px;height:13px;"></i>
-              Voir profil
-            <% end %>
+            <%# ── Colonne droite : countdown timer ── %>
+            <div class="col-6" style="padding-left:1.25rem;">
+
+              <%# Calcule le datetime ISO du match pour le passer au Stimulus controller %>
+              <% if @match.date.present? && @match.time.present? %>
+                <%
+                  match_datetime = Time.zone.local(
+                    @match.date.year, @match.date.month, @match.date.day,
+                    @match.time.hour, @match.time.min, 0
+                  )
+                %>
+
+                <%# Le controller Stimulus construit tout le DOM (flip-cards, labels, titre) %>
+                <%# Voir app/javascript/controllers/countdown_controller.js %>
+                <div data-controller="countdown"
+                     data-countdown-datetime-value="<%= match_datetime.iso8601 %>">
+                </div>
+              <% end %>
+
+            </div>
+            <%# / colonne droite %>
 
           </div>
         </div>
@@ -426,7 +458,10 @@
 
             <%# ── Joueurs approuvés (organisateur inclus) ── %>
             <% approved_users.each do |mu| %>
-              <div class="match-player-item">
+              <%# Lien vers le profil du joueur — toute la card est cliquable %>
+              <%= link_to user_profil_path(mu.user),
+                  class: "match-player-item",
+                  style: "text-decoration:none;" do %>
 
                 <%# Avatar du joueur %>
                 <% if mu.user.profil&.avatar&.attached? %>
@@ -446,12 +481,15 @@
                 %>
                 <span class="match-player-name"><%= display %></span>
 
-              </div>
+              <% end %>
             <% end %>
 
-            <%# ── Joueurs en attente — avatar avec badge horloge, non cliquable ── %>
+            <%# ── Joueurs en attente — avatar avec badge horloge ── %>
             <% pending_mus.each do |mu| %>
-              <div class="match-player-item match-player-item--pending">
+              <%# Lien vers le profil du joueur en attente %>
+              <%= link_to user_profil_path(mu.user),
+                  class: "match-player-item match-player-item--pending",
+                  style: "text-decoration:none;" do %>
 
                 <%# Wrapper relatif pour positionner le badge horloge sur l'avatar %>
                 <div class="match-player-avatar-wrapper">
@@ -463,7 +501,7 @@
                          class="match-player-avatar match-player-avatar--pending" alt="joueur">
                   <% end %>
 
-                  <%# Badge horloge en bas à droite (visible pour tous) %>
+                  <%# Badge horloge en bas à droite %>
                   <span class="match-player-pending-badge">
                     <i data-lucide="clock" style="width:9px;height:9px;"></i>
                   </span>
@@ -477,7 +515,7 @@
                 %>
                 <span class="match-player-name match-player-name--pending"><%= display %></span>
 
-              </div>
+              <% end %>
             <% end %>
 
             <%# Slot "Rejoindre" pour l'utilisateur connecté non inscrit %>
@@ -537,9 +575,11 @@
               <% end %>
             </div>
 
-            <%# Nombre de places restantes %>
+            <%# Nombre de places restantes — ou statut si match terminé %>
             <div class="match-spots-label">
-              <% if @match.full? %>
+              <% if @match.completed? %>
+                <span style="color:rgba(255,255,255,0.45);">Terminé</span>
+              <% elsif @match.full? %>
                 <span style="color:#ff6b6b;">Complet</span>
               <% else %>
                 <%= @match.player_left %>
