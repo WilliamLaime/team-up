@@ -132,6 +132,140 @@ achievements_data = [
     xp_reward:   30,
     icon_emoji:  "✍️",
     category:    "profile"
+  },
+
+  # ── MATCH — Nouveaux ──────────────────────────────────────────────────────
+  {
+    key:         "matches_75",
+    name:        "Indestructible",
+    description: "Participe à 75 matchs",
+    xp_reward:   750,
+    icon_emoji:  "🛡️",
+    category:    "match"
+  },
+  {
+    key:         "matches_100",
+    name:        "Centurion",
+    description: "Participe à 100 matchs",
+    xp_reward:   1500,
+    icon_emoji:  "🥇",
+    category:    "match"
+  },
+  {
+    key:         "organized_25",
+    name:        "Directeur sportif",
+    description: "Organise 25 matchs",
+    xp_reward:   700,
+    icon_emoji:  "📋",
+    category:    "match"
+  },
+  {
+    key:         "hat_trick",
+    name:        "Hat-trick",
+    description: "Rejoins 3 matchs en 7 jours",
+    xp_reward:   125,
+    icon_emoji:  "⚡",
+    category:    "match"
+  },
+  {
+    key:         "night_owl",
+    name:        "Joueur nocturne",
+    description: "Participe à un match après 20h",
+    xp_reward:   80,
+    icon_emoji:  "🌙",
+    category:    "match"
+  },
+  {
+    key:         "sport_explorer",
+    name:        "Touche-à-tout",
+    description: "Pratique 3 sports différents",
+    xp_reward:   200,
+    icon_emoji:  "🎽",
+    category:    "match"
+  },
+  {
+    key:         "early_bird",
+    name:        "Lève-tôt",
+    description: "Participe à un match avant 9h",
+    xp_reward:   80,
+    icon_emoji:  "🌅",
+    category:    "match"
+  },
+
+  # ── SOCIAL — Nouveaux ─────────────────────────────────────────────────────
+  {
+    key:         "messages_100",
+    name:        "DJ du vestiaire",
+    description: "Envoie 100 messages au total",
+    xp_reward:   350,
+    icon_emoji:  "🎙️",
+    category:    "social"
+  },
+  {
+    key:         "messages_250",
+    name:        "Inarrêtable",
+    description: "Envoie 250 messages au total",
+    xp_reward:   600,
+    icon_emoji:  "💥",
+    category:    "social"
+  },
+  {
+    key:         "first_review",
+    name:        "Juge de touche",
+    description: "Laisse ton premier avis sur un joueur",
+    xp_reward:   40,
+    icon_emoji:  "🌟",
+    category:    "social"
+  },
+  {
+    key:         "reviews_5",
+    name:        "Arbitre confirmé",
+    description: "Laisse 5 avis sur des joueurs",
+    xp_reward:   120,
+    icon_emoji:  "⚖️",
+    category:    "social"
+  },
+
+  # ── PROFIL — Nouveaux ─────────────────────────────────────────────────────
+  {
+    key:         "phone_added",
+    name:        "Joignable",
+    description: "Ajoute ton numéro de téléphone",
+    xp_reward:   25,
+    icon_emoji:  "📱",
+    category:    "profile"
+  },
+  {
+    key:         "location_added",
+    name:        "Localisé",
+    description: "Renseigne ta ville",
+    xp_reward:   25,
+    icon_emoji:  "📍",
+    category:    "profile"
+  },
+  {
+    key:         "achievement_collector",
+    name:        "Collectionneur",
+    description: "Débloque 10 achievements",
+    xp_reward:   400,
+    icon_emoji:  "💎",
+    category:    "profile"
+  },
+  {
+    key:         "og_player",
+    name:        "OG",
+    description: "Membre depuis plus d'un an",
+    xp_reward:   300,
+    icon_emoji:  "🎂",
+    category:    "profile"
+  },
+  {
+    key:         "comeback",
+    name:        "Revenant",
+    description: "Reviens jouer après 30 jours d'absence",
+    xp_reward:   100,
+    icon_emoji:  "🔄",
+    category:    "match"
   }
 ]
 
