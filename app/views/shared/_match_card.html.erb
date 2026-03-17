@@ -187,11 +187,8 @@
     <div class="match-players-row">
       <div class="match-avatars">
         <% match.users.first(3).each do |player| %>
-          <% if player.profil&.avatar&.attached? %>
-            <%= image_tag player.profil.avatar, class: "match-avatar", alt: player.email %>
-          <% else %>
-            <img src="https://kitt.lewagon.com/placeholder/users/ssaunier" class="match-avatar" alt="joueur">
-          <% end %>
+          <%# Avatar du joueur ou initiales colorées si pas de photo %>
+          <%= user_avatar_tag player, css_class: "match-avatar" %>
         <% end %>
       </div>
       <span class="match-players-text">

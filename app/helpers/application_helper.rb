@@ -1,4 +1,51 @@
 module ApplicationHelper
+  # ── Avatar utilisateur ────────────────────────────────────────────────────
+  # Affiche l'avatar d'un utilisateur :
+  #   - Si un avatar est attaché → image normale
+  #   - Sinon → div avec les initiales (Prénom + Nom) sur fond coloré
+  #
+  # La couleur est déterministe : elle dépend de l'id de l'utilisateur,
+  # donc elle ne change pas entre les rechargements de page.
+  #
+  # Paramètres :
+  #   user       – objet User (doit avoir un profil avec first_name/last_name)
+  #   css_class  – classes CSS à appliquer (ex: "avatar", "match-avatar")
+  #   style      – styles CSS inline supplémentaires
+  #   alt        – texte alternatif (par défaut : nom d'affichage)
+  def user_avatar_tag(user, css_class: nil, style: nil, alt: nil)
+    # Palette de couleurs vives pour les avatars à initiales
+    colors = %w[#E63946 #2A9D8F #E76F51 #457B9D #6A4C93 #F4A261 #264653 #2B9348 #C77DFF #FF6B6B]
+
+    # Couleur choisie de façon déterministe selon l'id de l'utilisateur
+    color = colors[(user.id.to_i) % colors.length]
+
+    profil    = user.try(:profil)
+    alt_text  = alt || user.try(:display_name) || user.email
+
+    if profil&.avatar&.attached?
+      # ── Cas 1 : avatar uploadé ───────────────────────────────────────────
+      image_tag profil.avatar, class: css_class, alt: alt_text, style: style
+    else
+      # ── Cas 2 : initiales sur fond coloré ───────────────────────────────
+      first    = profil&.first_name&.first&.upcase
+      last     = profil&.last_name&.first&.upcase
+      initials = [first, last].compact.join
+      initials = user.email&.first&.upcase || "?" if initials.blank?
+
+      content_tag :div, initials,
+        class: css_class,
+        alt:   alt_text,
+        style: [
+          "background-color:#{color};",
+          "color:#fff;",
+          "display:flex;align-items:center;justify-content:center;",
+          "font-weight:400;font-size:0.7em;",
+          style
+        ].compact.join(" ")
+    end
+  end
+
+  # ── Icônes de sport ───────────────────────────────────────────────────────
   # Affiche l'icône d'un sport : image si c'est un fichier, emoji sinon
   # Utilisé partout où on affiche l'icône d'un sport
   def sport_icon(sport, size: "1.1em", css_class: nil)

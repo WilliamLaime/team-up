@@ -27,8 +27,8 @@
         <%= f.input :remember_me, as: :boolean if devise_mapping.rememberable? %>
       </div>
 
-      <%# Bouton de soumission %>
-      <div class="form-actions">
+      <%# Bouton de soumission — centré, taille auto %>
+      <div class="form-actions form-actions--center mt-3">
         <%= f.button :submit, "Se connecter" %>
       </div>
 
