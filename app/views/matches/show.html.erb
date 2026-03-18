@@ -247,12 +247,17 @@
               <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
               Modifier
             <% end %>
-            <%= button_to match_path(@match),
-                method: :delete,
-                class: "match-banner-action-btn match-banner-action-btn--danger",
-                data: { turbo_confirm: "Supprimer définitivement ce match ?" } do %>
+            <%# Bouton "Supprimer" → ouvre la modal de confirmation au lieu de supprimer directement %>
+            <button type="button"
+                    class="match-banner-action-btn match-banner-action-btn--danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteMatchModal">
               <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
               Supprimer
+            </button>
+
+            <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+            <%= form_with url: match_path(@match), method: :delete, id: "delete-match-form" do %>
             <% end %>
           </div>
         <% end %>
@@ -1039,18 +1044,88 @@
       Injecte la modal #playerLeftModal et l'ouvre automatiquement côté organisateur. %>
   <div id="player_left_notification_container"></div>
 
+  <%# Conteneur vide — rempli par le broadcast Turbo Stream quand un joueur rejoint automatiquement.
+      Injecte la modal #autoJoinModal et l'ouvre automatiquement côté organisateur. %>
+  <div id="auto_join_notification_container"></div>
+
+  <%# ══════════════════════════════════════════════════
+      MODAL "SUPPRIMER CE MATCH ?" — organisateur uniquement
+      Même style que la modal "Quitter ce match".
+      Déclenché par le bouton "Supprimer" dans la bannière.
+      Le bouton "Confirmer" soumet le formulaire caché #delete-match-form.
+      ══════════════════════════════════════════════════ %>
+  <div class="modal fade" id="deleteMatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content" style="text-align:center;">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="pending-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône d'avertissement %>
+        <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+          <div class="pending-modal-icon" style="background:rgba(220,60,60,0.15);">
+            <i data-lucide="trash-2" style="width:22px;height:22px; color:#dc3c3c;"></i>
+          </div>
+        </div>
+
+        <%# Titre %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px;">
+          Supprimer ce match ?
+        </div>
+
+        <%# Sous-titre %>
+        <div class="pending-modal-subtitle">
+          Tu vas supprimer définitivement <strong><%= @match.title %></strong>.<br>
+          Tous les joueurs inscrits seront informés de l'annulation.
+        </div>
+
+        <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+        <%# Boutons d'action %>
+        <div class="d-flex gap-3" style="padding: 16px 0 4px;">
+          <%# Confirmer → soumet le formulaire DELETE #delete-match-form %>
+          <button type="submit"
+                  form="delete-match-form"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(220,60,60,0.15); color:#dc3c3c; border:1px solid rgba(220,60,60,0.35);">
+            Oui, supprimer
+          </button>
+          <%# Annuler → ferme la modal %>
+          <button type="button"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                  data-bs-dismiss="modal">
+            Annuler
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
 <% end %>
 
 <%# ══════════════════════════════════════════════════
-    NOTIFICATION DE DÉCISION — pour le joueur en attente (User B)
-    Souscription Turbo Stream : reçoit la décision de l'organisateur en direct
-    (accept ou refus) sans avoir besoin de recharger la page.
+    NOTIFICATIONS — pour tous les participants (hors organisateur)
+    Souscription Turbo Stream sur le canal personnel du joueur.
+    Reçoit :
+      - La décision de l'organisateur (accepté/refusé) si statut pending
+      - La notification d'annulation du match si l'organisateur supprime le match
     ══════════════════════════════════════════════════ %>
-<% if user_signed_in? && @current_match_user&.pending? %>
-  <%# Écoute les décisions sur ce match pour cet utilisateur spécifique %>
+<% if user_signed_in? && @current_match_user && @current_match_user.role != "organisateur" %>
+  <%# Écoute le canal personnel de ce joueur pour ce match %>
   <%= turbo_stream_from "match_#{@match.id}_participant_#{current_user.id}" %>
-  <%# Conteneur vide — rempli par le broadcast Turbo Stream avec la modal de décision %>
+
+  <%# Conteneur pour la décision (accepté/refusé) — uniquement pertinent si statut pending %>
   <div id="decision_notification_container"></div>
+
+  <%# Conteneur pour la notification d'annulation du match par l'organisateur %>
+  <div id="match_cancelled_notification_container"></div>
 <% end %>
 
 <%# ══════════════════════════════════════════════════

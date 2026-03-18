@@ -89,14 +89,41 @@ class MatchesController < ApplicationController
   end
 
   # DELETE /matches/:id
-  # Supprime un match
+  # Supprime un match et notifie tous les participants en temps réel
   def destroy
     authorize @match
+
+    # Récupère tous les participants inscrits (hors organisateur) avant destruction.
+    # On exclut les "rejected" car ils n'ont plus de place et ne sont plus actifs.
+    # IMPORTANT : on broadcast AVANT @match.destroy → le canal ActionCable doit encore exister.
+    participants = @match.match_users
+      .where.not(role: "organisateur")
+      .where(status: ["approved", "pending", "waiting"])
+      .includes(:user)
+
+    # Notifie chaque participant en temps réel si il est sur la page du match
+    participants.each do |mu|
+      broadcast_match_cancelled_to_participant(mu.user)
+    end
+
     @match.destroy
     redirect_to matches_path, notice: "Match supprimé."
   end
 
   private
+
+  # Envoie la notification d'annulation du match à un participant spécifique.
+  # Appelé depuis destroy pour chaque participant avant la suppression du match.
+  # Si le joueur est sur la page du match, une modal s'ouvre automatiquement
+  # et le redirige vers la liste des matchs.
+  def broadcast_match_cancelled_to_participant(participant_user)
+    Turbo::StreamsChannel.broadcast_update_to(
+      "match_#{@match.id}_participant_#{participant_user.id}", # canal personnel du joueur
+      target: "match_cancelled_notification_container",        # conteneur dans show.html.erb
+      partial: "matches/match_cancelled_notification",
+      locals: { match: @match }
+    )
+  end
 
   # Applique tous les filtres optionnels sur @matches selon les params reçus
   def apply_filters

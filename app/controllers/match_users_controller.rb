@@ -131,6 +131,20 @@ class MatchUsersController < ApplicationController
     )
   end
 
+  # Notifie l'organisateur en temps réel qu'un joueur a rejoint automatiquement.
+  # Appelé depuis join_automatically après le save et le decrement.
+  # Injecte une modal dans #auto_join_notification_container côté organisateur.
+  def broadcast_auto_join_to_organizer
+    # On recharge le match pour avoir le player_left à jour (après decrement!)
+    @match.reload
+    Turbo::StreamsChannel.broadcast_update_to(
+      "match_#{@match.id}_organizer",             # canal d'écoute de l'organisateur
+      target: "auto_join_notification_container", # conteneur dans show.html.erb
+      partial: "match_users/auto_join_notification",
+      locals: { match: @match, joining_user: current_user, match_user: @match_user }
+    )
+  end
+
   # Envoie la notification de décision (accepté/refusé) au joueur concerné.
   # Appelé depuis approve et reject.
   # Si le joueur est sur la page du match, une modal s'ouvre automatiquement.
@@ -192,6 +206,11 @@ class MatchUsersController < ApplicationController
     if @match_user.save
       @match.decrement!(:player_left)
       notify(organizer, "#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
+
+      # Notifie l'organisateur en temps réel s'il est sur la page du match.
+      # Injecte la modal #autoJoinModal dans son navigateur et l'ouvre automatiquement.
+      broadcast_auto_join_to_organizer
+
       redirect_to @match, notice: "Tu as rejoint le match !"
     else
       redirect_to @match, alert: "Impossible de rejoindre le match."
