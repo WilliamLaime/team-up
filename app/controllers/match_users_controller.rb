@@ -287,14 +287,14 @@ class MatchUsersController < ApplicationController
     if @match_user.save
       @match.decrement!(:player_left)
       notify(organizer, "#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
-      # flash[:show_calendar_modal] déclenche la modale "Demande acceptée" dans show.html.erb
-      flash[:show_calendar_modal] = true
-      redirect_to @match
 
       # Notifie l'organisateur en temps réel s'il est sur la page du match.
       # Injecte la modal #autoJoinModal dans son navigateur et l'ouvre automatiquement.
+      # Doit être appelé AVANT redirect_to (le redirect stoppe l'exécution côté client).
       broadcast_auto_join_to_organizer
 
+      # flash[:show_calendar_modal] déclenche la modale "Demande acceptée" dans show.html.erb
+      flash[:show_calendar_modal] = true
       redirect_to @match, notice: "Tu as rejoint le match !"
     else
       redirect_to @match, alert: "Impossible de rejoindre le match."
