@@ -9,6 +9,9 @@ class Profil < ApplicationRecord
   # La photo est stockée sur Cloudinary (configuré dans config/storage.yml)
   has_one_attached :avatar
 
+  # Niveau et rôle par sport — un enregistrement par sport pratiqué
+  has_many :sport_profils, dependent: :destroy
+
   # ─── SYSTÈME XP & NIVEAUX ───────────────────────────────────────────────────
   # Seuils d'XP cumulés pour atteindre chaque niveau
   # Index 0 = Niveau 1 (0 XP), Index 1 = Niveau 2 (100 XP), etc.
