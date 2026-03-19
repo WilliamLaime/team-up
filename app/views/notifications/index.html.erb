@@ -1,3 +1,28 @@
+<%# Page listant toutes les notifications de l'utilisateur connecté %>
+<%# Fond sombre sur le body pour éviter la barre blanche entre navbar et contenu %>
+<% content_for :body_class, "bg-dark-page" %>
+
+<div class="notifications-page">
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+
+        <%# Bouton retour — history.back() fiable peu importe le Referer %>
+        <button onclick="history.back()" class="nav-button nav-button--back mb-3" style="background:none;border:none;padding:0;cursor:pointer;">
+          <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Retour
+        </button>
+
+        <%# Titre %>
+        <h2 class="mb-4">Notifications</h2>
+
+        <%#
+          Ce wrapper a un id "notifications-index-section".
+          Turbo Stream peut le mettre à jour sans recharger la page.
+        %>
+        <div id="notifications-index-section">
+          <%= render "notifications_index_section", notifications: @notifications %>
+        </div>
+
 <%# Page : toutes les notifications de l'utilisateur connecté %>
 
 <div class="notifications-page">
