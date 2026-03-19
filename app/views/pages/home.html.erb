@@ -304,75 +304,9 @@
         </ul>
       </div>
 
-      <%# ── Colonne droite : mockup de chat ── %>
-      <div class="col-lg-6 d-flex justify-content-center">
-        <div class="cta-chat-mockup">
-
-          <%# En-tête du groupe %>
-          <div class="chat-header">
-            <div class="chat-group-icon">
-              <i data-lucide="users" style="width:18px;height:18px;"></i>
-            </div>
-            <div>
-              <div class="chat-group-name">Groupe Match #405</div>
-              <%# "TEAM COMPLÈTE" en vert via text-primary %>
-              <div class="chat-group-sub text-primary fw-bold" style="font-size:0.72rem;letter-spacing:0.05em;">TEAM COMPLÈTE</div>
-            </div>
-          </div>
-
-          <%# Messages fictifs — les messages entrants ont un avatar à gauche %>
-
-          <%# Message entrant d'Alex avec son avatar %>
-          <div class="chat-message-row">
-            <%# Avatar en 56px affiché à 28px → résolution 2× propre %>
-            <img src="https://i.pravatar.cc/56?img=11" class="chat-avatar" alt="Alex">
-            <div class="chat-message-col">
-              <%# Prénom au-dessus de la bulle, en gris discret %>
-              <span class="chat-sender-name">Alex</span>
-              <div class="chat-message incoming">
-                <span class="msg-text">On est 9, il manque encore quelqu'un pour demain ?</span>
-                <span class="msg-time">18:42</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="chat-message notification">
-            ✅ Un nouveau joueur a rejoint le match !
-          </div>
-
-          <%# Message entrant de Julie avec son avatar %>
-          <div class="chat-message-row">
-            <%# Avatar en 56px affiché à 28px → résolution 2× propre %>
-            <img src="https://i.pravatar.cc/56?img=47" class="chat-avatar" alt="Julie">
-            <div class="chat-message-col">
-              <%# Prénom au-dessus de la bulle, en gris discret %>
-              <span class="chat-sender-name">Julie</span>
-              <div class="chat-message incoming">
-                <span class="msg-text">C'est à quelle heure le terrain ?</span>
-                <span class="msg-time">18:55</span>
-              </div>
-            </div>
-          </div>
-
-          <%# Message sortant (pas d'avatar, c'est "moi") %>
-          <div class="chat-message outgoing">
-            <span class="msg-text">On se retrouve à 19h devant le terrain 🤝⚽️</span>
-            <span class="msg-time">19:00</span>
-          </div>
-
-          <div class="chat-message notification">
-            🏆 Ton équipe est complète — bonne chance !
-          </div>
-
-          <%# Faux champ de saisie — purement décoratif, non fonctionnel %>
-          <div class="chat-input-bar">
-            <span class="chat-input-placeholder">Écrire un message...</span>
-            <button class="chat-send-btn" disabled aria-label="Envoyer">
-              <i data-lucide="send" style="width:15px;height:15px;"></i>
-            </button>
-          </div>
-
-        </div>
+      <%# ── Colonne droite : image de la fenêtre de dialogue ── %>
+      <div class="col-lg-6 d-flex justify-content-center align-items-center">
+        <%= image_tag "fenetre_dialogue_home.svg", class: "cta-chat-image", alt: "Aperçu du chat Team Up", style: "width: 450px; max-width: 100%; height: auto; display: block;" %>
       </div>
 
     </div>
