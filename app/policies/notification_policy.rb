@@ -1,7 +1,12 @@
 class NotificationPolicy < ApplicationPolicy
   # Marquer une notification comme lue : seulement si elle appartient à l'utilisateur
   def mark_read?
-    record.user == user
+    owner?
+  end
+
+  # Supprimer une notification : seulement si elle appartient à l'utilisateur
+  def destroy?
+    owner?
   end
 
   # Supprimer une notification : seulement si elle appartient à l'utilisateur
@@ -19,5 +24,12 @@ class NotificationPolicy < ApplicationPolicy
     def resolve
       scope.where(user: user)
     end
+  end
+
+  private
+
+  # Vérifie que la notification appartient à l'utilisateur connecté
+  def owner?
+    record.user == user
   end
 end

@@ -55,7 +55,8 @@
   }
 
   // Au hover : la ligne s'étend jusqu'aux extrémités du texte
-  &:hover::after {
+  // Exclut le sport-switcher qui a son propre style pill
+  &:not(.sport-switcher):hover::after {
     width: calc(100% - 1.5rem); // 1.5rem = paddings gauche + droite (0.75rem × 2)
   }
 
@@ -151,9 +152,27 @@
     border-radius: 10px 10px 0 0;
   }
 
+  // Zone scrollable — hauteur max pour afficher ~5 notifs, scroll pour le reste
+  .notif-list {
+    max-height: 360px;
+    overflow-y: auto;
+
+    // Scrollbar discrète sur webkit (Chrome, Safari)
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
+  }
+
+  // Wrapper relatif pour positionner la croix de suppression
+  .notif-item-wrapper {
+    position: relative;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+
+    &:last-child { border-bottom: none; }
+  }
+
   .notif-item {
     background: transparent;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
     color: rgba(255,255,255,0.8);
     font-size: 0.82rem;
 
@@ -182,4 +201,40 @@
     }
   }
 
+  // Poubelle de suppression dans le dropdown — coin haut droit
+  .notif-delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 3px;
+    line-height: 1;
+
+    // Couleur discrète, hover rouge
+    color: rgba(255,255,255,0.25);
+    transition: color 0.15s, background 0.15s;
+
+    &:hover {
+      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.12);
+    }
+  }
+
+}
+
+// Scrollbar verte pour la modal d'avis — identique à .notif-list dans le dropdown
+.review-modal-body {
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
+}
+
+// Empêche Bootstrap d'ajouter un padding-right au body quand une modal s'ouvre
+// (évite le décalage/marge grise visible sur la droite de la page)
+body.modal-open {
+  padding-right: 0 !important;
 }

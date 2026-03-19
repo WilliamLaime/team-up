@@ -14,6 +14,13 @@ class Match < ApplicationRecord
 
   # Le créateur du match (organisateur)
   belongs_to :user, optional: true
+
+  # Le sport associé à ce match (Football, Tennis, etc.)
+  belongs_to :sport, optional: true
+
+  # L'établissement sportif sélectionné via l'autocomplétion (optionnel)
+  # nil si l'user a saisi une adresse libre ou un résultat OSM non référencé
+  belongs_to :venue, optional: true
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 
@@ -22,6 +29,13 @@ class Match < ApplicationRecord
   # Un match a plusieurs messages dans son chat de groupe
   has_many :messages, dependent: :destroy
 
+  # Votes "homme du match" pour ce match
+  has_many :match_votes, dependent: :destroy
+
+  # L'élu "homme du match" (calculé automatiquement à partir des votes)
+  # nil si aucun vote n'a encore été soumis pour ce match
+  belongs_to :homme_du_match, class_name: "User", optional: true
+
   # ── ActionCable : mises à jour en temps réel ─────────────────────────────
   # Diffuse automatiquement sur le canal "matches" :
   #   - création  → ajoute la carte en bas de la liste (append)
@@ -29,6 +43,17 @@ class Match < ApplicationRecord
   #   - suppression → retire la carte de la page (remove)
   # La vue s'abonne avec <%= turbo_stream_from "matches" %>
   broadcasts_to ->(match) { "matches" }
+
+  # Scope public : matchs ouverts à l'inscription (pas encore commencés)
+  # Dès l'heure du match → match "verrouillé" : retiré de l'index, on ne peut plus rejoindre
+  scope :upcoming, -> { where("(date + time) > ?", Time.current) }
+
+  # Scope historique : matchs terminés (débutés il y a plus d'1h)
+  scope :completed, -> { where("(date + time) < ?", Time.current - 1.hour) }
+
+  # Scope "en cours" pour mes matchs : matchs pas encore terminés
+  # (upcoming + verrouillés + en train de se jouer)
+  scope :active_for_user, -> { where("(date + time) >= ?", Time.current - 1.hour) }
 
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze
@@ -73,6 +98,25 @@ class Match < ApplicationRecord
   def past?
     return false unless date.present? && time.present?
     build_datetime < Time.current
+  end
+
+  # Retourne vrai si le match est verrouillé (a commencé mais pas encore terminé)
+  # = même logique que in_progress? : plus d'inscription possible, match en cours
+  def locked?
+    in_progress?
+  end
+
+  # Retourne vrai si le match est en cours (débuté mais pas encore terminé = < 1h)
+  def in_progress?
+    return false unless date.present? && time.present?
+    dt = build_datetime
+    dt <= Time.current && dt > Time.current - 1.hour
+  end
+
+  # Retourne vrai si le match est terminé (débuté il y a plus d'1h)
+  def completed?
+    return false unless date.present? && time.present?
+    build_datetime < Time.current - 1.hour
   end
 
   private

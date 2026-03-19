@@ -25,7 +25,10 @@
     - @match existant    → action="/matches/:id"    method="PATCH"
     data-controller="match-form" → connecte le contrôleur Stimulus %>
 <%= form_with model: @match,
-    data: { controller: "match-form" } do |f| %>
+    data: {
+      controller: "match-form",
+      action: "sport-picker:sport-selected->match-form#updateSport"
+    } do |f| %>
 
   <div class="container py-4">
 
@@ -44,14 +47,14 @@
       </div>
     <% end %>
 
-    <%# align-items-start retiré : la col-lg-5 s'étire à la même hauteur que col-lg-7
-        ce qui permet à position:sticky de s'arrêter en bas du dernier bloc gauche %>
+    <%# row sans align-items-start : Bootstrap étire les deux colonnes à la même hauteur
+        (celle du formulaire, la plus grande). Ça donne au sticky l'espace pour glisser. %>
     <div class="row g-4">
 
       <%# ════════════════════════════════════════════════════
           COLONNE GAUCHE : les 4 sections du formulaire
           ════════════════════════════════════════════════════ %>
-      <div class="col-lg-7">
+      <div class="col-lg-7" data-match-form-target="formCol">
 
         <%# Légende : explication de l'astérisque %>
         <p class="form-required-legend">
@@ -69,6 +72,103 @@
           <div class="match-form-section-header">
             <div class="match-form-step-badge">1</div>
             <h2 class="match-form-section-title">Descriptif</h2>
+          </div>
+
+          <%# Champ Sport — visible et pré-rempli avec le sport actif
+              L'utilisateur peut le modifier si besoin %>
+          <div class="mb-3">
+            <%= f.label :sport_id, class: "form-label" do %>Sport <span class="required-star">*</span><% end %>
+            <%
+              # Maps JSON passées au controller Stimulus pour adapter le compteur au sport/format
+              sports_defaults = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.default_player_count }
+              sports_max      = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.max_player_count }
+              # Pour le récap Stimulus : emoji + nom (image sports → juste le nom)
+              sports_names    = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = "#{sport_icon_text(s)} #{s.name}".strip }
+              # Formats disponibles par sport : { sportId => [{label, players}, ...] }
+              sports_formats  = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_formats }
+
+              # Images disponibles par sport — même liste que show.html.erb et _match_card.html.erb
+              # IMPORTANT : asset_path() lève une erreur si le fichier n'existe pas → ne lister que les vrais fichiers
+              _sport_images_data = {
+                "football"   => %w[sports/Football/ballon.webp sports/Football/citytoulouse.webp sports/Football/bresil.webp sports/Football/herbe.webp sports/Football/city1.webp sports/Football/citydrone.webp sports/Football/Duel.webp sports/Football/Medellin.webp],
+                "tennis"     => %w[sports/Tennis/tennis1.webp sports/Tennis/tennis2.webp sports/Tennis/tennis3.webp sports/Tennis/tennis4.webp sports/Tennis/tennis5.webp sports/Tennis/tennis6.webp],
+                "padel"      => %w[sports/Padel/padel1.webp sports/Padel/padel2.webp sports/Padel/padel3.webp sports/Padel/padel4.webp sports/Padel/padel5.webp sports/Padel/padel6.webp],
+                "volleyball" => %w[sports/Volley/volley1.webp sports/Volley/volley2.webp sports/Volley/volley3.webp sports/Volley/volley4.webp sports/Volley/volley5.webp sports/Volley/volley6.webp],
+                "basketball" => %w[sports/Basketball/basket1.webp sports/Basketball/basket2.webp sports/Basketball/basket3.webp sports/Basketball/basket4.webp sports/Basketball/basket5.webp sports/Basketball/basket6.webp],
+                "handball"   => %w[sports/Handball/handball1.webp sports/Handball/handball2.webp],
+                "badminton"  => %w[sports/Badminton/badminton1.webp sports/Badminton/badminton2.webp sports/Badminton/badminton3.webp sports/Badminton/badminton4.webp sports/Badminton/badminton5.webp sports/Badminton/badminton6.webp]
+              }
+              # Construit { sportId => ["/assets/sports/Football/ballon-abc123.webp", ...] }
+              # asset_path() génère l'URL avec fingerprint (cache-busting) → nécessaire en prod
+              sports_images_map = Sport.order(:name).each_with_object({}) do |s, h|
+                slug_imgs = _sport_images_data[s.slug] || _sport_images_data["football"]
+                h[s.id] = slug_imgs.map { |img| asset_path(img) }
+              end
+            %>
+            <%#
+              Select caché — soumis avec le formulaire et cible Stimulus.
+              Le dropdown custom ci-dessous met à jour sa valeur et déclenche
+              un event "change" pour que Stimulus (updateSport) réagisse.
+            %>
+            <%= f.hidden_field :sport_id,
+                data: {
+                  "match-form-target": "sportInput",
+                  "defaults": sports_defaults.to_json,
+                  "max-players": sports_max.to_json,
+                  "sport-names": sports_names.to_json,
+                  "formats": sports_formats.to_json,
+                  # images : { sportId => [url1, url2, ...] } — utilisé par Stimulus pour
+                  # changer l'image de la banner dynamiquement selon le sport sélectionné
+                  "images": sports_images_map.to_json
+                } %>
+
+            <%# Champ caché banner_image : stocke l'URL de l'image choisie (soumise avec le formulaire)
+                Stimulus met sa valeur à jour via updateBanner() quand le sport change %>
+            <%= f.hidden_field :banner_image,
+                data: { "match-form-target": "bannerImageInput" } %>
+
+            <%# Dropdown custom — affiche les icônes image + emoji %>
+            <div style="position:relative;" data-controller="sport-picker">
+
+              <%# Trigger : affiche le sport sélectionné (ou le prompt)
+                  form-select = même style + chevron blanc que date/heure
+                  Le contenu intérieur est en flex via un <span> pour ne pas casser
+                  le background-image du chevron Bootstrap %>
+              <button type="button"
+                      class="form-select"
+                      data-sport-picker-target="trigger"
+                      data-action="click->sport-picker#toggle"
+                      style="cursor:pointer; text-align:left;">
+                <span class="d-flex align-items-center gap-2">
+                  <% if @match.sport %>
+                    <%= sport_icon(@match.sport, size: "1.1rem") %>
+                    <span><%= @match.sport.name %></span>
+                  <% else %>
+                    <span style="color:rgba(255,255,255,0.4);">Sélectionner un sport</span>
+                  <% end %>
+                </span>
+              </button>
+
+              <%# Panel dropdown avec tous les sports %>
+              <div data-sport-picker-target="dropdown"
+                   style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
+                          background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
+                          padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                <% Sport.order(:name).each do |sport| %>
+                  <%# data-active="true" = sport actuellement sélectionné → fond vert géré par le controller %>
+                  <button type="button"
+                          class="sport-picker-item w-100 d-flex align-items-center gap-2 text-start <%= 'sport-picker-item--active' if @match.sport_id == sport.id %>"
+                          data-action="click->sport-picker#select"
+                          data-sport-picker-target="item"
+                          data-sport-id="<%= sport.id %>"
+                          data-sport-name="<%= sport.name %>">
+                    <%= sport_icon(sport, size: "1.1rem") %>
+                    <span><%= sport.name %></span>
+                  </button>
+                <% end %>
+              </div>
+            </div>
+
           </div>
 
           <%# Champ Titre — obligatoire
@@ -127,8 +227,9 @@
                   - data-match-form-target="placeInput" → récap Stimulus
                   - focus->place-search#showDefault     → ouvre le dropdown avec "Ma position" au clic
                   - data-action avec les actions séparées par un espace %>
+              <%# form-select = même chevron blanc que date/heure/sport %>
               <%= f.text_field :place,
-                  class: "form-control place-search-input",
+                  class: "form-select",
                   placeholder: "Ex: Urban Soccer, Bordeaux...",
                   autocomplete: "off",
                   required: true,
@@ -138,8 +239,10 @@
                     "action": "input->place-search#search focus->place-search#showDefault input->match-form#updatePlace"
                   } %>
 
-              <%# Chevron visuel à droite de l'input pour indiquer le dropdown %>
-              <span class="place-search-chevron" aria-hidden="true">&#8964;</span>
+              <%# Champ caché : stocke l'id du venue sélectionné en BDD
+                  Rempli par place_search_controller.js quand l'user choisit un résultat BDD.
+                  Vide si l'user choisit un résultat OSM ou saisit librement. %>
+              <%= f.hidden_field :venue_id, data: { "place-search-target": "venueId" } %>
 
               <%# Dropdown des suggestions — géré par place_search_controller.js %>
               <div data-place-search-target="dropdown"
@@ -165,32 +268,142 @@
 
           <div class="row g-3">
 
-            <%# Champ Date %>
+            <%# Champ Date — dropdown calendrier custom (date_picker_controller) %>
             <div class="col-md-6">
               <%= f.label :date, class: "form-label" do %>Date du match <span class="required-star">*</span><% end %>
-              <%= f.date_field :date,
-                  class: "form-control",
-                  value: @match.date,
-                  required: true,
-                  min: Date.today.to_s,
-                  data: {
-                    "match-form-target": "dateInput",
-                    "action": "change->match-form#updateDate"
-                  } %>
+
+              <%# Conteneur du picker : même pattern que time-picker %>
+              <div style="position:relative;" data-controller="date-picker">
+
+                <%# Input caché : valeur réelle soumise avec le formulaire
+                    data-match-form-target → récap | data-action → updateDate au changement %>
+                <%= f.hidden_field :date,
+                    value: @match.date,
+                    data: {
+                      "date-picker-target": "input",
+                      "match-form-target":  "dateInput",
+                      "action":             "change->match-form#updateDate"
+                    } %>
+
+                <%# Trigger : bouton avec icône calendrier à droite au lieu du chevron %>
+                <button type="button"
+                        class="form-select w-100 dp-trigger"
+                        data-date-picker-target="trigger"
+                        data-action="click->date-picker#toggle"
+                        style="cursor:pointer; display:flex; align-items:center; background-image:none; padding-right:0.75rem;">
+                  <%# Span du texte — mis à jour par Stimulus sans toucher à l'icône %>
+                  <span data-date-picker-target="triggerText"
+                        style="color:<%= @match.date.present? ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                    <% if @match.date.present? %>
+                      <% fr_days = %w[Dim Lun Mar Mer Jeu Ven Sam]; fr_months = %w[jan. fév. mars avr. mai juin juil. août sept. oct. nov. déc.] %>
+                      <%= "#{fr_days[@match.date.wday]} #{@match.date.day} #{fr_months[@match.date.month - 1]} #{@match.date.year}" %>
+                    <% else %>
+                      Choisir une date
+                    <% end %>
+                  </span>
+                  <%# Icône calendrier — reste fixe, jamais remplacée par Stimulus %>
+                  <i data-lucide="calendar" style="width:14px;height:14px;color:white;flex-shrink:0;margin-left:auto;"></i>
+                </button>
+
+                <%# Dropdown calendrier — rempli dynamiquement par le controller JS %>
+                <div data-date-picker-target="dropdown"
+                     class="dp-dropdown"
+                     style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:400; min-width:280px;">
+                </div>
+
+              </div>
             </div>
 
             <%# Champ Heure
-                time_select génère DEUX <select> :
-                  - match_time_4i → heures (0 à 23)
-                  - match_time_5i → minutes (00, 15, 30, 45 grâce à minute_step: 15)
-                Le data-action sur le div parent capture les changements des deux selects %>
+                Deux selects custom (au lieu de time_select) pour limiter les options :
+                  - Heures : 6h à 23h uniquement (pas de 0h-5h)
+                  - Minutes : 00, 15, 30, 45
+                Les noms time(4i) / time(5i) sont la convention Rails pour les champs composés %>
             <div class="col-md-6">
               <%= f.label :time, class: "form-label" do %>Heure de début <span class="required-star">*</span><% end %>
               <div class="d-flex gap-2"
                    data-action="change->match-form#updateTime">
-                <%= f.time_select :time,
-                    { minute_step: 15, default: @match.time, prompt: { hour: "H", minute: "Min" } },
-                    { class: "form-select" } %>
+
+                <%# ── Dropdown custom pour les heures (time_picker_controller) ── %>
+                <%# Affiche 5 heures à la fois + scroll — même pattern que sport-picker %>
+                <div style="position:relative; flex:1;" data-controller="time-picker">
+
+                  <%# Input hidden time(4i) : valeur réelle soumise avec le formulaire %>
+                  <%= f.hidden_field "time(4i)",
+                      value: @match.time&.hour,
+                      data: { "time-picker-target": "input" } %>
+
+                  <%# Trigger : même rendu visuel que le form-select des minutes %>
+                  <button type="button"
+                          class="form-select w-100"
+                          data-time-picker-target="trigger"
+                          data-action="click->time-picker#toggle"
+                          style="cursor:pointer; text-align:left; color:<%= @match.time ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                    <%= @match.time ? ("%02dh" % @match.time.hour) : "Heure" %>
+                  </button>
+
+                  <%# Dropdown : toutes les heures (0h-23h), 5 visibles + scroll %>
+                  <%# .time-picker-dropdown → scrollbar verte (même style que .notif-list) %>
+                  <div class="time-picker-dropdown"
+                       data-time-picker-target="dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
+                              background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
+                              overflow-y:auto; max-height:200px; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                    <% (0..23).each do |h| %>
+                      <%# Styles inline garantis : évite tout conflit Bootstrap/navigateur %>
+                      <button type="button"
+                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.hour == h %>"
+                              style="display:block; width:100%; padding:0.5rem 0.85rem; background:<%= @match.time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important; border:none !important; outline:none; border-radius:6px; color:<%= @match.time&.hour == h ? '#1EDD88' : 'rgba(255,255,255,0.7)' %>; font-size:0.88rem; font-weight:<%= @match.time&.hour == h ? '700' : '500' %>; text-align:left; cursor:pointer; box-shadow:none !important;"
+                              data-time-picker-item
+                              data-action="click->time-picker#select"
+                              data-value="<%= h %>"
+                              data-label="<%= "%02dh" % h %>">
+                        <%= "%02dh" % h %>
+                      </button>
+                    <% end %>
+                  </div>
+
+                </div>
+
+                <%# ── Dropdown custom pour les minutes — même pattern que les heures ── %>
+                <div style="position:relative; flex:1;" data-controller="time-picker">
+
+                  <%# Input hidden time(5i) : valeur réelle soumise avec le formulaire %>
+                  <%= f.hidden_field "time(5i)",
+                      value: @match.time&.min,
+                      data: { "time-picker-target": "input" } %>
+
+                  <%# Trigger : même rendu que le bouton heures %>
+                  <button type="button"
+                          class="form-select w-100"
+                          data-time-picker-target="trigger"
+                          data-action="click->time-picker#toggle"
+                          style="cursor:pointer; text-align:left; color:<%= @match.time ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                    <%= @match.time ? ("%02d" % @match.time.min) : "Min" %>
+                  </button>
+
+                  <%# Dropdown : 4 options (quarts d'heure) %>
+                  <%# .time-picker-dropdown → même style scrollbar que les heures et les notifs %>
+                  <div class="time-picker-dropdown"
+                       data-time-picker-target="dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
+                              background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
+                              overflow-y:auto; max-height:200px; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                    <% [[0, "00"], [15, "15"], [30, "30"], [45, "45"]].each do |val, lbl| %>
+                      <button type="button"
+                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.min == val %>"
+                              style="display:block; width:100%; padding:0.5rem 0.85rem; background:<%= @match.time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important; border:none !important; outline:none; border-radius:6px; color:<%= @match.time&.min == val ? '#1EDD88' : 'rgba(255,255,255,0.7)' %>; font-size:0.88rem; font-weight:<%= @match.time&.min == val ? '700' : '500' %>; text-align:left; cursor:pointer; box-shadow:none !important;"
+                              data-time-picker-item
+                              data-action="click->time-picker#select"
+                              data-value="<%= val %>"
+                              data-label="<%= lbl %>">
+                        <%= lbl %>
+                      </button>
+                    <% end %>
+                  </div>
+
+                </div>
+
               </div>
             </div>
 
@@ -212,6 +425,13 @@
             <h2 class="match-form-section-title">Détails du match</h2>
           </div>
 
+          <%# ── Sélecteur de format — visible uniquement pour les sports multi-formats ── %>
+          <div class="mb-4" data-match-form-target="formatWrapper" style="display:none;">
+            <label class="form-label d-block">Format <span class="required-star">*</span></label>
+            <%= f.hidden_field :format, data: { "match-form-target": "formatInput" } %>
+            <div class="match-level-buttons" data-match-form-target="formatButtons"></div>
+          </div>
+
           <%# ── Compteur : Nombre de joueurs manquants ── %>
           <div class="mb-4">
             <label class="form-label d-block">Nombre de joueurs manquants <span class="required-star">*</span></label>
@@ -220,7 +440,7 @@
                 Le compteur visible (+/-) met à jour cet input via Stimulus.
                 Valeur par défaut : 4 si non défini %>
             <%= f.hidden_field :player_left,
-                value: (@match.player_left || 4),
+                value: (@match.player_left || 1),
                 data: { "match-form-target": "playersInput" } %>
 
             <div class="match-player-counter">
@@ -236,7 +456,7 @@
               <%# Chiffre affiché — mis à jour par Stimulus (target "playersCount") %>
               <span class="counter-value"
                     data-match-form-target="playersCount">
-                <%= @match.player_left || 4 %>
+                <%= @match.player_left || 1 %>
               </span>
 
               <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus
@@ -265,8 +485,12 @@
                 La classe .active est ajoutée/retirée par Stimulus selon la sélection %>
             <div class="match-level-buttons">
               <% Match::LEVELS.each do |lvl| %>
+                <%# Styles inline garantis + hover via onmouseover/onmouseout (contourne !important du CSS) %>
                 <button type="button"
                         class="match-level-btn <%= 'active' if @match.level == lvl %>"
+                        style="padding:0.5rem 1.1rem; border-radius:0.5rem; font-size:0.9rem; cursor:pointer; border:<%= @match.level == lvl ? '2px solid #1EDD88' : '2px solid rgba(255,255,255,0.4)' %> !important; background:<%= @match.level == lvl ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.08)' %> !important; color:<%= @match.level == lvl ? '#1EDD88' : 'rgba(255,255,255,0.9)' %> !important;"
+                        onmouseover="if(!this.classList.contains('active')){this.style.setProperty('border','2px solid #1EDD88','important');this.style.setProperty('background','rgba(30,221,136,0.08)','important');this.style.setProperty('color','#1EDD88','important')}"
+                        onmouseout="if(!this.classList.contains('active')){this.style.setProperty('border','2px solid rgba(255,255,255,0.4)','important');this.style.setProperty('background','rgba(255,255,255,0.08)','important');this.style.setProperty('color','rgba(255,255,255,0.9)','important')}"
                         data-level="<%= lvl %>"
                         data-action="click->match-form#selectLevel">
                   <%= lvl %>
@@ -278,25 +502,33 @@
 
           <%# ── Toggle : Validation Manuel / Automatique ── %>
           <div class="mb-0">
-            <label class="form-label d-block">Validation des joueurs</label>
+            <label class="form-label d-block">
+              Validation des joueurs
+              <%# Infobulle CSS pure — même style que sur la page d'inscription %>
+              <span class="css-tooltip"
+                    data-tip="Vous avez la possibilité de valider manuellement ou automatiquement les personnes qui s'inscrivent à votre match.">
+                <i data-lucide="info" style="width:14px;height:14px;vertical-align:middle;"></i>
+              </span>
+            </label>
 
             <%# Champ caché : contient la vraie valeur envoyée avec le formulaire.
                 Mis à jour via onchange du toggle ci-dessous. %>
             <%= f.hidden_field :validation_mode, value: (@match.validation_mode || "automatic"),
                 id: "match_validation_mode" %>
 
-            <%# Toggle avec "Manuel" à gauche et "Automatique" à droite
-                - Toggle OFF (boule à gauche) = Manuel sélectionné
-                - Toggle ON  (boule à droite) = Automatique sélectionné %>
-            <div class="d-flex align-items-center gap-3 mt-2">
+            <%# Conteneur compact : fond + bordure, inline pour ne pas prendre toute la largeur %>
+            <div style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
+                        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
+                        border-radius:10px; padding:0.55rem 0.9rem;">
 
-              <%# Label gauche "Manuel" — vert quand mode manuel actif %>
-              <span class="toggle-label <%= 'active-label' if @match.manual_validation? %>">Manuel</span>
+              <%# Label gauche : Manuel %>
+              <span style="font-size:0.82rem; font-weight:700; white-space:nowrap;
+                           color:<%= @match.manual_validation? ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;">
+                ✋ Manuel
+              </span>
 
-              <%# Toggle pill visuel
-                  checked = Automatique (boule à droite, fond vert)
-                  unchecked = Manuel (boule à gauche) %>
-              <label class="pill-toggle" for="validation_toggle">
+              <%# Toggle pill %>
+              <label class="pill-toggle" for="validation_toggle" style="flex-shrink:0;">
                 <%= check_box_tag :validation_mode_toggle,
                     "automatic",
                     !@match.manual_validation?,
@@ -307,12 +539,14 @@
                       "action": "change->match-form#updateValidation"
                     },
                     onchange: "document.getElementById('match_validation_mode').value = this.checked ? 'automatic' : 'manual'" %>
-                <%# Piste visuelle (fond + boule blanche via CSS) %>
                 <span class="pill-toggle-track"></span>
               </label>
 
-              <%# Label droit "Automatique" — vert quand mode automatique actif %>
-              <span class="toggle-label <%= 'active-label' unless @match.manual_validation? %>">Automatique</span>
+              <%# Label droit : Automatique %>
+              <span style="font-size:0.82rem; font-weight:700; white-space:nowrap;
+                           color:<%= @match.manual_validation? ? 'rgba(255,255,255,0.4)' : '#1EDD88' %>;">
+                ⚡ Automatique
+              </span>
 
             </div>
           </div><%# fin toggle validation %>
@@ -334,6 +568,8 @@
                   min: 0,
                   step: 1,
                   value: (@match.price_per_player || 0),
+                  onfocus: "if(this.value === '0') this.value = ''",
+                  onblur:  "if(this.value === '') this.value = '0'",
                   data: {
                     "match-form-target": "priceInput",
                     "action": "input->match-form#updatePrice"
@@ -363,7 +599,11 @@
           Cette colonne reste visible pendant le scroll grâce à
           position: sticky dans _match_form.scss
           ════════════════════════════════════════════════════ %>
-      <div class="col-lg-5">
+      <%# position:sticky + align-self:flex-start : la colonne a sa hauteur naturelle
+          (celle de la carte) et reste visible en haut pendant le scroll.
+          top:-1.5rem (négatif) : compense le margin-top:2rem de .match-recap-card
+          → au scroll, la carte apparaît à -1.5rem + 2rem = 0.5rem du haut de l'écran %>
+      <div class="col-lg-5" style="position:sticky; top:-16px; align-self:flex-start;">
         <div class="match-recap-card">
 
           <%# En-tête "Récapitulatif" avec icône %>
@@ -376,20 +616,36 @@
               Valeur initiale : titre existant ou texte par défaut %>
           <h3 class="match-recap-main-title"
               data-match-form-target="recapTitle">
-            <%= @match.title.present? ? @match.title : "Titre" %>
+            <%# Première lettre en majuscule, reste en minuscules %>
+            <%= @match.title.present? ? (@match.title[0].upcase + @match.title[1..].downcase) : "Titre" %>
           </h3>
 
-          <%# Description courte (tronquée à 80 caractères par Stimulus) %>
+          <%# Description courte (tronquée à 80 caractères par Stimulus)
+              Masquée si vide — Stimulus la réaffiche quand l'utilisateur saisit quelque chose %>
           <p class="match-recap-description"
-             data-match-form-target="recapDescription">
-            <%= @match.description.present? ? truncate(@match.description, length: 80) : "—" %>
+             data-match-form-target="recapDescription"
+             style="<%= 'display:none;' if @match.description.blank? %>">
+            <%= truncate(@match.description.to_s, length: 80) %>
           </p>
+
+          <%# ── Ligne Sport ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Sport</span>
+            <span class="recap-value" data-match-form-target="recapSport">
+              <%# Affiche l'emoji + nom du sport si sélectionné %>
+              <% if @match.sport %>
+                <%= sport_icon(@match.sport, size: "1rem") %> <%= @match.sport.name %>
+              <% else %>
+                —
+              <% end %>
+            </span>
+          </div>
 
           <%# ── Ligne Lieu ── %>
           <div class="match-recap-row">
             <span class="recap-label">Lieu</span>
             <span class="recap-value" data-match-form-target="recapPlace">
-              <%= @match.place.present? ? @match.place : "—" %>
+              <%= @match.place.to_s %>
             </span>
           </div>
 
@@ -412,6 +668,12 @@
             </span>
           </div>
 
+          <%# ── Ligne Format — masquée si sport mono-format ── %>
+          <div class="match-recap-row" data-match-form-target="recapFormatRow" style="display:none;">
+            <span class="recap-label">Format</span>
+            <span class="recap-value" data-match-form-target="recapFormat">—</span>
+          </div>
+
           <%# ── Ligne Joueurs recherchés ── %>
           <div class="match-recap-row">
             <span class="recap-label">Joueurs recherchés</span>
@@ -424,7 +686,7 @@
           <div class="match-recap-row">
             <span class="recap-label">Niveau souhaité</span>
             <span class="recap-value" data-match-form-target="recapLevel">
-              <%= @match.level.present? ? @match.level : "—" %>
+              <%= @match.level.to_s %>
             </span>
           </div>
 
@@ -441,9 +703,9 @@
           <div class="match-recap-price mt-1">
             <span class="recap-price-label">Prix par joueur</span>
             <span class="recap-price-value" data-match-form-target="recapPrice">
-              <%# Affiche "Gratuit" si prix = 0, sinon "X €" %>
+              <%# Affiche le prix en € si > 0, sinon rien %>
               <% price = @match.price_per_player.to_i %>
-              <%= price > 0 ? "#{price} €" : "Gratuit" %>
+              <%= price > 0 ? "#{price} €" : "" %>
             </span>
           </div>
 

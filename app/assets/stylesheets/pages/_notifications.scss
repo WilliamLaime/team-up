@@ -127,3 +127,143 @@
     color: rgba(255, 255, 255, 0.4);
   }
 }
+// =====================================================
+// PAGE NOTIFICATIONS — Thème sombre, cohérent avec la navbar
+// =====================================================
+
+.notifications-page {
+  background-color: $dark-bg;
+  min-height: 100vh;
+  color: $dark-text;
+}
+
+// Titre de la page
+.notif-page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+// Flèche retour
+.notif-page-back {
+  color: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+
+  &:hover { color: $green; }
+}
+
+// Badge "X non lues" à côté du titre
+.notif-page-badge {
+  background: rgba($green, 0.15);
+  color: $green;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba($green, 0.3);
+}
+
+// Conteneur de la liste
+.notif-page-list {
+  background: $dark-surface;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+// Chaque ligne de notification
+.notif-page-item {
+  display: block;
+  transition: background 0.15s;
+  cursor: pointer;
+
+  // Non lue : léger fond vert
+  &.is-unread {
+    background: rgba($green, 0.05);
+    &:hover { background: rgba($green, 0.1); }
+  }
+
+  // Lue : fond neutre
+  &.is-read {
+    background: transparent;
+    &:hover { background: rgba(255,255,255,0.04); }
+  }
+}
+
+// Texte du message
+.notif-page-message {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 3px;
+
+  // Non lue : blanc gras
+  &.unread {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  // Lue : blanc atténué
+  &.read {
+    color: rgba(255,255,255,0.5);
+    font-weight: 400;
+  }
+}
+
+// Heure sous le message
+.notif-page-time {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// Point vert "nouveau" à droite
+.notif-page-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $green;
+  flex-shrink: 0;
+}
+
+// Wrapper relatif autour de chaque notification (pour positionner la croix)
+.notif-page-wrapper {
+  position: relative;
+
+  // Séparateur entre les notifications (repris de notif-page-item)
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  &:last-child { border-bottom: none; }
+}
+
+// Bouton poubelle pour supprimer une notification — coin haut droit
+.notif-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  // Réinitialise le style du bouton
+  background: none;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1;
+
+  // Couleur discrète, hover rouge
+  color: rgba(255,255,255,0.25);
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.12);
+  }
+}
+
+// État vide
+.notif-page-empty {
+  color: rgba(255,255,255,0.4);
+  font-size: 0.95rem;
+}

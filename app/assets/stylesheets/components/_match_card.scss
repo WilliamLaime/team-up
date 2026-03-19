@@ -28,9 +28,39 @@
   // Photo du terrain
   .match-card-img {
     width: 100%;
-    height: 160px;
-    object-fit: cover;
-    display: block; // supprime l'espace parasite sous l'image
+    height: 200px;          // hauteur augmentée pour voir plus de l'image
+    object-fit: cover;      // remplit le cadre sans déformer
+    object-position: center 25%; // cadre sur le haut-centre (sujet souvent en haut)
+    display: block;         // supprime l'espace parasite sous l'image
+  }
+
+  // ── Overlay sport — coin haut gauche de l'image ───
+  // Pill floutée avec emoji + nom du sport
+  .match-sport-overlay {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    .match-sport-overlay-icon {
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+
+    .match-sport-overlay-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+    }
   }
 
   // ── Overlay "COMPLET" ──────────────────────────────
@@ -45,6 +75,22 @@
     font-size: 1.1rem;
     font-weight: 800;
     color: #fff;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  // ── Overlay "TERMINÉ" ──────────────────────────────
+  // Même style que "Complet" mais teinte grise pour les matchs passés (> 1h)
+  .match-completed-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 20, 20, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.7);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -118,7 +164,7 @@
       font-size: 1rem;
       font-weight: 700;
       color: #fff;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.5rem;  // remplacé à 0 inline quand description présente
       line-height: 1.3;
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -145,7 +191,6 @@
         line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: calc(0.82rem * 1.4 * 2);
       }
     }
 

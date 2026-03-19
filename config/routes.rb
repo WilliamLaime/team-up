@@ -5,9 +5,23 @@ Rails.application.routes.draw do
   # Page d'accueil
   root to: "pages#home"
 
+  # Page "Qui sommes-nous ?"
+  get "about", to: "pages#about", as: :about
+
+  # Page "Qui sommes-nous ?" — version 2 (expérimentale)
+  get "about2", to: "pages#about2", as: :about2
+
+  # Page de contact
+  get "contact", to: "pages#contact", as: :contact
+
   # Routes pour les matchs (CRUD complet)
   # Exemple : GET /matches => liste, GET /matches/1 => détail, etc.
   resources :matches do
+    member do
+      # Télécharge le fichier ICS pour ajouter le match à un calendrier externe
+      get :calendar
+    end
+
     # Routes imbriquées pour gérer les inscriptions à un match
     # POST   /matches/:match_id/match_users          => rejoindre
     # DELETE /matches/:match_id/match_users/:id      => quitter
@@ -23,6 +37,9 @@ Rails.application.routes.draw do
         patch :reject
       end
     end
+
+    # Vote "homme du match" — POST /matches/:match_id/match_votes
+    resources :match_votes, only: [:create]
   end
 
   # Route pour le profil de l'utilisateur connecté (ressource singulière)
@@ -30,6 +47,16 @@ Rails.application.routes.draw do
   # GET  /profil/edit => modifier mon profil
   # PUT  /profil      => sauvegarder les modifications
   resource :profil, only: [:show, :edit, :update]
+
+  # Route pour voir le profil public d'un autre utilisateur
+  # GET /users/:id/profil => voir le profil de l'utilisateur avec cet id
+  get "users/:id/profil", to: "profils#show_user", as: :user_profil
+
+  # Routes pour les avis (imbriquées sous users)
+  # POST /users/:user_id/avis => laisser un avis à un joueur
+  resources :users, only: [] do
+    resources :avis, only: [:create]
+  end
 
   # Routes pour les notifications
   # GET   /notifications               => liste des notifications
@@ -44,6 +71,35 @@ Rails.application.routes.draw do
     end
   end
 
+  # Routes pour le chat sticky global (accessible depuis toutes les pages)
+  # GET    /conversations/:id         => chat d'un match spécifique (dans le panneau sticky)
+  # DELETE /conversations/:id/dismiss => masquer la conversation (bouton poubelle)
+  resources :conversations, only: [:index, :show] do
+    member do
+      delete :dismiss
+    end
+  end
+
+  # Route multisport EN PREMIER — doit être avant /:id sinon "all" est capturé comme un id
+  post "/switch_sport/all", to: "sports#multisport", as: :multisport_switch
+
+  # Route pour changer le sport actif de l'utilisateur
+  # POST /switch_sport/3 → passe au sport avec l'id 3
+  post "/switch_sport/:id", to: "sports#switch", as: :switch_sport
+
+  # Route AJAX pour la recherche d'établissements sportifs
+  # Appelée par le Stimulus controller "place-search" via fetchDbVenues()
+  # GET /venues/search?q=...&lat=...&lon=... → retourne JSON
+  get "venues/search", to: "venues#search", as: :search_venues
+
   # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
+
+  # ── Pages d'erreur personnalisées ──────────────────────────────────────────
+  # Ces routes sont utilisées par config.exceptions_app = routes (dans application.rb)
+  # Rails redirige automatiquement les erreurs vers ces URLs selon le code HTTP
+  # /404 → ressource introuvable (match supprimé, route inexistante)
+  # /500 → erreur serveur interne
+  match "/404", to: "errors#not_found",            via: :all
+  match "/500", to: "errors#internal_server_error", via: :all
 end

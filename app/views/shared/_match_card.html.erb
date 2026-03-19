@@ -9,6 +9,74 @@
 
 <%# Calculs réutilisés dans la carte %>
 <%
+  # Images disponibles par sport — dossier sports/ dans assets/images/
+  sport_images = {
+    "football"   => %w[
+      sports/Football/ballon.webp
+      sports/Football/citytoulouse.webp
+      sports/Football/bresil.webp
+      sports/Football/herbe.webp
+      sports/Football/city1.webp
+      sports/Football/citydrone.webp
+      sports/Football/Duel.webp
+      sports/Football/Medellin.webp
+    ],
+    "tennis"     => %w[
+      sports/Tennis/tennis1.webp
+      sports/Tennis/tennis2.webp
+      sports/Tennis/tennis3.webp
+      sports/Tennis/tennis4.webp
+      sports/Tennis/tennis5.webp
+      sports/Tennis/tennis6.webp
+    ],
+    "padel"      => %w[
+      sports/Padel/padel1.webp
+      sports/Padel/padel2.webp
+      sports/Padel/padel3.webp
+      sports/Padel/padel4.webp
+      sports/Padel/padel5.webp
+      sports/Padel/padel6.webp
+    ],
+    "volleyball" => %w[
+      sports/Volley/volley1.webp
+      sports/Volley/volley2.webp
+      sports/Volley/volley3.webp
+      sports/Volley/volley4.webp
+      sports/Volley/volley5.webp
+      sports/Volley/volley6.webp
+    ],
+    "basketball" => %w[
+      sports/Basketball/basket1.webp
+      sports/Basketball/basket2.webp
+      sports/Basketball/basket3.webp
+      sports/Basketball/basket4.webp
+      sports/Basketball/basket5.webp
+      sports/Basketball/basket6.webp
+    ],
+    "handball"   => %w[
+      sports/Handball/handball1.webp
+      sports/Handball/handball2.webp
+    ],
+    "badminton"  => %w[
+      sports/Badminton/badminton1.webp
+      sports/Badminton/badminton2.webp
+      sports/Badminton/badminton3.webp
+      sports/Badminton/badminton4.webp
+      sports/Badminton/badminton5.webp
+      sports/Badminton/badminton6.webp
+    ]
+  }
+
+  # On récupère le slug du sport du match, ou "football" par défaut
+  sport_slug = match.sport&.slug || "football"
+
+  # On récupère la liste d'images correspondante (ou football si slug inconnu)
+  images = sport_images[sport_slug] || sport_images["football"]
+
+  # Utilise l'image sauvegardée à la création si elle existe,
+  # sinon rotation déterministe : le même match aura toujours la même image
+  cover_image = match.banner_image.presence || images[match.id % images.length]
+
   # Classe CSS du badge de niveau
   level_css = case match.level
     when "Débutant"      then "level-debutant"
@@ -39,14 +107,21 @@
 
   <%# ── Image du terrain + overlays ──────────────────────────────────────── %>
   <div class="match-card-img-wrapper">
-    <img
-      src="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=500&q=75"
-      alt="Terrain <%= match.title %>"
-      class="match-card-img"
-    >
+    <%= image_tag cover_image, alt: "Terrain #{match.title}", class: "match-card-img" %>
 
-    <%# Bandeau "COMPLET" sur l'image si le match est plein %>
-    <% if match.full? %>
+    <%# Badge sport — coin haut gauche de l'image %>
+    <% if match.sport %>
+      <div class="match-sport-overlay">
+        <%= sport_icon(match.sport, size: "0.85rem", css_class: "match-sport-overlay-icon") %>
+        <span class="match-sport-overlay-name"><%= match.sport.name %></span>
+      </div>
+    <% end %>
+
+    <%# Bandeau "TERMINÉ" sur l'image si le match est terminé (> 1h après le début) %>
+    <% if match.completed? %>
+      <div class="match-completed-overlay">Terminé</div>
+    <%# Bandeau "COMPLET" sur l'image si le match est plein (et pas encore terminé) %>
+    <% elsif match.full? %>
       <div class="match-full-overlay">Complet</div>
     <% end %>
 
@@ -66,22 +141,38 @@
   <%# ── Corps de la carte ─────────────────────────────────────────────────── %>
   <div class="match-card-body">
 
-    <%# Ligne 1 : badges (urgent + niveau) + date courte %>
+    <%# Ligne 1 : badges (sport + urgent + niveau) + date courte %>
     <div class="d-flex align-items-center justify-content-between mb-2">
-      <div class="d-flex gap-1">
+      <div class="d-flex gap-1 flex-wrap">
         <% if match.urgent? %>
           <span class="match-badge-urgent">🔥 Urgent</span>
         <% end %>
         <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
       </div>
-      <span class="match-card-date">
-        <i data-lucide="calendar" style="width:12px;height:12px;"></i>
-        <%= date_str %>
-      </span>
+      <%# Format + date côte à côte à droite %>
+      <div class="d-flex align-items-center gap-2">
+        <% if match.format.present? %>
+          <span class="match-card-date">
+            <i data-lucide="users" style="width:12px;height:12px;"></i>
+            <%= match.format %>
+          </span>
+        <% end %>
+        <span class="match-card-date">
+          <i data-lucide="calendar" style="width:12px;height:12px;"></i>
+          <%= date_str %>
+        </span>
+      </div>
     </div>
 
-    <%# Titre du match (tronqué à 2 lignes) %>
-    <div class="match-card-title"><%= match.title %></div>
+    <%# Titre %>
+    <div class="match-card-title" style="margin-bottom:6px; min-height:0; -webkit-line-clamp:1;">
+      <%= match.title %>
+    </div>
+
+    <%# Description — toujours présente, hauteur fixe 2 lignes pour aligner toutes les cards %>
+    <div style="font-size:0.75rem; color:rgba(255,255,255,0.65); margin-top:0; margin-bottom:18px; line-height:1.4; height:2.1rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+      <%= match.description %>
+    </div>
 
     <%# Lieu %>
     <div class="match-info-line">
@@ -93,11 +184,8 @@
     <div class="match-players-row">
       <div class="match-avatars">
         <% match.users.first(3).each do |player| %>
-          <% if player.profil&.avatar&.attached? %>
-            <%= image_tag player.profil.avatar, class: "match-avatar", alt: player.email %>
-          <% else %>
-            <img src="https://kitt.lewagon.com/placeholder/users/ssaunier" class="match-avatar" alt="joueur">
-          <% end %>
+          <%# Avatar du joueur ou initiales colorées si pas de photo %>
+          <%= user_avatar_tag player, css_class: "match-avatar" %>
         <% end %>
       </div>
       <span class="match-players-text">
@@ -113,17 +201,25 @@
 
   <%# ── Pied de carte : bouton ────────────────────────────────────────────── %>
   <div class="match-card-footer">
-    <% if match.full? %>
-      <%# Match complet → bouton liste d'attente %>
-      <%= link_to match_path(match), class: "btn btn-outline-secondary btn-sm w-100 match-card-btn" do %>
-        Liste d'attente
+    <% if match.completed? %>
+      <%# Match terminé → bouton secondaire pour tous %>
+      <%= link_to match_path(match), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
+        Voir le match
+      <% end %>
+    <% elsif match.full? %>
+      <%# Match complet (pas encore terminé) → bouton secondaire %>
+      <%= link_to match_path(match), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
+        Voir le match
       <% end %>
     <% elsif user_signed_in? %>
       <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
-        <%= btn_label %>
+        <%# Si c'est le créateur du match, on personnalise le label %>
+        <%= match.user == current_user ? "Voir ton match" : btn_label %>
       <% end %>
     <% else %>
-      <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
+      <%# Non connecté → on va quand même vers la page du match (accessible sans connexion).
+          La connexion sera demandée uniquement si l'utilisateur clique sur "Rejoindre". %>
+      <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
         <%= btn_label %>
       <% end %>
     <% end %>

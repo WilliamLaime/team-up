@@ -8,8 +8,87 @@
       5. Modal chat complet (participants seulement)
     ===================================================== %>
 
+<%# Désactive le cache Turbo pour cette page.
+    Sans ça, Turbo sauvegarde le DOM APRÈS que Stimulus a construit les flip-cards.
+    Quand l'utilisateur revient (flèche arrière puis avant), Turbo affiche le cache
+    (avec flip-cards déjà construites) ET charge la page fraîche → deux timers visibles.
+    "no-cache" force Turbo à toujours charger depuis le serveur → un seul timer garanti. %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+  <%# Fix barre .countdown-sep : le SCSS corrigé n'est pas encore compilé par Sprockets.
+      Ce style inline est servi dynamiquement par Rails (jamais mis en cache par le navigateur)
+      → écrase immédiatement le CSS compilé jusqu'au prochain redémarrage du serveur. %>
+  <style>
+    .countdown-sep { display: none !important; height: 0 !important; margin: 0 !important; }
+  </style>
+<% end %>
+
 <%# ── Données calculées une seule fois en haut ── %>
 <%
+  # Images par sport — même logique que _match_card.html.erb pour cohérence
+  sport_images = {
+    "football"   => %w[
+      sports/Football/ballon.webp
+      sports/Football/citytoulouse.webp
+      sports/Football/bresil.webp
+      sports/Football/herbe.webp
+      sports/Football/city1.webp
+      sports/Football/citydrone.webp
+      sports/Football/Duel.webp
+      sports/Football/Medellin.webp
+    ],
+    "tennis"     => %w[
+      sports/Tennis/tennis1.webp
+      sports/Tennis/tennis2.webp
+      sports/Tennis/tennis3.webp
+      sports/Tennis/tennis4.webp
+      sports/Tennis/tennis5.webp
+      sports/Tennis/tennis6.webp
+    ],
+    "padel"      => %w[
+      sports/Padel/padel1.webp
+      sports/Padel/padel2.webp
+      sports/Padel/padel3.webp
+      sports/Padel/padel4.webp
+      sports/Padel/padel5.webp
+      sports/Padel/padel6.webp
+    ],
+    "volleyball" => %w[
+      sports/Volley/volley1.webp
+      sports/Volley/volley2.webp
+      sports/Volley/volley3.webp
+      sports/Volley/volley4.webp
+      sports/Volley/volley5.webp
+      sports/Volley/volley6.webp
+    ],
+    "basketball" => %w[
+      sports/Basketball/basket1.webp
+      sports/Basketball/basket2.webp
+      sports/Basketball/basket3.webp
+      sports/Basketball/basket4.webp
+      sports/Basketball/basket5.webp
+      sports/Basketball/basket6.webp
+    ],
+    "handball"   => %w[
+      sports/Handball/handball1.webp
+      sports/Handball/handball2.webp
+    ],
+    "badminton"  => %w[
+      sports/Badminton/badminton1.webp
+      sports/Badminton/badminton2.webp
+      sports/Badminton/badminton3.webp
+      sports/Badminton/badminton4.webp
+      sports/Badminton/badminton5.webp
+      sports/Badminton/badminton6.webp
+    ]
+  }
+  # Slug du sport, football par défaut si pas de sport associé
+  sport_slug = @match.sport&.slug || "football"
+  images = sport_images[sport_slug] || sport_images["football"]
+  # Utilise l'image sauvegardée (choisie à la création) si elle existe,
+  # sinon fallback déterministe : même calcul que la card (id % nombre d'images)
+  cover_image_path = @match.banner_image.presence || images[@match.id % images.length]
+
   # Organisateur du match
   organizer_mu   = @match_users.find { |mu| mu.role == "organisateur" }
   organizer      = organizer_mu&.user
@@ -40,33 +119,55 @@
     ══════════════════════════════════════════════════ %>
 <section class="match-banner">
 
-  <%# Image de fond (placeholder terrain — pas encore de champ image en BDD) %>
+  <%# Image de fond — même image que sur la card (déterministe selon l'id du match) %>
   <div class="match-banner-bg"
-       style="background-image: url('https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1400&q=80')">
+       style="background-image: url('<%= asset_path(cover_image_path) %>')">
   </div>
 
   <%# Calque sombre semi-transparent pour lisibilité du texte %>
   <div class="match-banner-overlay"></div>
 
+  <%# Bandeau centré sur l'image — "TERMINÉ" si le match est fini, "COMPLET" si plein %>
+  <% if @match.completed? %>
+    <div class="match-banner-full-overlay" style="color:rgba(255,255,255,0.18);">TERMINÉ</div>
+  <% elsif @match.full? %>
+    <div class="match-banner-full-overlay">COMPLET</div>
+  <% end %>
+
   <div class="container match-banner-container">
 
-    <%# Bouton retour %>
-    <%= render "shared/nav_button", url: matches_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
+    <%# ── Ligne haute : Retour (gauche) + Partager (droite) ── %>
+    <div class="match-banner-topbar">
+      <%= render "shared/nav_button", url: matches_path, label: "Retour", direction: "back" %>
+      <%# Bouton partage — ouvre la modale #shareModal %>
+      <button class="match-banner-share-btn"
+              title="Partager ce match"
+              data-bs-toggle="modal"
+              data-bs-target="#shareModal">
+        <i data-lucide="share-2" style="width:17px;height:17px;"></i>
+      </button>
+    </div>
 
+    <%# ── Ligne basse : gauche = titre/desc/date, droite = boutons+prix en bas ── %>
     <div class="match-banner-content">
 
-      <%# ── Gauche : badges / titre / description / date ── %>
+      <%# Gauche : badges / titre / description / date %>
       <div class="match-banner-left">
 
         <%# Badges %>
-        <div class="d-flex gap-2 mb-3 flex-wrap">
+        <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+          <%# Badge sport — pill discrète emoji + nom, cohérente avec les badges niveau %>
+          <% if @match.sport %>
+            <span class="match-badge-sport" style="display:inline-flex;align-items:center;gap:0.3rem;">
+              <%= sport_icon(@match.sport, size: "0.9rem") %>
+              <%= @match.sport.name %>
+            </span>
+          <% end %>
           <% if @match.urgent? %>
             <span class="match-badge-urgent">🔥 Urgent</span>
           <% end %>
           <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
-          <% if @match.full? %>
-            <span class="match-badge-level" style="background:rgba(255,100,100,0.15);color:#ff6b6b;border:1px solid rgba(255,100,100,0.40);">Complet</span>
-          <% end %>
+          <%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
         </div>
 
         <%# Titre %>
@@ -77,6 +178,19 @@
           <p class="match-banner-desc"><%= @match.description %></p>
         <% end %>
 
+        <%# Format du match — affiché uniquement si renseigné (sports multi-formats) %>
+        <% if @match.format.present? %>
+          <div class="match-banner-datetime" style="margin-bottom:0.6rem;">
+            <div class="match-banner-datetime-icon">
+              <i data-lucide="users" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <div class="match-banner-datetime-label">Format</div>
+              <div class="match-banner-datetime-value"><%= @match.format %></div>
+            </div>
+          </div>
+        <% end %>
+
         <%# Date & heure %>
         <%
           d = @match.date
@@ -84,28 +198,136 @@
           date_str = d ? "#{fr_days[d.wday]} #{d.day} #{fr_months[d.month - 1]}" : "Date à définir"
           time_str = t ? t.strftime('%H:%M') : "—"
         %>
-        <div class="match-banner-datetime">
-          <%# Icône horloge avec fond vert arrondi %>
-          <div class="match-banner-datetime-icon">
-            <i data-lucide="clock" style="width:16px;height:16px;"></i>
+        <%# Wrapper flex pour aligner la date à gauche et le bouton calendrier à droite %>
+        <div class="match-banner-datetime-wrapper">
+          <div class="match-banner-datetime">
+            <div class="match-banner-datetime-icon">
+              <i data-lucide="clock" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <div class="match-banner-datetime-label">Date &amp; Heure</div>
+              <div class="match-banner-datetime-value"><%= date_str %> · <%= time_str %></div>
+            </div>
           </div>
-          <%# Label + valeur %>
-          <div>
-            <div class="match-banner-datetime-label">Date &amp; Heure</div>
-            <div class="match-banner-datetime-value"><%= date_str %> · <%= time_str %></div>
-          </div>
+
+          <%# Bouton "Ajouter au calendrier" — visible uniquement pour les participants %>
+          <% if is_participant && d.present? && t.present? %>
+            <%
+              # Construit les dates en UTC pour Google Calendar (format : YYYYMMDDTHHmmSSZ)
+              start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
+              end_dt   = start_dt + 90.minutes
+              gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+              gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+
+              # URL Google Calendar avec les paramètres pré-remplis
+              google_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \
+                           "&text=#{CGI.escape(@match.title)}" \
+                           "&dates=#{gc_start}/#{gc_end}" \
+                           "&location=#{CGI.escape(@match.place.to_s)}" \
+                           "&details=#{CGI.escape("Match #{@match.title} - Niveau : #{@match.level}")}"
+            %>
+            <div class="dropdown match-calendar-dropdown">
+              <%# Bouton principal du dropdown %>
+              <button class="match-calendar-btn"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      title="Ajouter au calendrier">
+                <i data-lucide="calendar-plus" style="width:15px;height:15px;"></i>
+                <span>Calendrier</span>
+              </button>
+
+              <%# Menu déroulant avec les options de calendrier %>
+              <ul class="dropdown-menu match-calendar-menu">
+                <%# Google Calendar — ouvre dans un nouvel onglet %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= google_url %>"
+                     target="_blank"
+                     rel="noopener noreferrer">
+                    <span class="match-calendar-item-icon">🗓️</span>
+                    Google Calendar
+                  </a>
+                </li>
+                <%# Apple Calendar — télécharge le fichier .ics %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= calendar_match_path(@match) %>">
+                    <span class="match-calendar-item-icon">🍎</span>
+                    Apple Calendar
+                  </a>
+                </li>
+                <%# Outlook — télécharge le même fichier .ics, compatible Outlook %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= calendar_match_path(@match) %>">
+                    <span class="match-calendar-item-icon">📧</span>
+                    Outlook
+                  </a>
+                </li>
+              </ul>
+            </div>
+          <% end %>
         </div>
 
       </div>
 
-      <%# ── Droite : bouton partage ── %>
+      <%# Droite : prix en haut, boutons organisateur en dessous, collés en bas %>
       <div class="match-banner-right">
-        <button class="match-banner-share-btn" title="Partager ce match">
-          <i data-lucide="share-2" style="width:17px;height:17px;"></i>
-        </button>
+
+        <%# Prix au-dessus des boutons — affiché uniquement si un prix a été défini %>
+        <% if @match.price_per_player.present? && @match.price_per_player.to_f > 0 %>
+          <div class="match-banner-price">
+            <i data-lucide="euro" style="width:15px;height:15px;"></i>
+            <span class="match-banner-price-amount"><%= number_to_currency(@match.price_per_player, unit: "€", format: "%n %u", precision: 0) %></span>
+            <span class="match-banner-price-label">par joueur</span>
+          </div>
+        <% end %>
+
+        <%# Boutons Modifier / Supprimer en dessous — uniquement pour l'organisateur %>
+        <% if @current_match_user&.role == "organisateur" %>
+          <%
+            # Calcul des demandes en attente pour le badge dans la bannière
+            banner_pending_count = @match_users.count(&:pending?)
+          %>
+          <div class="match-banner-organizer-actions">
+
+            <%# Bouton "en attente" — ouvre la modale de gestion des demandes %>
+            <button class="match-banner-action-btn match-banner-action-btn--pending"
+                    data-bs-toggle="modal"
+                    data-bs-target="#pendingModal"
+                    title="Gérer les demandes en attente">
+              <i data-lucide="clock" style="width:14px;height:14px;"></i>
+              <% if banner_pending_count > 0 %>
+                <%= banner_pending_count %> en attente
+              <% else %>
+                Demandes
+              <% end %>
+            </button>
+
+            <%= link_to edit_match_path(@match), class: "match-banner-action-btn" do %>
+              <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+              Modifier
+            <% end %>
+            <%# Bouton "Supprimer" → ouvre la modal de confirmation au lieu de supprimer directement %>
+            <button type="button"
+                    class="match-banner-action-btn match-banner-action-btn--danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteMatchModal">
+              <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+              Supprimer
+            </button>
+
+            <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+            <%= form_with url: match_path(@match), method: :delete, id: "delete-match-form" do %>
+            <% end %>
+          </div>
+        <% end %>
+
       </div>
 
     </div>
+
   </div>
 </section>
 
@@ -124,47 +346,84 @@
 
 
         <%# ──────────────────────────────────────
-            BLOC ORGANISATEUR (Capitaine)
+            BLOC ORGANISATEUR (Capitaine) + COUNTDOWN
+            Divisé en 2 colonnes : gauche = capitaine, droite = timer
             ────────────────────────────────────── %>
         <div class="match-block">
+          <div class="row g-0 align-items-center">
 
-          <h5 class="match-block-title">
-            <i data-lucide="shield" style="width:15px;height:15px;"></i>
-            Capitaine
-          </h5>
+            <%# ── Colonne gauche : info capitaine ── %>
+            <div class="col-6" style="border-right:1px solid rgba(255,255,255,0.07); padding-right:1.25rem;">
 
-          <div class="d-flex align-items-center justify-content-between gap-3">
+              <h5 class="match-block-title">
+                <i data-lucide="shield" style="width:15px;height:15px;"></i>
+                Capitaine
+              </h5>
 
-            <%# Identité %>
-            <div class="d-flex align-items-center gap-3">
-              <%# Avatar de l'organisateur %>
-              <% if organizer&.profil&.avatar&.attached? %>
-                <%= image_tag organizer.profil.avatar,
-                    class: "match-organizer-avatar", alt: "Avatar organisateur" %>
-              <% else %>
-                <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                     class="match-organizer-avatar" alt="avatar">
-              <% end %>
+              <div class="d-flex align-items-center justify-content-between gap-3">
 
-              <div>
-                <%# Nom complet ou email si pas de profil %>
-                <div class="match-organizer-name">
-                  <% if organizer&.profil %>
-                    <%= [organizer.profil.first_name, organizer.profil.last_name]
-                          .compact.join(" ").presence || organizer.email %>
-                  <% else %>
-                    <%= organizer&.email || "Organisateur" %>
-                  <% end %>
+                <%# Identité %>
+                <div class="d-flex align-items-center gap-3">
+                  <%# Avatar de l'organisateur ou initiales colorées si pas de photo %>
+                  <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
+
+                  <div>
+                    <%# Nom complet ou email si pas de profil %>
+                    <div class="match-organizer-name">
+                      <% if organizer&.profil %>
+                        <%= [organizer.profil.first_name, organizer.profil.last_name]
+                              .compact.join(" ").presence || organizer.email %>
+                      <% else %>
+                        <%= organizer&.email || "Organisateur" %>
+                      <% end %>
+                    </div>
+                    <div class="match-organizer-tag">Organisateur</div>
+                  </div>
                 </div>
-                <div class="match-organizer-tag">Organisateur</div>
+
+                <%# Bouton voir profil %>
+                <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
+                  <i data-lucide="user" style="width:13px;height:13px;"></i>
+                  Voir profil
+                <% end %>
+
               </div>
             </div>
+            <%# / colonne gauche %>
 
-            <%# Bouton voir profil %>
-            <%= link_to profil_path, class: "btn btn-sm match-profile-btn" do %>
-              <i data-lucide="user" style="width:13px;height:13px;"></i>
-              Voir profil
-            <% end %>
+            <%# ── Colonne droite : countdown timer ── %>
+            <div class="col-6" style="padding-left:1.25rem;">
+
+              <%# Calcule le datetime ISO du match pour le passer au Stimulus controller %>
+              <% if @match.date.present? && @match.time.present? %>
+                <%
+                  match_datetime = Time.zone.local(
+                    @match.date.year, @match.date.month, @match.date.day,
+                    @match.time.hour, @match.time.min, 0
+                  )
+                %>
+
+                <%# Le controller Stimulus construit tout le DOM (flip-cards, labels, titre) %>
+                <%# Voir app/javascript/controllers/countdown_controller.js %>
+                <div data-controller="countdown"
+                     data-countdown-datetime-value="<%= match_datetime.iso8601 %>">
+                </div>
+
+                <%# Bouton "Laisser un avis" — sous le countdown quand le match est terminé %>
+                <% if @match.completed? && @match_pending_reviews.present? %>
+                  <%= link_to "#",
+                      class: "btn btn-cta-secondary btn-sm mt-3 w-100",
+                      style: "font-size:0.78rem;",
+                      data: { bs_toggle: "modal", bs_target: "#review-modal" } do %>
+                    <i data-lucide="star" style="width:13px;height:13px;"></i>
+                    Laisser un avis
+                  <% end %>
+                <% end %>
+
+              <% end %>
+
+            </div>
+            <%# / colonne droite %>
 
           </div>
         </div>
@@ -180,9 +439,7 @@
               <i data-lucide="map-pin" style="width:15px;height:15px;"></i>
               Lieu du match
             </h5>
-            <%# Nom de l'établissement en vert en haut à droite
-                On prend la partie avant " - " pour ne pas afficher l'adresse
-                Ex: "Le Five Bordeaux - Rue Dumont..." → "Le Five Bordeaux" %>
+            <%# Nom de l'établissement en vert en haut à droite %>
             <% if @match.place.present? %>
               <span class="match-map-venue-name"><%= @match.place.split(' - ').first %></span>
             <% end %>
@@ -192,11 +449,12 @@
           <% if @match.place.present? %>
             <div class="match-map-wrapper">
               <iframe
+                title="Carte Google Maps du lieu du match"
                 src="https://maps.google.com/maps?q=<%= URI.encode_www_form_component(@match.place) %>&output=embed"
                 width="100%"
                 height="220"
                 style="border:0;"
-                allowfullscreen=""
+                allowfullscreen
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade">
               </iframe>
@@ -214,28 +472,86 @@
 
         <%# ──────────────────────────────────────
             BLOC JOUEURS INSCRITS
+            Joueurs approuvés + joueurs en attente (avec badge horloge).
+            Pour l'organisateur : bouton "Gérer les demandes" dans le titre
+            qui ouvre la modale de validation (#pendingModal).
             ────────────────────────────────────── %>
+        <%
+          # Calcul des joueurs en attente une seule fois pour ce bloc
+          pending_mus = @match_users.select(&:pending?)
+
+          # Calcul du nombre de joueurs IRL (sans compte app) — fait ici pour l'afficher dans le titre
+          total_from_format = if @match.format.present? && @match.format.match?(/\d+v\d+/i)
+            @match.format.scan(/\d+/).map(&:to_i).sum
+          else
+            nil
+          end
+
+          irl_count = if total_from_format
+            [total_from_format - approved_users.count - @match.player_left.to_i, 0].max
+          else
+            0
+          end
+
+          can_join = user_signed_in? && !@current_match_user && !@match.full?
+
+          # Choisir aléatoirement un des deux avatars groupe
+          irl_svg_images = ["avatargroup_svg/picto_groupe_1.svg", "avatargroup_svg/picto_groupe_2.svg"]
+          irl_svg = irl_svg_images.sample
+
+          # Total affiché dans le titre = joueurs app approuvés + joueurs IRL
+          total_players_count = approved_users.count + irl_count
+        %>
         <div class="match-block">
 
-          <h5 class="match-block-title">
-            <i data-lucide="users" style="width:15px;height:15px;"></i>
-            Joueurs inscrits (<%= approved_users.count %>)
-          </h5>
+          <%# Titre + bouton "Gérer les demandes" pour l'organisateur %>
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="match-block-title mb-0">
+              <i data-lucide="users" style="width:15px;height:15px;"></i>
+              Joueurs inscrits (<%= total_players_count %>)
+            </h5>
+
+            <%# Bouton visible pour tous les organisateurs (peu importe le mode de validation)
+                Montre le nombre de demandes en attente, ou "Demandes" si aucune %>
+            <% if @current_match_user&.role == "organisateur" %>
+              <button class="match-pending-trigger-btn"
+                      data-bs-toggle="modal"
+                      data-bs-target="#pendingModal"
+                      title="Gérer les demandes en attente">
+                <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                <% if pending_mus.any? %>
+                  <%= pending_mus.count %> en attente
+                <% else %>
+                  Demandes
+                <% end %>
+              </button>
+            <% end %>
+          </div>
 
           <div class="match-players-grid">
 
-            <%# Un item par joueur approuvé %>
-            <% approved_users.each do |mu| %>
-              <div class="match-player-item">
+            <%# ── Avatar groupé pour les joueurs IRL — affiché EN PREMIER (à gauche) ── %>
+            <% if irl_count > 0 %>
+              <div class="match-player-item match-player-item--irl">
+                <div class="match-player-avatar-irl">
+                  <%# Image SVG aléatoire à la place de l'icône grise — style géré par le CSS %>
+                  <%= image_tag irl_svg, alt: "Joueurs sur place" %>
+                  <%# Badge avec le nombre de joueurs IRL %>
+                  <span class="match-player-irl-badge"><%= irl_count %></span>
+                </div>
+                <span class="match-player-name match-player-name--irl">Sur place</span>
+              </div>
+            <% end %>
 
-                <%# Avatar du joueur %>
-                <% if mu.user.profil&.avatar&.attached? %>
-                  <%= image_tag mu.user.profil.avatar,
-                      class: "match-player-avatar", alt: "Avatar joueur" %>
-                <% else %>
-                  <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                       class="match-player-avatar" alt="joueur">
-                <% end %>
+            <%# ── Joueurs approuvés (organisateur inclus) ── %>
+            <% approved_users.each do |mu| %>
+              <%# Lien vers le profil du joueur — toute la card est cliquable %>
+              <%= link_to user_profil_path(mu.user),
+                  class: "match-player-item",
+                  style: "text-decoration:none;" do %>
+
+                <%# Avatar du joueur ou initiales colorées si pas de photo %>
+                <%= user_avatar_tag mu.user, css_class: "match-player-avatar" %>
 
                 <%# Prénom + 1ère lettre du Nom suivi d'un point
                     Ex : "Marc L." — si pas de profil, on affiche la partie avant @ %>
@@ -246,11 +562,40 @@
                 %>
                 <span class="match-player-name"><%= display %></span>
 
-              </div>
+              <% end %>
             <% end %>
 
-            <%# Slot vide cliquable si l'utilisateur connecté n'est pas encore inscrit %>
-            <% if user_signed_in? && !@current_match_user && !@match.full? %>
+            <%# ── Joueurs en attente — avatar avec badge horloge ── %>
+            <% pending_mus.each do |mu| %>
+              <%# Lien vers le profil du joueur en attente %>
+              <%= link_to user_profil_path(mu.user),
+                  class: "match-player-item match-player-item--pending",
+                  style: "text-decoration:none;" do %>
+
+                <%# Wrapper relatif pour positionner le badge horloge sur l'avatar %>
+                <div class="match-player-avatar-wrapper">
+                  <%# Avatar joueur en attente ou initiales colorées %>
+                  <%= user_avatar_tag mu.user, css_class: "match-player-avatar match-player-avatar--pending" %>
+
+                  <%# Badge horloge en bas à droite %>
+                  <span class="match-player-pending-badge">
+                    <i data-lucide="clock" style="width:9px;height:9px;"></i>
+                  </span>
+                </div>
+
+                <%# Nom en jaune pour signaler l'état en attente %>
+                <%
+                  first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                  last_letter = mu.user.profil&.last_name.presence&.first&.upcase
+                  display     = last_letter ? "#{first} #{last_letter}." : first
+                %>
+                <span class="match-player-name match-player-name--pending"><%= display %></span>
+
+              <% end %>
+            <% end %>
+
+            <%# Slot "Rejoindre" pour l'utilisateur connecté non inscrit %>
+            <% if can_join %>
               <div class="match-player-item match-player-empty"
                    data-bs-toggle="modal"
                    data-bs-target="#joinModal"
@@ -265,63 +610,6 @@
 
           </div>
         </div>
-
-
-        <%# ──────────────────────────────────────
-            BLOC GESTION (organisateur seulement)
-            ────────────────────────────────────── %>
-        <% if @current_match_user&.role == "organisateur" %>
-          <div class="match-block match-block-organizer">
-
-            <h5 class="match-block-title">
-              <i data-lucide="settings" style="width:15px;height:15px;"></i>
-              Gestion du match
-            </h5>
-
-            <div class="d-flex gap-2 flex-wrap">
-              <%= link_to edit_match_path(@match), class: "btn btn-sm btn-primary" do %>
-                <i data-lucide="edit-2" style="width:13px;height:13px;"></i>
-                Modifier
-              <% end %>
-              <%= button_to match_path(@match),
-                  method: :delete,
-                  class: "btn btn-sm btn-danger",
-                  data: { turbo_confirm: "Supprimer définitivement ce match ?" } do %>
-                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
-                Supprimer
-              <% end %>
-            </div>
-
-            <%# Demandes en attente (mode manuel uniquement) %>
-            <% if @match.manual_validation? %>
-              <% pending_users = @match_users.select(&:pending?) %>
-              <% if pending_users.any? %>
-                <div class="mt-3">
-                  <h6 style="color:#FFC65A;" class="mb-2">
-                    ⏳ Demandes en attente (<%= pending_users.count %>)
-                  </h6>
-                  <% pending_users.each do |mu| %>
-                    <div class="d-flex justify-content-between align-items-center py-2"
-                         style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                      <span class="text-white small"><%= mu.user.display_name %></span>
-                      <div class="d-flex gap-2">
-                        <%= button_to approve_match_match_user_path(@match, mu),
-                            method: :patch, class: "btn btn-success btn-sm" do %>
-                          Accepter
-                        <% end %>
-                        <%= button_to reject_match_match_user_path(@match, mu),
-                            method: :patch, class: "btn btn-danger btn-sm" do %>
-                          Refuser
-                        <% end %>
-                      </div>
-                    </div>
-                  <% end %>
-                </div>
-              <% end %>
-            <% end %>
-
-          </div>
-        <% end %>
 
 
       </div>
@@ -347,18 +635,27 @@
             <p class="match-spots-hook match-spots-hook--notice">Dépêchez-vous !</p>
           <% end %>
 
-          <%# Compteur de places
-              Five = 10 joueurs max
-              Places prises = 10 - player_left (places restantes à remplir) %>
-          <% spots_taken = 10 - @match.player_left.to_i %>
+          <%# Bloc format + places libres
+              Affiche le format du match (ex : "6v6") comme élément principal
+              et le nombre de places libres en dessous %>
           <div class="match-spots-display">
+
+            <%# Format affiché en grand — si pas de format, on affiche le total calculé %>
             <div class="match-spots-fraction">
-              <%= spots_taken %>
-              <span class="match-spots-sep">/</span>
-              10
+              <% if @match.format.present? %>
+                <%= @match.format %>
+              <% else %>
+                <%# Fallback : approuvés / total estimé %>
+                <% total_est = approved_users.count + @match.player_left.to_i %>
+                <%= approved_users.count %><span class="match-spots-sep">/</span><%= total_est %>
+              <% end %>
             </div>
+
+            <%# Nombre de places restantes — ou statut si match terminé %>
             <div class="match-spots-label">
-              <% if @match.full? %>
+              <% if @match.completed? %>
+                <span style="color:rgba(255,255,255,0.45);">Match terminé</span>
+              <% elsif @match.full? %>
                 <span style="color:#ff6b6b;">Complet</span>
               <% else %>
                 <%= @match.player_left %>
@@ -366,6 +663,7 @@
                 libre<%= @match.player_left > 1 ? "s" : "" %>
               <% end %>
             </div>
+
           </div>
 
           <%# Action selon le statut de l'utilisateur %>
@@ -386,11 +684,18 @@
                   <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
                   Tu es inscrit
                 </div>
-                <%= button_to match_match_user_path(@match, @current_match_user),
-                    method: :delete,
-                    class: "btn btn-outline-danger btn-sm w-100 mt-2",
-                    data: { turbo_confirm: "Quitter ce match ?" } do %>
+                <%# Bouton qui ouvre la modal de confirmation — pas de turbo_confirm natif %>
+                <button type="button"
+                        class="btn btn-outline-danger btn-sm w-100 mt-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#leaveMatchModal">
                   Quitter le match
+                </button>
+
+                <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+                <%= form_with url: match_match_user_path(@match, @current_match_user),
+                    method: :delete,
+                    id: "leave-match-form" do %>
                 <% end %>
 
               <% elsif @current_match_user.pending? %>
@@ -411,6 +716,12 @@
                   <i data-lucide="list" style="width:14px;height:14px;"></i>
                   En file d'attente
                 </div>
+                <%# Bouton pour quitter la file d'attente %>
+                <%= button_to match_match_user_path(@match, @current_match_user),
+                    method: :delete,
+                    class: "btn btn-outline-secondary btn-sm w-100 mt-2" do %>
+                  Quitter la file
+                <% end %>
 
               <% elsif @current_match_user.rejected? %>
                 <%# Refusé %>
@@ -440,8 +751,10 @@
             <% end %>
 
           <% else %>
-            <%# Non connecté → vers inscription %>
-            <%= link_to new_user_registration_path, class: "btn btn-primary w-100 match-join-btn" do %>
+            <%# Non connecté → vers la page de connexion.
+                Devise redirigera automatiquement vers ce match après la connexion
+                grâce au store_location_for défini dans le contrôleur. %>
+            <%= link_to new_user_session_path, class: "btn btn-primary w-100 match-join-btn" do %>
               Rejoindre le match
             <% end %>
           <% end %>
@@ -486,33 +799,14 @@
             <%# Abonnement Turbo Stream pour les nouveaux messages en temps réel %>
             <%= turbo_stream_from "match_chat_#{@match.id}" %>
 
-            <%# Aperçu des 2 derniers messages (pas de controller ici, il est sur le modal) %>
+            <%# Aperçu des 2 derniers messages — mis à jour en temps réel via Turbo Stream.
+                id="chat-preview-list-<match_id>" : cible du broadcast dans message.rb %>
             <div>
 
-              <%# Aperçu des 2 derniers messages %>
-              <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
-              <% if preview_messages.any? %>
-                <div class="match-chat-preview-list">
-                  <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
-                  <% preview_messages.each do |msg| %>
-                    <div class="match-chat-preview-item">
-                      <%# Bulle avec initiales colorées %>
-                      <div class="match-chat-preview-avatar"
-                           style="background-color:<%= avatar_colors[msg.user_id % avatar_colors.length] %>;">
-                        <%= msg.user.display_name.split.map(&:first).join.upcase.first(2) %>
-                      </div>
-                      <div class="match-chat-preview-content">
-                        <span class="match-chat-preview-name"><%= msg.user.display_name %></span>
-                        <span class="match-chat-preview-text">
-                          <%= truncate(msg.content, length: 55) %>
-                        </span>
-                      </div>
-                    </div>
-                  <% end %>
-                </div>
-              <% else %>
-                <p class="match-chat-empty-hint">Aucun message. Brise la glace !</p>
-              <% end %>
+              <%# Conteneur avec id unique — remplacé par broadcast_update_to à chaque nouveau message %>
+              <div id="chat-preview-list-<%= @match.id %>">
+                <%= render "matches/chat_preview_list", match: @match %>
+              </div>
 
               <%# Séparateur et lien vers le chat complet (ouvre la modal) %>
               <div class="match-chat-divider"></div>
@@ -532,8 +826,9 @@
               <div class="match-chat-blur-content">
                 <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
                 <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
-                <% if preview_messages.any? %>
-                  <div class="match-chat-preview-list">
+                <div class="match-chat-preview-list">
+                  <% if preview_messages.any? %>
+
                     <% preview_messages.each do |msg| %>
                       <div class="match-chat-preview-item">
                         <div class="match-chat-preview-avatar"
@@ -546,10 +841,10 @@
                         </div>
                       </div>
                     <% end %>
-                  </div>
-                <% else %>
-                  <%# Placeholder si aucun message encore %>
-                  <div class="match-chat-preview-list">
+
+                  <% else %>
+                    <%# Placeholder si aucun message encore %>
+
                     <div class="match-chat-preview-item">
                       <div class="match-chat-preview-avatar" style="background-color:#2E7D32;">JD</div>
                       <div class="match-chat-preview-content">
@@ -557,8 +852,9 @@
                         <span class="match-chat-preview-text">Rejoins le match pour discuter !</span>
                       </div>
                     </div>
-                  </div>
-                <% end %>
+
+                  <% end %>
+                </div>
               </div>
 
               <%# Overlay avec le bouton centré par-dessus le flou %>
@@ -591,6 +887,67 @@
 
 
 <%# ══════════════════════════════════════════════════
+    MODAL "QUITTER LE MATCH" — confirmation avant suppression
+    Déclenchée par le bouton "Quitter le match" (joueur approuvé)
+    ══════════════════════════════════════════════════ %>
+<% if user_signed_in? && @current_match_user&.approved? && @current_match_user.role != "organisateur" %>
+  <div class="modal fade" id="leaveMatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content" style="text-align:center;">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="pending-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône d'avertissement %>
+        <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+          <div class="pending-modal-icon" style="background:rgba(220,60,60,0.15);">
+            <i data-lucide="log-out" style="width:22px;height:22px; color:#dc3c3c;"></i>
+          </div>
+        </div>
+
+        <%# Titre %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px;">
+          Quitter ce match ?
+        </div>
+
+        <%# Sous-titre %>
+        <div class="pending-modal-subtitle">
+          Tu vas quitter <strong><%= @match.title %></strong>.<br>
+          Ta place sera libérée et tu ne pourras plus accéder au chat.
+        </div>
+
+        <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+        <%# Boutons d'action %>
+        <div class="d-flex gap-3" style="padding: 16px 0 4px;">
+          <%# Confirmer → soumet le formulaire delete #leave-match-form %>
+          <button type="submit"
+                  form="leave-match-form"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(220,60,60,0.15); color:#dc3c3c; border:1px solid rgba(220,60,60,0.35);">
+            Oui, quitter
+          </button>
+          <%# Annuler → ferme la modal %>
+          <button type="button"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                  data-bs-dismiss="modal">
+            Annuler
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>
+
+
+<%# ══════════════════════════════════════════════════
     MODAL "REJOINDRE CE MATCH ?"
     Déclenché par 3 points d'entrée :
       1. Bouton "Rejoindre le match" (colonne droite)
@@ -617,21 +974,33 @@
         <div class="join-modal-title">Rejoindre ce match ?</div>
         <p class="join-modal-subtitle"><%= @match.title %></p>
 
-        <%# Formulaire caché — le bouton "Oui" le soumet via form= %>
-        <%# Pas de champs visibles, juste l'action POST %>
+        <%# Formulaire avec champ message optionnel %>
         <%= form_with url: match_match_users_path(@match),
             method: :post,
-            id: "join-form",
-            class: "d-none" do |f| %>
+            id: "join-form" do |f| %>
+
+          <%# Textarea optionnelle pour laisser un message à l'organisateur %>
+          <div class="mt-3">
+            <%= f.label :message, "Laisser un message (optionnel)", class: "join-modal-label" %>
+            <%# onkeydown : Enter (sans Shift) soumet le formulaire au lieu de créer une ligne.
+                Shift+Enter conserve le comportement normal (retour à la ligne). %>
+            <%= f.text_area :message,
+                placeholder: "Présente-toi, ton niveau...",
+                rows: 3,
+                class: "form-control join-modal-textarea",
+                maxlength: 300,
+                onkeydown: "if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.requestSubmit();}" %>
+          </div>
+
         <% end %>
 
         <%# Boutons Oui / Non — Oui en premier à gauche, Non à droite %>
         <div class="d-flex gap-3 mt-4">
-          <%# Oui → soumet le formulaire caché %>
+          <%# Oui → soumet le formulaire %>
           <button type="submit"
                   form="join-form"
                   class="btn btn-primary flex-fill join-modal-btn-yes">
-            Oui
+            Rejoindre
           </button>
           <%# Non → ferme la modal sans soumettre %>
           <button type="button"
@@ -715,4 +1084,309 @@
       </div>
     </div>
   </div>
+<% end %>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL "DEMANDES EN ATTENTE" — uniquement pour l'organisateur
+    Affiche la liste des joueurs qui souhaitent rejoindre le match.
+    Permet de voir leur profil, leur niveau / rôle, et d'accepter ou refuser.
+    ══════════════════════════════════════════════════ %>
+<% if @current_match_user&.role == "organisateur" %>
+  <%# Souscription Turbo Stream — reçoit les mises à jour en direct de la liste des demandes.
+      Quand un joueur envoie une demande, #pending_modal_inner est mis à jour silencieusement.
+      L'alerte à l'organisateur arrive via son canal personnel (layout application.html.erb). %>
+  <%= turbo_stream_from "match_#{@match.id}_organizer" %>
+
+  <% pending_modal_users = @match_users.select(&:pending?) %>
+
+  <div class="modal fade" id="pendingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <%# id="pending_modal_inner" : ciblé par le broadcast Turbo Stream pour
+          mettre à jour le contenu sans toucher l'élément Bootstrap #pendingModal %>
+      <div class="modal-content pending-modal-content" id="pending_modal_inner">
+
+        <%# Le contenu de la modal est extrait dans un partial réutilisable.
+            Ce même partial est rendu via Turbo Stream quand un joueur envoie une demande,
+            ce qui met à jour #pending_modal_inner en direct et ouvre la modal automatiquement. %>
+        <%= render "match_users/pending_modal_content",
+                   match: @match,
+                   pending_users: pending_modal_users %>
+
+      </div>
+    </div>
+  </div>
+
+  <%# ══════════════════════════════════════════════════
+      MODAL "SUPPRIMER CE MATCH ?" — organisateur uniquement
+      Même style que la modal "Quitter ce match".
+      Déclenché par le bouton "Supprimer" dans la bannière.
+      Le bouton "Confirmer" soumet le formulaire caché #delete-match-form.
+      ══════════════════════════════════════════════════ %>
+  <div class="modal fade" id="deleteMatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content" style="text-align:center;">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="pending-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône d'avertissement %>
+        <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+          <div class="pending-modal-icon" style="background:rgba(220,60,60,0.15);">
+            <i data-lucide="trash-2" style="width:22px;height:22px; color:#dc3c3c;"></i>
+          </div>
+        </div>
+
+        <%# Titre %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px;">
+          Supprimer ce match ?
+        </div>
+
+        <%# Sous-titre %>
+        <div class="pending-modal-subtitle">
+          Tu vas supprimer définitivement <strong><%= @match.title %></strong>.<br>
+          Tous les joueurs inscrits seront informés de l'annulation.
+        </div>
+
+        <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+        <%# Boutons d'action %>
+        <div class="d-flex gap-3" style="padding: 16px 0 4px;">
+          <%# Confirmer → soumet le formulaire DELETE #delete-match-form %>
+          <button type="submit"
+                  form="delete-match-form"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(220,60,60,0.15); color:#dc3c3c; border:1px solid rgba(220,60,60,0.35);">
+            Oui, supprimer
+          </button>
+          <%# Annuler → ferme la modal %>
+          <button type="button"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                  data-bs-dismiss="modal">
+            Annuler
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<% end %>
+
+<%# Les notifications aux participants (décision, annulation, etc.) sont désormais
+    gérées globalement via le canal personnel de chaque user dans application.html.erb. %>
+
+<%# ── Modal d'avis pour ce match (rendu uniquement si des avis sont en attente) %>
+<% if @match_pending_reviews.present? %>
+  <%= render "shared/review_modal", pending_review_matches: @match_pending_reviews, auto_open: false %>
+<% end %>
+
+<%# ══════════════════════════════════════════════════
+    MODAL PARTAGE — accessible à tous (connecté ou non)
+    data-controller="share" → Stimulus gère le copier-coller
+    data-share-url-value  → URL complète du match passée en JS
+    ══════════════════════════════════════════════════ %>
+<div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true"
+     data-controller="share"
+     data-share-url-value="<%= match_url(@match) %>">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content share-modal-content">
+
+      <%# Croix de fermeture %>
+      <button type="button"
+              class="share-modal-close"
+              data-bs-dismiss="modal"
+              aria-label="Fermer">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+
+      <%# Icône et titre %>
+      <div class="share-modal-icon">
+        <i data-lucide="share-2" style="width:28px;height:28px;"></i>
+      </div>
+      <div class="share-modal-title">Partager ce match</div>
+      <p class="share-modal-subtitle"><%= @match.title %></p>
+
+      <%# ── Grille 2×2 des options de partage ── %>
+      <div class="share-modal-grid">
+
+        <%# 1. Copier le lien — géré par Stimulus (clipboard) %>
+        <button class="share-option" data-action="click->share#copy">
+          <%# Icône "lien" — visible par défaut %>
+          <div class="share-option-icon share-copy-icon" data-share-target="copyIcon">
+            <i data-lucide="link" style="width:22px;height:22px;"></i>
+          </div>
+          <%# Icône "check" — visible après la copie (d-none par défaut) %>
+          <div class="share-option-icon share-check-icon d-none" data-share-target="checkIcon">
+            <i data-lucide="check" style="width:22px;height:22px;"></i>
+          </div>
+          <%# Libellé — change aussi après la copie %>
+          <span class="share-option-label" data-share-target="copyLabel">Copier le lien</span>
+        </button>
+
+        <%# 2. WhatsApp — lien universel wa.me avec texte pré-rempli %>
+        <a class="share-option"
+           href="https://wa.me/?text=<%= CGI.escape("Rejoins ce match sur Team Up ! #{match_url(@match)}") %>"
+           target="_blank"
+           rel="noopener noreferrer">
+          <div class="share-option-icon share-whatsapp-icon">
+            <%# Logo WhatsApp en SVG inline %>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="#25D366">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+          </div>
+          <span class="share-option-label">WhatsApp</span>
+        </a>
+
+        <%# 3. Messenger — deep link mobile (ouvre l'app Messenger si installée) %>
+        <a class="share-option"
+           href="fb-messenger://share?link=<%= CGI.escape(match_url(@match)) %>"
+           rel="noopener noreferrer">
+          <div class="share-option-icon share-messenger-icon">
+            <%# Logo Messenger en SVG inline %>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="url(#messenger-grad)">
+              <defs>
+                <linearGradient id="messenger-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#0099FF"/>
+                  <stop offset="100%" stop-color="#A033FF"/>
+                </linearGradient>
+              </defs>
+              <path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8l3.131 3.26L19.752 8l-6.561 6.963z"/>
+            </svg>
+          </div>
+          <span class="share-option-label">Messenger</span>
+        </a>
+
+        <%# 4. SMS — lien sms: natif (fonctionne sur mobile iOS et Android) %>
+        <a class="share-option"
+           href="sms:?body=<%= CGI.escape("Rejoins ce match sur Team Up ! #{match_url(@match)}") %>">
+          <div class="share-option-icon share-sms-icon">
+            <i data-lucide="message-circle" style="width:22px;height:22px;"></i>
+          </div>
+          <span class="share-option-label">SMS</span>
+        </a>
+
+      </div><%# fin .share-modal-grid %>
+    </div>
+  </div>
+</div>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL "DEMANDE ACCEPTÉE" — affiché automatiquement après avoir rejoint
+    Déclenché par flash[:show_calendar_modal] (posé par join_automatically)
+    Contient un bouton pour ajouter le match à un calendrier externe
+    ══════════════════════════════════════════════════ %>
+<% if flash[:show_calendar_modal] && @match.date.present? && @match.time.present? %>
+  <%
+    # Construit les URLs calendrier pour la modale
+    d = @match.date
+    t = @match.time
+    start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
+    end_dt   = start_dt + 90.minutes
+    gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+    gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+    google_cal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \
+                     "&text=#{CGI.escape(@match.title)}" \
+                     "&dates=#{gc_start}/#{gc_end}" \
+                     "&location=#{CGI.escape(@match.place.to_s)}" \
+                     "&details=#{CGI.escape("Match #{@match.title} - Niveau : #{@match.level}")}"
+  %>
+
+  <div class="modal fade" id="joinedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content joined-modal-content">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="joined-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône de succès %>
+        <div class="joined-modal-icon">
+          <i data-lucide="circle-check-big" style="width:30px;height:30px;"></i>
+        </div>
+
+        <%# Titre %>
+        <div class="joined-modal-title">Demande acceptée !</div>
+
+        <%# Sous-titre personnalisé avec le nom du match %>
+        <p class="joined-modal-subtitle">
+          Tu as été accepté dans le match <strong><%= @match.title %></strong>. Bonne chance !
+        </p>
+
+        <%# Séparateur %>
+        <div class="joined-modal-separator"></div>
+
+        <%# Bouton "Ajouter à mon calendrier" — ouvre un dropdown vers Google/Apple/Outlook %>
+        <div class="dropdown joined-modal-cal-wrapper">
+          <button class="btn joined-modal-btn-calendar"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false">
+            <i data-lucide="calendar-plus" style="width:16px;height:16px;"></i>
+            Ajouter à mon calendrier
+          </button>
+
+          <%# Menu déroulant des options calendrier %>
+          <ul class="dropdown-menu match-calendar-menu w-100">
+            <%# Google Calendar — ouvre dans un nouvel onglet %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= google_cal_url %>"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                <span class="match-calendar-item-icon">🗓️</span>
+                Google Calendar
+              </a>
+            </li>
+            <%# Apple Calendar — télécharge le fichier .ics %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= calendar_match_path(@match) %>">
+                <span class="match-calendar-item-icon">🍎</span>
+                Apple Calendar
+              </a>
+            </li>
+            <%# Outlook — compatible avec le même fichier .ics %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= calendar_match_path(@match) %>">
+                <span class="match-calendar-item-icon">📧</span>
+                Outlook
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <%# Bouton de fermeture principal %>
+        <button type="button"
+                class="btn joined-modal-btn-dismiss"
+                data-bs-dismiss="modal">
+          Super, j'ai compris !
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <%# Ouvre automatiquement la modale au chargement de la page %>
+  <script>
+    document.addEventListener("turbo:load", function openJoinedModal() {
+      var modalEl = document.getElementById("joinedModal");
+      if (modalEl) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+      document.removeEventListener("turbo:load", openJoinedModal);
+    });
+  </script>
 <% end %>

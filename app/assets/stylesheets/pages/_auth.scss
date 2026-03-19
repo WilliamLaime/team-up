@@ -20,8 +20,62 @@
   border-radius: 16px;
   padding: 2.5rem 2.25rem;
   width: 100%;
-  max-width: 460px;
+  max-width: 580px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+
+  // ── Variante large pour le formulaire d'inscription (layout 2 colonnes) ──
+  &--wide {
+    max-width: 900px;
+
+    // Bouton "S'inscrire" en hug (taille auto au lieu de 100%)
+    .form-actions {
+      display: flex;
+      justify-content: center; // Centre le bouton horizontalement
+
+      input[type="submit"],
+      button[type="submit"] {
+        width: auto;           // Annule le width: 100% du bouton par défaut
+        padding-left: 2rem;    // Espacement horizontal généreux
+        padding-right: 2rem;
+      }
+    }
+  }
+
+  // Bouton hug centré — utilisé sur la page connexion
+  .form-actions--center {
+    display: flex;
+    justify-content: center;
+
+    input[type="submit"],
+    button[type="submit"] {
+      width: auto;
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  // ── Espacement + séparateur entre les 2 colonnes ─────────────────────────
+  // Sur mobile : pas de séparateur, juste un espace vertical entre les blocs
+  // Sur desktop : border-left sur la colonne droite + padding symétrique
+  .col-md-5 {
+    @media (min-width: 768px) {
+      padding-right: 2rem; // Espace à droite de la colonne gauche
+    }
+  }
+
+  .col-md-7 {
+    @media (min-width: 768px) {
+      padding-left: 2rem;                               // Espace à gauche = même valeur
+      border-left: 1px solid rgba(255, 255, 255, 0.08); // Ligne de séparation
+    }
+
+    // Sur mobile : séparateur horizontal à la place du vertical
+    @media (max-width: 767px) {
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      margin-top: 1rem;
+    }
+  }
 
   // ── Titre du formulaire ──────────────────────────
   h2 {
@@ -199,15 +253,6 @@
     display: block;
   }
 
-  // ── Étoile obligatoire verte ─────────────────────
-  // simple_form génère <abbr title="required">*</abbr> dans les labels
-  // On la passe en vert pour correspondre à la charte visuelle
-  abbr[title="required"],
-  .required-star {
-    color: $green !important;
-    text-decoration: none;
-    font-weight: 700;
-  }
 
   // ── Bloc choix d'avatar (photo personnelle OU preset) ────
   .auth-avatar-block {
@@ -399,5 +444,76 @@
       margin-top: 0.6rem;
       text-align: center;
     }
+  }
+}
+
+// ── Étoile obligatoire verte (page inscription) ──────────────────────────
+// Déclarée hors de .auth-card pour battre la spécificité de Bootstrap sur abbr
+// simple_form génère <abbr title="required">*</abbr> dans les labels
+// Cible "required" (EN) et "obligatoire" (FR) car le titre change selon la locale
+.auth-card abbr[title="required"],
+.auth-card abbr[title="obligatoire"],
+.auth-card .required-star {
+  color: $green !important;
+  text-decoration: none !important;
+  font-weight: 700;
+}
+
+// ── Tooltip CSS pure (aucun JS requis) ───────────────────────────────────
+// Utilisé avec <span class="css-tooltip" data-tip="texte">
+// Le contenu de data-tip est affiché via ::after au survol
+.css-tooltip {
+  position: relative;
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+
+  // Icône info en vert
+  i { color: $green !important; }
+
+  // Bulle de texte — construite depuis l'attribut data-tip
+  &::after {
+    content: attr(data-tip);        // Récupère le texte dans data-tip
+    position: absolute;
+    left: calc(100% + 10px);        // Positionné à droite de l'icône
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: $dark-card-bg; // Fond sombre cohérent avec la DA
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid $green;        // Bordure verte
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.45;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    white-space: normal;
+    width: 220px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    pointer-events: none;           // La bulle ne bloque pas les clics
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    z-index: 10;
+  }
+
+  // Petite flèche à gauche de la bulle
+  &::before {
+    content: "";
+    position: absolute;
+    left: calc(100% + 4px);         // Juste avant la bulle
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-right-color: $green;     // Flèche verte pointant à gauche
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    z-index: 10;
+  }
+
+  // Affiche bulle + flèche au survol
+  &:hover::after,
+  &:hover::before {
+    opacity: 1;
   }
 }

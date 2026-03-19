@@ -35,6 +35,14 @@
   }
 }
 
+// État "actif" appliqué par JS (star_rating_controller) une fois les étoiles sélectionnées
+// Reprend exactement l'état hover pour signaler que le bouton est prêt à être cliqué
+.btn-cta-primary--rated {
+  background-color: darken($green, 10%) !important;
+  border-color: darken($green, 10%) !important;
+  color: #111111 !important;
+}
+
 
 // ── Lien texte "Se connecter" — surlignage vert ──────
 // Pas de fond ni de bordure, juste le texte en vert
@@ -46,7 +54,7 @@
   font-size: 0.875rem;                        // aligné avec btn-sm
   font-weight: 500;
   text-decoration: none;
-  border-bottom: 1.5px solid $green;         // surlignage vert sous le texte
+  border-bottom: none;
   padding: 0 0.1rem;
   line-height: 1.5;
   cursor: pointer;

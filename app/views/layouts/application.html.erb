@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Team Up" %></title>
+    <title><%= content_for(:title) || "Teams-up" %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Team Up">
+    <meta name="application-name" content="Teams-up">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -25,8 +25,21 @@
   </head>
 
   <body class="<%= content_for(:body_class) %>">
+  <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler
+      automatiquement jusqu'à la première erreur de formulaire si elle existe %>
+  <body data-controller="scroll-to-error">
     <%= render "shared/navbar" %>
     <%= render "shared/flashes" %>
+
+    <%# ── Canal de notifications personnelles ──────────────────────────────────
+        Chaque user connecté écoute son propre canal Turbo Stream.
+        Toutes les notifications en temps réel (décision, annulation, joueur quitte,
+        invitation reçue) sont broadcastées sur ce canal depuis les controllers.
+        Le conteneur vide reçoit les modals injectées dynamiquement. %>
+    <% if user_signed_in? %>
+      <%= turbo_stream_from "user_#{current_user.id}_notifications" %>
+      <div id="global_notification_container"></div>
+    <% end %>
 
     <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
     <main>
@@ -36,17 +49,57 @@
     <%# Pied de page commun à toutes les pages %>
     <%= render "shared/footer" %>
 
+    <%# Bouton + panneau chat sticky — visible sur toutes les pages pour les connectés %>
+    <%# Doit être EN DEHORS du <main> pour que position:fixed fonctionne correctement %>
+    <%= render "shared/sticky_chat" %>
+
+    <%# Modal post-match : s'affiche à la 1ère connexion après un match terminé %>
+    <%# @pending_review_matches est chargé par ApplicationController#load_review_modal_data %>
+    <% if user_signed_in? && @pending_review_matches.present? %>
+      <%= render "shared/review_modal", pending_review_matches: @pending_review_matches %>
+      <%# Script séparé : ouvre la modal automatiquement après connexion %>
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          var el = document.getElementById("review-modal");
+          if (el) { new bootstrap.Modal(el).show(); }
+        });
+      </script>
+    <% end %>
+
+    <%# Modals provenant des vues (ex: modal avis profil) %>
+    <%# Rendus ici — en dehors de tout stacking context — pour que Bootstrap puisse
+        gérer correctement z-index et backdrop sans conflit de positionnement CSS %>
+    <%= yield :modals %>
+
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Appelé en bas de body pour que le DOM soit chargé %>
     <script>
-      // Fonction utilitaire : (ré)initialise toutes les icônes Lucide dans la page
-      function initLucide() { lucide.createIcons(); }
+      // Initialisation au premier chargement de la page
+      lucide.createIcons();
 
-      // 1. Chargement initial de la page
-      initLucide();
+      // Ré-initialisation après chaque mise à jour Turbo (navigation, turbo_frame, turbo_stream)
+      // Sans ça, les icônes dans les frames remplacées par Turbo disparaissent
+      document.addEventListener("turbo:render", () => lucide.createIcons());
+      document.addEventListener("turbo:frame-render", () => lucide.createIcons());
 
-      // 2. Après une navigation Turbo (changement de page)
-      document.addEventListener("turbo:render", initLucide);
+      // Turbo Stream (ex: nouvelle notification via ActionCable) — on intercepte la fonction
+      // de rendu pour appeler lucide.createIcons() et ouvrir les modals APRÈS que le DOM a été modifié.
+      // C'est plus fiable que les <script> inline qui ne s'exécutent pas toujours avec Turbo Stream.
+      document.addEventListener("turbo:before-stream-render", (event) => {
+        const originalRender = event.detail.render;
+        event.detail.render = function(streamElement) {
+          originalRender(streamElement); // mise à jour du DOM
+
+          lucide.createIcons(); // ré-initialise les icônes APRÈS le DOM
+
+          // Ouvre automatiquement toute modal marquée data-auto-open="true"
+          // (injectée via Turbo Stream depuis les partials de notification)
+          document.querySelectorAll("[data-auto-open='true']").forEach(function(el) {
+            // Retire l'attribut pour éviter de ré-ouvrir si le DOM est re-rendu
+            el.removeAttribute("data-auto-open");
+
+            if (typeof bootstrap !== "undefined") {
+              bootstrap.Modal.getOrCreateInstance(el).show();
 
       // 3. Après la mise à jour d'un turbo_frame (ex: cloche de notifications)
       //    C'est cet événement qui se déclenche quand un turbo_stream remplace un frame
@@ -58,6 +111,16 @@
       document.addEventListener("turbo:before-stream-render", function(event) {
         // Laisse Turbo appliquer toutes les actions DOM, puis re-init Lucide
         setTimeout(initLucide, 0);
+              // Si une URL de redirection est définie, on redirige à la fermeture
+              var redirectUrl = el.getAttribute("data-redirect-url");
+              if (redirectUrl) {
+                el.addEventListener("hidden.bs.modal", function() {
+                  window.location.href = redirectUrl;
+                }, { once: true });
+              }
+            }
+          });
+        };
       });
     </script>
   </body>
