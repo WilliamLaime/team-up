@@ -34,6 +34,7 @@ export default class extends Controller {
     "levelInput",        // Input caché : niveau sélectionné (mis à jour par les boutons)
     "validationToggle",  // Checkbox du toggle Manuel/Automatique
     "priceInput",        // Champ numérique : prix par joueur
+    "bannerImageInput",  // Input caché : URL de l'image de la banner (soumise avec le formulaire)
 
     // ── Format ────────────────────────────────────────────
     "formatWrapper",     // Div englobant les boutons de format (affiché/caché selon sport)
@@ -52,7 +53,8 @@ export default class extends Controller {
     "recapPlayers",      // Zone affichant le nombre de joueurs
     "recapLevel",        // Valeur du niveau dans la ligne
     "recapValidation",   // Zone affichant le mode de validation (Manuel / Automatique)
-    "recapPrice"         // Zone affichant le prix par joueur (en bas du récap, en blanc)
+    "recapPrice",        // Zone affichant le prix par joueur (en bas du récap, en blanc)
+    "formCol"            // Colonne gauche (col-lg-7) — sert à mesurer son bas pour l'alignement
   ]
 
   // ── connect() : appelé automatiquement au chargement de la page ──
@@ -65,6 +67,7 @@ export default class extends Controller {
 
     this.updateTitle()
     this.updateDescription()
+    // updateSport() appelle updateBanner() en interne
     this.updateSport()
     this.updatePlace()
     this.updateDate()
@@ -75,6 +78,7 @@ export default class extends Controller {
     this.updatePrice()
     // Initialise les couleurs des boutons − et + selon la valeur de départ
     this.updateCounterButtons(parseInt(this.playersInputTarget.value) || 4)
+
   }
 
   // ══════════════════════════════════════════════════════════
@@ -105,6 +109,32 @@ export default class extends Controller {
     } else {
       this.recapDescriptionTarget.textContent = ""
       this.recapDescriptionTarget.style.display = "none" // masqué
+    }
+  }
+
+  // ── Banner : change le fond de .match-new-banner selon le sport ──
+  // Choisit une image aléatoire dans le tableau du sport sélectionné
+  // et met à jour l'élément #match-new-banner (dans new.html.erb) + le champ caché
+  updateBanner() {
+    const select    = this.sportInputTarget
+    const sportId   = select.value
+    // Récupère la map { sportId => [url1, url2, ...] } passée en data-images
+    const imagesMap = JSON.parse(select.dataset.images || "{}")
+    const images    = imagesMap[sportId] || []
+
+    if (images.length === 0) return
+
+    // Choisit une image au hasard dans le tableau
+    const randomImg = images[Math.floor(Math.random() * images.length)]
+
+    // Met à jour le champ caché (sera sauvegardé en BDD à la soumission)
+    this.bannerImageInputTarget.value = randomImg
+
+    // Met à jour le fond de la banner dans new.html.erb (absent en edit → ok si null)
+    const bannerEl = document.getElementById("match-new-banner")
+    if (bannerEl) {
+      // Garde le gradient sombre par-dessus l'image pour la lisibilité
+      bannerEl.style.background = `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url('${randomImg}') center 25% / cover no-repeat`
     }
   }
 
@@ -145,6 +175,9 @@ export default class extends Controller {
       this.recapSportTarget.textContent = "—"
       this.formatWrapperTarget.style.display = "none"
     }
+
+    // Met à jour la banner selon le nouveau sport
+    this.updateBanner()
   }
 
   // Génère les boutons de format dans le conteneur dédié
@@ -159,6 +192,30 @@ export default class extends Controller {
       btn.textContent = fmt.label
       btn.dataset.players = fmt.players
       btn.dataset.label   = fmt.label
+      // Styles inline garantis (évite tout conflit Bootstrap/navigateur)
+      const isFirst = index === 0
+      btn.style.setProperty("padding", "0.5rem 1.1rem")
+      btn.style.setProperty("border-radius", "0.5rem")
+      btn.style.setProperty("font-size", "0.9rem")
+      btn.style.setProperty("cursor", "pointer")
+      btn.style.setProperty("border", isFirst ? "2px solid #1EDD88" : "2px solid rgba(255,255,255,0.4)", "important")
+      btn.style.setProperty("background", isFirst ? "rgba(30,221,136,0.12)" : "rgba(255,255,255,0.08)", "important")
+      btn.style.setProperty("color", isFirst ? "#1EDD88" : "rgba(255,255,255,0.9)", "important")
+      // Hover : vert au survol si non actif, retour à la normale en partant
+      btn.addEventListener("mouseover", () => {
+        if (!btn.classList.contains("active")) {
+          btn.style.setProperty("border", "2px solid #1EDD88", "important")
+          btn.style.setProperty("background", "rgba(30,221,136,0.08)", "important")
+          btn.style.setProperty("color", "#1EDD88", "important")
+        }
+      })
+      btn.addEventListener("mouseout", () => {
+        if (!btn.classList.contains("active")) {
+          btn.style.setProperty("border", "2px solid rgba(255,255,255,0.4)", "important")
+          btn.style.setProperty("background", "rgba(255,255,255,0.08)", "important")
+          btn.style.setProperty("color", "rgba(255,255,255,0.9)", "important")
+        }
+      })
       // Au clic : sélectionne ce format
       btn.addEventListener("click", () => this._applyFormat(fmt, btn))
       container.appendChild(btn)
@@ -183,10 +240,14 @@ export default class extends Controller {
     this.recapPlayersTarget.textContent = count
     this.updateCounterButtons(count)
 
-    // Met à jour l'état "active" des boutons de format
+    // Met à jour l'état "active" des boutons de format avec styles inline
     if (clickedBtn) {
       this.formatButtonsTarget.querySelectorAll(".match-level-btn").forEach(b => {
-        b.classList.toggle("active", b === clickedBtn)
+        const isActive = b === clickedBtn
+        b.classList.toggle("active", isActive)
+        b.style.setProperty("border", isActive ? "2px solid #1EDD88" : "2px solid rgba(255,255,255,0.4)", "important")
+        b.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "rgba(255,255,255,0.08)", "important")
+        b.style.setProperty("color", isActive ? "#1EDD88" : "rgba(255,255,255,0.9)", "important")
       })
     }
   }
@@ -227,18 +288,19 @@ export default class extends Controller {
   }
 
   // ── Heure (format : "21h15") ──────────────────────────────
-  // time_select génère deux <select> avec des IDs prévisibles :
-  //   match_time_4i → heures
-  //   match_time_5i → minutes
-  // On les trouve par leurs IDs depuis l'élément racine du contrôleur
+  // Les deux inputs cachés du time-picker ont des noms Rails prévisibles :
+  //   match[time(4i)] → heures
+  //   match[time(5i)] → minutes
+  // On les trouve via l'attribut name (plus fiable que l'ID car Rails peut
+  // ajouter un _ final à l'ID lors de la sanitisation des parenthèses)
   updateTime() {
-    const hourEl   = this.element.querySelector('[id$="_time_4i"]')
-    const minuteEl = this.element.querySelector('[id$="_time_5i"]')
+    const hourEl   = this.element.querySelector('[name="match[time(4i)]"]')
+    const minuteEl = this.element.querySelector('[name="match[time(5i)]"]')
 
-    if (hourEl && minuteEl && hourEl.value && minuteEl.value) {
+    if (hourEl && minuteEl && hourEl.value !== "" && minuteEl.value !== "") {
       // padStart(2, "0") : force "9" → "09" pour avoir "09h00"
-      const h = hourEl.value.padStart(2, "0")
-      const m = minuteEl.value.padStart(2, "0")
+      const h = String(hourEl.value).padStart(2, "0")
+      const m = String(minuteEl.value).padStart(2, "0")
       this.recapTimeTarget.textContent = `${h}h${m}`
     } else {
       this.recapTimeTarget.textContent = "—"
@@ -316,11 +378,18 @@ export default class extends Controller {
     this.levelInputTarget.value = value
 
     // 2. Retire la classe "active" de tous les boutons de niveau
+    //    + styles inline : garantit l'apparence même si le CSS est surchargé
     this.element.querySelectorAll(".match-level-btn").forEach(b => {
       b.classList.remove("active")
+      b.style.setProperty("border", "2px solid rgba(255,255,255,0.4)", "important")
+      b.style.setProperty("background", "rgba(255,255,255,0.08)", "important")
+      b.style.setProperty("color", "rgba(255,255,255,0.9)", "important")
     })
-    // 3. Ajoute "active" seulement sur le bouton cliqué
+    // 3. Ajoute "active" + styles verts seulement sur le bouton cliqué
     btn.classList.add("active")
+    btn.style.setProperty("border", "2px solid #1EDD88", "important")
+    btn.style.setProperty("background", "rgba(30,221,136,0.12)", "important")
+    btn.style.setProperty("color", "#1EDD88", "important")
 
     // 4. Met à jour le récap (la ligne reste toujours visible)
     this.recapLevelTarget.textContent = value

@@ -19,6 +19,21 @@ export default class extends Controller {
   connect() {
     this.isOpen = false
 
+    // Ferme le panneau si on clique en dehors de l'élément sticky-chat
+    // On stocke la référence pour pouvoir la retirer dans disconnect()
+    this._handleOutsideClick = (event) => {
+      // On utilise composedPath() plutôt que contains(event.target) car Lucide
+      // remplace les <i> par des <svg> lors de createIcons() — l'élément original
+      // est retiré du DOM et contains() retourne false à tort, ce qui fermait
+      // le panneau immédiatement après l'avoir ouvert en cliquant sur l'icône.
+      // composedPath() capture le chemin AVANT tout remplacement DOM, donc fiable.
+      const clickedInside = event.composedPath().includes(this.element)
+      if (this.isOpen && !clickedInside) {
+        this.close()
+      }
+    }
+    document.addEventListener("click", this._handleOutsideClick)
+
     // Options de l'observer stockées pour pouvoir reconnecter après lucide.createIcons()
     this._observerOptions = {
       subtree: true,       // surveille tous les descendants
@@ -55,19 +70,33 @@ export default class extends Controller {
   disconnect() {
     // Nettoyage : on arrête l'observation quand le controller est détruit
     if (this._observer) this._observer.disconnect()
+    // Retire le listener de clic extérieur
+    document.removeEventListener("click", this._handleOutsideClick)
   }
 
-  // ── Mettre à jour la visibilité du badge sur le bouton ────────────────────
-  // Le badge est visible s'il existe au moins un .sticky-chat-unread-dot
-  // dans la liste des conversations (ET que le panneau est fermé)
+  // ── Mettre à jour la visibilité et la couleur du badge sur le bouton ────────
+  // Règle d'affichage :
+  //   - Messages non lus + panneau FERMÉ → vert + pulsation (attire l'attention)
+  //   - Messages non lus + panneau OUVERT → orange + sans pulsation (vus, pas urgent)
+  //   - Aucun message non lu              → caché
   updateBadge() {
     if (!this.hasBadgeTarget) return
 
     // Cherche s'il existe des points de notification dans la sidebar
     const hasUnread = this.element.querySelectorAll(".sticky-chat-unread-dot").length > 0
 
-    // Affiche le badge seulement si panneau fermé ET messages non lus
-    this.badgeTarget.style.display = (hasUnread && !this.isOpen) ? "block" : "none"
+    if (!hasUnread) {
+      // Aucun non-lu → on cache le badge
+      this.badgeTarget.style.display = "none"
+      return
+    }
+
+    // Il y a des non-lus → on affiche le badge
+    this.badgeTarget.style.display = "block"
+
+    // Panneau ouvert = messages vus (orange, sans pulsation)
+    // Panneau fermé  = messages pas encore vus (vert, pulsation)
+    this.badgeTarget.classList.toggle("sticky-chat-btn-badge--seen", this.isOpen)
   }
 
   // ── Basculer ouvert / fermé ──────────────────────────────────────────────

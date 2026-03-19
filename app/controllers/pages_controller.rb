@@ -1,6 +1,6 @@
 class PagesController < ApplicationController
   # about est publique (pas besoin d'être connecté)
-  skip_before_action :authenticate_user!, only: [ :home, :about ]
+  skip_before_action :authenticate_user!, only: [ :home, :about, :about2, :contact ]
 
   # Rails 7.1 vérifie au chargement que les actions dans `only:` existent.
   # PagesController n'a pas d'action `index`, donc on désactive les callbacks Pundit.
@@ -8,6 +8,14 @@ class PagesController < ApplicationController
   skip_after_action :verify_policy_scoped
 
   def about
+    # Pas de données à charger — page statique
+  end
+
+  def about2
+    # Version 2 expérimentale — page statique
+  end
+
+  def contact
     # Pas de données à charger — page statique
   end
 

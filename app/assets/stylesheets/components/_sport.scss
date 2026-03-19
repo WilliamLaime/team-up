@@ -74,7 +74,28 @@
 
 // ── Dropdown des sports dans la navbar ───────────────────────────────────
 .sport-dropdown {
-  min-width: 200px;
+  min-width: 220px;
+
+  // Champ de recherche dans le dropdown
+  .sport-search-input {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-size: 0.82rem;
+
+    // Placeholder légèrement transparent
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    // Focus : légère bordure verte pour indiquer l'état actif
+    &:focus {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba($green, 0.5);
+      box-shadow: none;
+      color: #fff;
+    }
+  }
 
   // Chaque item sport (bouton dans le dropdown)
   .sport-dropdown-item {
@@ -125,17 +146,22 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.75rem 0.5rem;
-  border-radius: 10px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
   user-select: none;
 
+  // Hover : fond vert translucide + bordure verte
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba($green, 0.1);
+    border-color: rgba($green, 0.4);
     transform: translateY(-1px);
+
+    .sport-select-name {
+      color: $green;
+    }
   }
 
   // État sélectionné → fond vert translucide + bordure verte

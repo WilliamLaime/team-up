@@ -1,14 +1,35 @@
 class MatchesController < ApplicationController
+  # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
+  # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
+  skip_before_action :authenticate_user!, only: [:index, :show]
+
   # Retrouver le match avant les actions qui en ont besoin
-  before_action :set_match, only: [:show, :edit, :update, :destroy]
+  before_action :set_match, only: [:show, :edit, :update, :destroy, :calendar]
 
   # GET /matches
-  # Affiche uniquement les matchs à venir (passés exclus), triés par date puis heure
-  # Accepte des paramètres de filtre : level, place, date, time, player_left, mine
+  # Deux modes :
+  #   - ?mine=1 → historique personnel (matchs en cours + terminés de l'user)
+  #   - par défaut → index public (matchs ouverts à l'inscription, ≥ 30 min)
   def index
-    # .upcoming = scope défini dans le modèle Match (filtre date+heure dans le futur)
-    @matches = policy_scope(Match).upcoming.order(date: :asc, time: :asc)
-    apply_filters
+    if params[:mine].present? && user_signed_in?
+      # Historique : TOUS les matchs de l'user (participants ou organisateur), triés du plus récent
+      @matches = policy_scope(Match)
+        .where(id: current_user.match_users.select(:match_id))
+        .order(date: :desc, time: :desc)
+
+      # Filtre statut :
+      #   ?status=completed → matchs terminés (> 1h après le début)
+      #   par défaut        → matchs "en cours" (pas encore terminés)
+      if params[:status] == "completed"
+        @matches = @matches.completed
+      else
+        @matches = @matches.active_for_user
+      end
+    else
+      # Index public : uniquement les matchs ouverts à l'inscription
+      @matches = policy_scope(Match).upcoming.order(date: :asc, time: :asc)
+      apply_filters
+    end
   end
 
   # GET /matches/:id
@@ -18,8 +39,42 @@ class MatchesController < ApplicationController
     @match_users = @match.match_users.includes(user: :profil)
     authorize @match
 
+    # Si l'utilisateur n'est pas connecté, on mémorise l'URL du match.
+    # Devise s'en servira pour rediriger automatiquement ici après la connexion.
+    store_location_for(:user, match_path(@match)) unless user_signed_in?
+
     # Vérifie si l'utilisateur connecté est déjà inscrit à ce match
     @current_match_user = @match.match_users.find_by(user: current_user)
+
+    # Calcule les avis en attente pour CE match (pour le bouton "Laisser un avis")
+    # Conditions : match terminé + connecté + participant approuvé
+    if user_signed_in? && @match.completed? && @current_match_user&.approved?
+      # Co-joueurs approuvés dans ce match (sauf current_user)
+      co_player_ids = @match.match_users
+                            .where(status: "approved")
+                            .where.not(user_id: current_user.id)
+                            .pluck(:user_id)
+
+      # Joueurs déjà notés par current_user dans CE match
+      already_reviewed = Avis.where(reviewer_id: current_user.id, match_id: @match.id)
+                             .pluck(:reviewed_user_id)
+
+      # Joueurs pas encore notés
+      pending_ids    = co_player_ids - already_reviewed
+      has_voted      = MatchVote.where(voter_id: current_user.id, match_id: @match.id).exists?
+      can_vote_homme = !has_voted && co_player_ids.any?
+
+      # On prépare les données seulement s'il reste quelque chose à faire
+      if pending_ids.any? || can_vote_homme
+        @match_pending_reviews = [{
+          match:          @match,
+          users:          User.where(id: pending_ids).includes(:profil),
+          all_co_players: User.where(id: co_player_ids).includes(:profil),
+          has_voted:      has_voted,
+          can_vote_homme: can_vote_homme
+        }]
+      end
+    end
   end
 
   # GET /matches/new
@@ -74,25 +129,88 @@ class MatchesController < ApplicationController
   end
 
   # DELETE /matches/:id
-  # Supprime un match
+  # Supprime un match et notifie tous les participants en temps réel
   def destroy
     authorize @match
+
+    # Récupère tous les participants inscrits (hors organisateur) avant destruction.
+    # On exclut les "rejected" car ils n'ont plus de place et ne sont plus actifs.
+    # IMPORTANT : on broadcast AVANT @match.destroy → le canal ActionCable doit encore exister.
+    participants = @match.match_users
+      .where.not(role: "organisateur")
+      .where(status: ["approved", "pending", "waiting"])
+      .includes(:user)
+
+    # Notifie chaque participant en temps réel si il est sur la page du match
+    participants.each do |mu|
+      broadcast_match_cancelled_to_participant(mu.user)
+    end
+
     @match.destroy
     redirect_to matches_path, notice: "Match supprimé."
   end
 
+  # GET /matches/:id/calendar
+  # Génère et télécharge un fichier .ics pour ajouter le match à un calendrier externe
+  # Compatible avec Google Calendar, Apple Calendar et Outlook
+  def calendar
+    authorize @match, :show?
+
+    # Construit le datetime de début en combinant date + heure du match
+    start_dt = Time.zone.local(
+      @match.date.year, @match.date.month, @match.date.day,
+      @match.time.hour, @match.time.min, 0
+    )
+    # Durée par défaut : 1h30
+    end_dt = start_dt + 90.minutes
+
+    # Lieu : venue ou adresse libre
+    location = @match.place.presence || ""
+
+    # Description enrichie pour le calendrier
+    description = "Match #{@match.title} - Niveau : #{@match.level}"
+
+    # Contenu du fichier ICS (format standard iCalendar)
+    ics_content = <<~ICS
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      PRODID:-//TeamUp//TeamUp//FR
+      BEGIN:VEVENT
+      UID:match-#{@match.id}@teamup
+      DTSTART:#{start_dt.utc.strftime('%Y%m%dT%H%M%SZ')}
+      DTEND:#{end_dt.utc.strftime('%Y%m%dT%H%M%SZ')}
+      SUMMARY:#{@match.title}
+      LOCATION:#{location}
+      DESCRIPTION:#{description}
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    # Envoie le fichier au navigateur comme téléchargement
+    send_data ics_content.strip,
+              type: "text/calendar; charset=utf-8",
+              disposition: "attachment",
+              filename: "match-#{@match.id}.ics"
+  end
+
   private
+
+  # Envoie la notification d'annulation du match à un participant spécifique.
+  # Appelé depuis destroy pour chaque participant avant la suppression du match.
+  # La modal s'ouvre automatiquement peu importe la page où se trouve le joueur.
+  def broadcast_match_cancelled_to_participant(participant_user)
+    Turbo::StreamsChannel.broadcast_update_to(
+      "user_#{participant_user.id}_notifications", # canal personnel du joueur
+      target: "global_notification_container",      # conteneur dans application.html.erb
+      partial: "matches/match_cancelled_notification",
+      locals: { match: @match }
+    )
+  end
 
   # Applique tous les filtres optionnels sur @matches selon les params reçus
   def apply_filters
     # Recherche full-text — titre, ville, description ou prénom/nom du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
-
-    # Filtre "Mes matchs" — matchs où current_user est créateur OU participant
-    # current_user.match_users.select(:match_id) → sous-requête SQL (couvre créateur + participant)
-    if params[:mine].present? && user_signed_in?
-      @matches = @matches.where(id: current_user.match_users.select(:match_id))
-    end
 
     # Filtre par niveau — accepte plusieurs valeurs (WHERE level IN ('...', '...'))
     @matches = @matches.where(level: params[:levels]) if params[:levels].present?
@@ -138,6 +256,6 @@ class MatchesController < ApplicationController
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
-    params.require(:match).permit(:title, :description, :date, :time, :place, :venue_id, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format)
+    params.require(:match).permit(:title, :description, :date, :time, :place, :venue_id, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format, :banner_image)
   end
 end

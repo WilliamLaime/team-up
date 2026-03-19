@@ -8,72 +8,86 @@
       5. Modal chat complet (participants seulement)
     ===================================================== %>
 
+<%# Désactive le cache Turbo pour cette page.
+    Sans ça, Turbo sauvegarde le DOM APRÈS que Stimulus a construit les flip-cards.
+    Quand l'utilisateur revient (flèche arrière puis avant), Turbo affiche le cache
+    (avec flip-cards déjà construites) ET charge la page fraîche → deux timers visibles.
+    "no-cache" force Turbo à toujours charger depuis le serveur → un seul timer garanti. %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+  <%# Fix barre .countdown-sep : le SCSS corrigé n'est pas encore compilé par Sprockets.
+      Ce style inline est servi dynamiquement par Rails (jamais mis en cache par le navigateur)
+      → écrase immédiatement le CSS compilé jusqu'au prochain redémarrage du serveur. %>
+  <style>
+    .countdown-sep { display: none !important; height: 0 !important; margin: 0 !important; }
+  </style>
+<% end %>
+
 <%# ── Données calculées une seule fois en haut ── %>
 <%
   # Images par sport — même logique que _match_card.html.erb pour cohérence
   sport_images = {
     "football"   => %w[
-      sports/Football/ballon.jpg
-      sports/Football/citytoulouse.jpg
-      sports/Football/bresil.jpg
-      sports/Football/herbe.jpg
-      sports/Football/city1.jpg
-      sports/Football/citydrone.jpg
-      sports/Football/Duel.jpg
-      sports/Football/Medellin.jpg
-      sports/Football/herbe.jpg
-      sports/Football/terrainight.jpg
+      sports/Football/ballon.webp
+      sports/Football/citytoulouse.webp
+      sports/Football/bresil.webp
+      sports/Football/herbe.webp
+      sports/Football/city1.webp
+      sports/Football/citydrone.webp
+      sports/Football/Duel.webp
+      sports/Football/Medellin.webp
     ],
     "tennis"     => %w[
-      sports/Tennis/tennis1.jpg
-      sports/Tennis/tennis2.jpg
-      sports/Tennis/tennis3.jpg
-      sports/Tennis/tennis4.jpg
-      sports/Tennis/tennis5.jpg
-      sports/Tennis/tennis6.jpg
+      sports/Tennis/tennis1.webp
+      sports/Tennis/tennis2.webp
+      sports/Tennis/tennis3.webp
+      sports/Tennis/tennis4.webp
+      sports/Tennis/tennis5.webp
+      sports/Tennis/tennis6.webp
     ],
     "padel"      => %w[
-      sports/Padel/padel1.jpg
-      sports/Padel/padel2.jpg
-      sports/Padel/padel3.jpg
-      sports/Padel/padel4.jpg
-      sports/Padel/padel5.jpg
-      sports/Padel/padel6.jpg
+      sports/Padel/padel1.webp
+      sports/Padel/padel2.webp
+      sports/Padel/padel3.webp
+      sports/Padel/padel4.webp
+      sports/Padel/padel5.webp
+      sports/Padel/padel6.webp
     ],
     "volleyball" => %w[
-      sports/Volley/volley1.jpg
-      sports/Volley/volley2.jpg
-      sports/Volley/volley3.jpg
-      sports/Volley/volley4.jpg
-      sports/Volley/volley5.jpg
-      sports/Volley/volley6.jpg
+      sports/Volley/volley1.webp
+      sports/Volley/volley2.webp
+      sports/Volley/volley3.webp
+      sports/Volley/volley4.webp
+      sports/Volley/volley5.webp
+      sports/Volley/volley6.webp
     ],
     "basketball" => %w[
-      sports/Basketball/basket1.jpg
-      sports/Basketball/basket2.jpg
-      sports/Basketball/basket3.jpg
-      sports/Basketball/basket4.jpg
-      sports/Basketball/basket5.jpg
-      sports/Basketball/basket6.jpg
+      sports/Basketball/basket1.webp
+      sports/Basketball/basket2.webp
+      sports/Basketball/basket3.webp
+      sports/Basketball/basket4.webp
+      sports/Basketball/basket5.webp
+      sports/Basketball/basket6.webp
     ],
     "handball"   => %w[
-      sports/Handball/handball1.jpg
-      sports/Handball/handball2.jpg
+      sports/Handball/handball1.webp
+      sports/Handball/handball2.webp
     ],
     "badminton"  => %w[
-      sports/Badminton/badminton1.jpg
-      sports/Badminton/badminton2.jpg
-      sports/Badminton/badminton3.jpg
-      sports/Badminton/badminton4.jpg
-      sports/Badminton/badminton5.jpg
-      sports/Badminton/badminton6.jpg
+      sports/Badminton/badminton1.webp
+      sports/Badminton/badminton2.webp
+      sports/Badminton/badminton3.webp
+      sports/Badminton/badminton4.webp
+      sports/Badminton/badminton5.webp
+      sports/Badminton/badminton6.webp
     ]
   }
   # Slug du sport, football par défaut si pas de sport associé
   sport_slug = @match.sport&.slug || "football"
   images = sport_images[sport_slug] || sport_images["football"]
-  # Image déterministe : même calcul que la card (id % nombre d'images)
-  cover_image_path = images[@match.id % images.length]
+  # Utilise l'image sauvegardée (choisie à la création) si elle existe,
+  # sinon fallback déterministe : même calcul que la card (id % nombre d'images)
+  cover_image_path = @match.banner_image.presence || images[@match.id % images.length]
 
   # Organisateur du match
   organizer_mu   = @match_users.find { |mu| mu.role == "organisateur" }
@@ -113,8 +127,10 @@
   <%# Calque sombre semi-transparent pour lisibilité du texte %>
   <div class="match-banner-overlay"></div>
 
-  <%# Bandeau "COMPLET" centré sur l'image — affiché uniquement quand le match est plein %>
-  <% if @match.full? %>
+  <%# Bandeau centré sur l'image — "TERMINÉ" si le match est fini, "COMPLET" si plein %>
+  <% if @match.completed? %>
+    <div class="match-banner-full-overlay" style="color:rgba(255,255,255,0.18);">TERMINÉ</div>
+  <% elsif @match.full? %>
     <div class="match-banner-full-overlay">COMPLET</div>
   <% end %>
 
@@ -151,7 +167,7 @@
             <span class="match-badge-urgent">🔥 Urgent</span>
           <% end %>
           <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
-<%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
+          <%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
         </div>
 
         <%# Titre %>
@@ -182,14 +198,76 @@
           date_str = d ? "#{fr_days[d.wday]} #{d.day} #{fr_months[d.month - 1]}" : "Date à définir"
           time_str = t ? t.strftime('%H:%M') : "—"
         %>
-        <div class="match-banner-datetime">
-          <div class="match-banner-datetime-icon">
-            <i data-lucide="clock" style="width:16px;height:16px;"></i>
+        <%# Wrapper flex pour aligner la date à gauche et le bouton calendrier à droite %>
+        <div class="match-banner-datetime-wrapper">
+          <div class="match-banner-datetime">
+            <div class="match-banner-datetime-icon">
+              <i data-lucide="clock" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <div class="match-banner-datetime-label">Date &amp; Heure</div>
+              <div class="match-banner-datetime-value"><%= date_str %> · <%= time_str %></div>
+            </div>
           </div>
-          <div>
-            <div class="match-banner-datetime-label">Date &amp; Heure</div>
-            <div class="match-banner-datetime-value"><%= date_str %> · <%= time_str %></div>
-          </div>
+
+          <%# Bouton "Ajouter au calendrier" — visible uniquement pour les participants %>
+          <% if is_participant && d.present? && t.present? %>
+            <%
+              # Construit les dates en UTC pour Google Calendar (format : YYYYMMDDTHHmmSSZ)
+              start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
+              end_dt   = start_dt + 90.minutes
+              gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+              gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+
+              # URL Google Calendar avec les paramètres pré-remplis
+              google_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \
+                           "&text=#{CGI.escape(@match.title)}" \
+                           "&dates=#{gc_start}/#{gc_end}" \
+                           "&location=#{CGI.escape(@match.place.to_s)}" \
+                           "&details=#{CGI.escape("Match #{@match.title} - Niveau : #{@match.level}")}"
+            %>
+            <div class="dropdown match-calendar-dropdown">
+              <%# Bouton principal du dropdown %>
+              <button class="match-calendar-btn"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      title="Ajouter au calendrier">
+                <i data-lucide="calendar-plus" style="width:15px;height:15px;"></i>
+                <span>Calendrier</span>
+              </button>
+
+              <%# Menu déroulant avec les options de calendrier %>
+              <ul class="dropdown-menu match-calendar-menu">
+                <%# Google Calendar — ouvre dans un nouvel onglet %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= google_url %>"
+                     target="_blank"
+                     rel="noopener noreferrer">
+                    <span class="match-calendar-item-icon">🗓️</span>
+                    Google Calendar
+                  </a>
+                </li>
+                <%# Apple Calendar — télécharge le fichier .ics %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= calendar_match_path(@match) %>">
+                    <span class="match-calendar-item-icon">🍎</span>
+                    Apple Calendar
+                  </a>
+                </li>
+                <%# Outlook — télécharge le même fichier .ics, compatible Outlook %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= calendar_match_path(@match) %>">
+                    <span class="match-calendar-item-icon">📧</span>
+                    Outlook
+                  </a>
+                </li>
+              </ul>
+            </div>
+          <% end %>
         </div>
 
       </div>
@@ -231,12 +309,17 @@
               <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
               Modifier
             <% end %>
-            <%= button_to match_path(@match),
-                method: :delete,
-                class: "match-banner-action-btn match-banner-action-btn--danger",
-                data: { turbo_confirm: "Supprimer définitivement ce match ?" } do %>
+            <%# Bouton "Supprimer" → ouvre la modal de confirmation au lieu de supprimer directement %>
+            <button type="button"
+                    class="match-banner-action-btn match-banner-action-btn--danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteMatchModal">
               <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
               Supprimer
+            </button>
+
+            <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+            <%= form_with url: match_path(@match), method: :delete, id: "delete-match-form" do %>
             <% end %>
           </div>
         <% end %>
@@ -263,48 +346,84 @@
 
 
         <%# ──────────────────────────────────────
-            BLOC ORGANISATEUR (Capitaine)
+            BLOC ORGANISATEUR (Capitaine) + COUNTDOWN
+            Divisé en 2 colonnes : gauche = capitaine, droite = timer
             ────────────────────────────────────── %>
         <div class="match-block">
+          <div class="row g-0 align-items-center">
 
-          <h5 class="match-block-title">
-            <i data-lucide="shield" style="width:15px;height:15px;"></i>
-            Capitaine
-          </h5>
+            <%# ── Colonne gauche : info capitaine ── %>
+            <div class="col-6" style="border-right:1px solid rgba(255,255,255,0.07); padding-right:1.25rem;">
 
-          <div class="d-flex align-items-center justify-content-between gap-3">
+              <h5 class="match-block-title">
+                <i data-lucide="shield" style="width:15px;height:15px;"></i>
+                Capitaine
+              </h5>
 
-            <%# Identité %>
-            <div class="d-flex align-items-center gap-3">
-              <%# Avatar de l'organisateur %>
-              <% if organizer&.profil&.avatar&.attached? %>
-                <%= image_tag organizer.profil.avatar,
-                    class: "match-organizer-avatar", alt: "Avatar organisateur" %>
-              <% else %>
-                <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                     class="match-organizer-avatar" alt="avatar">
-              <% end %>
+              <div class="d-flex align-items-center justify-content-between gap-3">
 
-              <div>
-                <%# Nom complet ou email si pas de profil %>
-                <div class="match-organizer-name">
-                  <% if organizer&.profil %>
-                    <%= [organizer.profil.first_name, organizer.profil.last_name]
-                          .compact.join(" ").presence || organizer.email %>
-                  <% else %>
-                    <%= organizer&.email || "Organisateur" %>
-                  <% end %>
+                <%# Identité %>
+                <div class="d-flex align-items-center gap-3">
+                  <%# Avatar de l'organisateur ou initiales colorées si pas de photo %>
+                  <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
+
+                  <div>
+                    <%# Nom complet ou email si pas de profil %>
+                    <div class="match-organizer-name">
+                      <% if organizer&.profil %>
+                        <%= [organizer.profil.first_name, organizer.profil.last_name]
+                              .compact.join(" ").presence || organizer.email %>
+                      <% else %>
+                        <%= organizer&.email || "Organisateur" %>
+                      <% end %>
+                    </div>
+                    <div class="match-organizer-tag">Organisateur</div>
+                  </div>
                 </div>
-                <div class="match-organizer-tag">Organisateur</div>
+
+                <%# Bouton voir profil %>
+                <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
+                  <i data-lucide="user" style="width:13px;height:13px;"></i>
+                  Voir profil
+                <% end %>
+
               </div>
             </div>
+            <%# / colonne gauche %>
 
-            <%# Bouton voir profil — redirige vers le profil de l'organisateur %>
-            <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
-            <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
-              <i data-lucide="user" style="width:13px;height:13px;"></i>
-              Voir profil
-            <% end %>
+            <%# ── Colonne droite : countdown timer ── %>
+            <div class="col-6" style="padding-left:1.25rem;">
+
+              <%# Calcule le datetime ISO du match pour le passer au Stimulus controller %>
+              <% if @match.date.present? && @match.time.present? %>
+                <%
+                  match_datetime = Time.zone.local(
+                    @match.date.year, @match.date.month, @match.date.day,
+                    @match.time.hour, @match.time.min, 0
+                  )
+                %>
+
+                <%# Le controller Stimulus construit tout le DOM (flip-cards, labels, titre) %>
+                <%# Voir app/javascript/controllers/countdown_controller.js %>
+                <div data-controller="countdown"
+                     data-countdown-datetime-value="<%= match_datetime.iso8601 %>">
+                </div>
+
+                <%# Bouton "Laisser un avis" — sous le countdown quand le match est terminé %>
+                <% if @match.completed? && @match_pending_reviews.present? %>
+                  <%= link_to "#",
+                      class: "btn btn-cta-secondary btn-sm mt-3 w-100",
+                      style: "font-size:0.78rem;",
+                      data: { bs_toggle: "modal", bs_target: "#review-modal" } do %>
+                    <i data-lucide="star" style="width:13px;height:13px;"></i>
+                    Laisser un avis
+                  <% end %>
+                <% end %>
+
+              <% end %>
+
+            </div>
+            <%# / colonne droite %>
 
           </div>
         </div>
@@ -426,16 +545,13 @@
 
             <%# ── Joueurs approuvés (organisateur inclus) ── %>
             <% approved_users.each do |mu| %>
-              <div class="match-player-item">
+              <%# Lien vers le profil du joueur — toute la card est cliquable %>
+              <%= link_to user_profil_path(mu.user),
+                  class: "match-player-item",
+                  style: "text-decoration:none;" do %>
 
-                <%# Avatar du joueur %>
-                <% if mu.user.profil&.avatar&.attached? %>
-                  <%= image_tag mu.user.profil.avatar,
-                      class: "match-player-avatar", alt: "Avatar joueur" %>
-                <% else %>
-                  <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                       class="match-player-avatar" alt="joueur">
-                <% end %>
+                <%# Avatar du joueur ou initiales colorées si pas de photo %>
+                <%= user_avatar_tag mu.user, css_class: "match-player-avatar" %>
 
                 <%# Prénom + 1ère lettre du Nom suivi d'un point
                     Ex : "Marc L." — si pas de profil, on affiche la partie avant @ %>
@@ -446,24 +562,22 @@
                 %>
                 <span class="match-player-name"><%= display %></span>
 
-              </div>
+              <% end %>
             <% end %>
 
-            <%# ── Joueurs en attente — avatar avec badge horloge, non cliquable ── %>
+            <%# ── Joueurs en attente — avatar avec badge horloge ── %>
             <% pending_mus.each do |mu| %>
-              <div class="match-player-item match-player-item--pending">
+              <%# Lien vers le profil du joueur en attente %>
+              <%= link_to user_profil_path(mu.user),
+                  class: "match-player-item match-player-item--pending",
+                  style: "text-decoration:none;" do %>
 
                 <%# Wrapper relatif pour positionner le badge horloge sur l'avatar %>
                 <div class="match-player-avatar-wrapper">
-                  <% if mu.user.profil&.avatar&.attached? %>
-                    <%= image_tag mu.user.profil.avatar,
-                        class: "match-player-avatar match-player-avatar--pending", alt: "Avatar joueur" %>
-                  <% else %>
-                    <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                         class="match-player-avatar match-player-avatar--pending" alt="joueur">
-                  <% end %>
+                  <%# Avatar joueur en attente ou initiales colorées %>
+                  <%= user_avatar_tag mu.user, css_class: "match-player-avatar match-player-avatar--pending" %>
 
-                  <%# Badge horloge en bas à droite (visible pour tous) %>
+                  <%# Badge horloge en bas à droite %>
                   <span class="match-player-pending-badge">
                     <i data-lucide="clock" style="width:9px;height:9px;"></i>
                   </span>
@@ -477,7 +591,7 @@
                 %>
                 <span class="match-player-name match-player-name--pending"><%= display %></span>
 
-              </div>
+              <% end %>
             <% end %>
 
             <%# Slot "Rejoindre" pour l'utilisateur connecté non inscrit %>
@@ -537,9 +651,11 @@
               <% end %>
             </div>
 
-            <%# Nombre de places restantes %>
+            <%# Nombre de places restantes — ou statut si match terminé %>
             <div class="match-spots-label">
-              <% if @match.full? %>
+              <% if @match.completed? %>
+                <span style="color:rgba(255,255,255,0.45);">Match terminé</span>
+              <% elsif @match.full? %>
                 <span style="color:#ff6b6b;">Complet</span>
               <% else %>
                 <%= @match.player_left %>
@@ -568,11 +684,18 @@
                   <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
                   Tu es inscrit
                 </div>
-                <%= button_to match_match_user_path(@match, @current_match_user),
-                    method: :delete,
-                    class: "btn btn-outline-danger btn-sm w-100 mt-2",
-                    data: { turbo_confirm: "Quitter ce match ?" } do %>
+                <%# Bouton qui ouvre la modal de confirmation — pas de turbo_confirm natif %>
+                <button type="button"
+                        class="btn btn-outline-danger btn-sm w-100 mt-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#leaveMatchModal">
                   Quitter le match
+                </button>
+
+                <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+                <%= form_with url: match_match_user_path(@match, @current_match_user),
+                    method: :delete,
+                    id: "leave-match-form" do %>
                 <% end %>
 
               <% elsif @current_match_user.pending? %>
@@ -593,6 +716,12 @@
                   <i data-lucide="list" style="width:14px;height:14px;"></i>
                   En file d'attente
                 </div>
+                <%# Bouton pour quitter la file d'attente %>
+                <%= button_to match_match_user_path(@match, @current_match_user),
+                    method: :delete,
+                    class: "btn btn-outline-secondary btn-sm w-100 mt-2" do %>
+                  Quitter la file
+                <% end %>
 
               <% elsif @current_match_user.rejected? %>
                 <%# Refusé %>
@@ -622,8 +751,10 @@
             <% end %>
 
           <% else %>
-            <%# Non connecté → vers inscription %>
-            <%= link_to new_user_registration_path, class: "btn btn-primary w-100 match-join-btn" do %>
+            <%# Non connecté → vers la page de connexion.
+                Devise redirigera automatiquement vers ce match après la connexion
+                grâce au store_location_for défini dans le contrôleur. %>
+            <%= link_to new_user_session_path, class: "btn btn-primary w-100 match-join-btn" do %>
               Rejoindre le match
             <% end %>
           <% end %>
@@ -668,33 +799,14 @@
             <%# Abonnement Turbo Stream pour les nouveaux messages en temps réel %>
             <%= turbo_stream_from "match_chat_#{@match.id}" %>
 
-            <%# Aperçu des 2 derniers messages (pas de controller ici, il est sur le modal) %>
+            <%# Aperçu des 2 derniers messages — mis à jour en temps réel via Turbo Stream.
+                id="chat-preview-list-<match_id>" : cible du broadcast dans message.rb %>
             <div>
 
-              <%# Aperçu des 2 derniers messages %>
-              <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
-              <% if preview_messages.any? %>
-                <div class="match-chat-preview-list">
-                  <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
-                  <% preview_messages.each do |msg| %>
-                    <div class="match-chat-preview-item">
-                      <%# Bulle avec initiales colorées %>
-                      <div class="match-chat-preview-avatar"
-                           style="background-color:<%= avatar_colors[msg.user_id % avatar_colors.length] %>;">
-                        <%= msg.user.display_name.split.map(&:first).join.upcase.first(2) %>
-                      </div>
-                      <div class="match-chat-preview-content">
-                        <span class="match-chat-preview-name"><%= msg.user.display_name %></span>
-                        <span class="match-chat-preview-text">
-                          <%= truncate(msg.content, length: 55) %>
-                        </span>
-                      </div>
-                    </div>
-                  <% end %>
-                </div>
-              <% else %>
-                <p class="match-chat-empty-hint">Aucun message. Brise la glace !</p>
-              <% end %>
+              <%# Conteneur avec id unique — remplacé par broadcast_update_to à chaque nouveau message %>
+              <div id="chat-preview-list-<%= @match.id %>">
+                <%= render "matches/chat_preview_list", match: @match %>
+              </div>
 
               <%# Séparateur et lien vers le chat complet (ouvre la modal) %>
               <div class="match-chat-divider"></div>
@@ -714,8 +826,9 @@
               <div class="match-chat-blur-content">
                 <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
                 <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
-                <% if preview_messages.any? %>
-                  <div class="match-chat-preview-list">
+                <div class="match-chat-preview-list">
+                  <% if preview_messages.any? %>
+
                     <% preview_messages.each do |msg| %>
                       <div class="match-chat-preview-item">
                         <div class="match-chat-preview-avatar"
@@ -728,10 +841,10 @@
                         </div>
                       </div>
                     <% end %>
-                  </div>
-                <% else %>
-                  <%# Placeholder si aucun message encore %>
-                  <div class="match-chat-preview-list">
+
+                  <% else %>
+                    <%# Placeholder si aucun message encore %>
+
                     <div class="match-chat-preview-item">
                       <div class="match-chat-preview-avatar" style="background-color:#2E7D32;">JD</div>
                       <div class="match-chat-preview-content">
@@ -739,8 +852,9 @@
                         <span class="match-chat-preview-text">Rejoins le match pour discuter !</span>
                       </div>
                     </div>
-                  </div>
-                <% end %>
+
+                  <% end %>
+                </div>
               </div>
 
               <%# Overlay avec le bouton centré par-dessus le flou %>
@@ -770,6 +884,67 @@
     </div>
   </div>
 </div>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL "QUITTER LE MATCH" — confirmation avant suppression
+    Déclenchée par le bouton "Quitter le match" (joueur approuvé)
+    ══════════════════════════════════════════════════ %>
+<% if user_signed_in? && @current_match_user&.approved? && @current_match_user.role != "organisateur" %>
+  <div class="modal fade" id="leaveMatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content" style="text-align:center;">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="pending-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône d'avertissement %>
+        <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+          <div class="pending-modal-icon" style="background:rgba(220,60,60,0.15);">
+            <i data-lucide="log-out" style="width:22px;height:22px; color:#dc3c3c;"></i>
+          </div>
+        </div>
+
+        <%# Titre %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px;">
+          Quitter ce match ?
+        </div>
+
+        <%# Sous-titre %>
+        <div class="pending-modal-subtitle">
+          Tu vas quitter <strong><%= @match.title %></strong>.<br>
+          Ta place sera libérée et tu ne pourras plus accéder au chat.
+        </div>
+
+        <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+        <%# Boutons d'action %>
+        <div class="d-flex gap-3" style="padding: 16px 0 4px;">
+          <%# Confirmer → soumet le formulaire delete #leave-match-form %>
+          <button type="submit"
+                  form="leave-match-form"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(220,60,60,0.15); color:#dc3c3c; border:1px solid rgba(220,60,60,0.35);">
+            Oui, quitter
+          </button>
+          <%# Annuler → ferme la modal %>
+          <button type="button"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                  data-bs-dismiss="modal">
+            Annuler
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>
 
 
 <%# ══════════════════════════════════════════════════
@@ -807,11 +982,14 @@
           <%# Textarea optionnelle pour laisser un message à l'organisateur %>
           <div class="mt-3">
             <%= f.label :message, "Laisser un message (optionnel)", class: "join-modal-label" %>
+            <%# onkeydown : Enter (sans Shift) soumet le formulaire au lieu de créer une ligne.
+                Shift+Enter conserve le comportement normal (retour à la ligne). %>
             <%= f.text_area :message,
                 placeholder: "Présente-toi, ton niveau...",
                 rows: 3,
                 class: "form-control join-modal-textarea",
-                maxlength: 300 %>
+                maxlength: 300,
+                onkeydown: "if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.requestSubmit();}" %>
           </div>
 
         <% end %>
@@ -915,11 +1093,39 @@
     Permet de voir leur profil, leur niveau / rôle, et d'accepter ou refuser.
     ══════════════════════════════════════════════════ %>
 <% if @current_match_user&.role == "organisateur" %>
+  <%# Souscription Turbo Stream — reçoit les mises à jour en direct de la liste des demandes.
+      Quand un joueur envoie une demande, #pending_modal_inner est mis à jour silencieusement.
+      L'alerte à l'organisateur arrive via son canal personnel (layout application.html.erb). %>
+  <%= turbo_stream_from "match_#{@match.id}_organizer" %>
+
   <% pending_modal_users = @match_users.select(&:pending?) %>
 
   <div class="modal fade" id="pendingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content pending-modal-content">
+      <%# id="pending_modal_inner" : ciblé par le broadcast Turbo Stream pour
+          mettre à jour le contenu sans toucher l'élément Bootstrap #pendingModal %>
+      <div class="modal-content pending-modal-content" id="pending_modal_inner">
+
+        <%# Le contenu de la modal est extrait dans un partial réutilisable.
+            Ce même partial est rendu via Turbo Stream quand un joueur envoie une demande,
+            ce qui met à jour #pending_modal_inner en direct et ouvre la modal automatiquement. %>
+        <%= render "match_users/pending_modal_content",
+                   match: @match,
+                   pending_users: pending_modal_users %>
+
+      </div>
+    </div>
+  </div>
+
+  <%# ══════════════════════════════════════════════════
+      MODAL "SUPPRIMER CE MATCH ?" — organisateur uniquement
+      Même style que la modal "Quitter ce match".
+      Déclenché par le bouton "Supprimer" dans la bannière.
+      Le bouton "Confirmer" soumet le formulaire caché #delete-match-form.
+      ══════════════════════════════════════════════════ %>
+  <div class="modal fade" id="deleteMatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content" style="text-align:center;">
 
         <%# Croix de fermeture %>
         <button type="button"
@@ -929,125 +1135,56 @@
           <i data-lucide="x" style="width:16px;height:16px;"></i>
         </button>
 
-        <%# En-tête — icône + titre + nombre de demandes %>
-        <div class="pending-modal-header">
-          <div class="pending-modal-icon">
-            <i data-lucide="users" style="width:22px;height:22px;"></i>
-          </div>
-          <div>
-            <div class="pending-modal-title">Demandes en attente</div>
-            <div class="pending-modal-subtitle">
-              <%= pending_modal_users.count %> joueur<%= pending_modal_users.count > 1 ? "s" : "" %> souhaite<%= pending_modal_users.count > 1 ? "nt" : "" %> rejoindre
-            </div>
+        <%# Icône d'avertissement %>
+        <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+          <div class="pending-modal-icon" style="background:rgba(220,60,60,0.15);">
+            <i data-lucide="trash-2" style="width:22px;height:22px; color:#dc3c3c;"></i>
           </div>
         </div>
 
-        <%# Séparateur %>
-        <div class="pending-modal-divider"></div>
+        <%# Titre %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px;">
+          Supprimer ce match ?
+        </div>
 
-        <%# Liste des joueurs en attente %>
-        <div class="pending-modal-list">
+        <%# Sous-titre %>
+        <div class="pending-modal-subtitle">
+          Tu vas supprimer définitivement <strong><%= @match.title %></strong>.<br>
+          Tous les joueurs inscrits seront informés de l'annulation.
+        </div>
 
-          <% if pending_modal_users.any? %>
-            <% pending_modal_users.each do |mu| %>
+        <div class="pending-modal-divider" style="margin-top:20px;"></div>
 
-              <%# Ligne d'un joueur en attente %>
-              <div class="pending-modal-row">
-
-                <%# Avatar cliquable → ouvre le profil dans un nouvel onglet %>
-                <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
-                <%= link_to user_profil_path(mu.user, from_match: @match.id),
-                    class: "pending-modal-avatar-link",
-                    target: "_blank",
-                    title: "Voir le profil" do %>
-                  <% if mu.user.profil&.avatar&.attached? %>
-                    <%= image_tag mu.user.profil.avatar,
-                        class: "pending-modal-avatar", alt: "Avatar joueur" %>
-                  <% else %>
-                    <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
-                         class="pending-modal-avatar" alt="joueur">
-                  <% end %>
-                <% end %>
-
-                <%# Infos du joueur : nom + niveau + rôle + lien profil %>
-                <div class="pending-modal-info">
-                  <%
-                    first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
-                    last_name   = mu.user.profil&.last_name.presence
-                    full_name   = last_name ? "#{first} #{last_name}" : first
-                    level       = mu.user.profil&.level.presence  || "Niveau non renseigné"
-                    role_pref   = mu.user.profil&.role.presence   || "Rôle non renseigné"
-                  %>
-                  <div class="pending-modal-name"><%= full_name %></div>
-                  <div class="pending-modal-tags">
-                    <span class="pending-modal-tag pending-modal-tag--level"><%= level %></span>
-                    <span class="pending-modal-tag pending-modal-tag--role"><%= role_pref %></span>
-                  </div>
-                  <%# Message optionnel laissé par le joueur lors de sa demande %>
-                  <% if mu.message.present? %>
-                    <div class="pending-modal-message">
-                      <i data-lucide="message-square" style="width:11px;height:11px;"></i>
-                      <%= mu.message %>
-                    </div>
-                  <% end %>
-                  <%# Lien vers le profil complet (ouvre dans un nouvel onglet) %>
-                  <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
-                  <%= link_to user_profil_path(mu.user, from_match: @match.id),
-                      class: "pending-modal-profile-link",
-                      target: "_blank" do %>
-                    <i data-lucide="external-link" style="width:11px;height:11px;"></i>
-                    Voir le profil complet
-                  <% end %>
-                </div>
-
-                <%# Boutons accepter (vert) / refuser (rouge) %>
-                <div class="pending-modal-actions">
-                  <%= button_to approve_match_match_user_path(@match, mu),
-                      method: :patch,
-                      class: "pending-modal-btn pending-modal-btn--approve",
-                      title: "Accepter" do %>
-                    <i data-lucide="check" style="width:14px;height:14px;"></i>
-                  <% end %>
-                  <%= button_to reject_match_match_user_path(@match, mu),
-                      method: :patch,
-                      class: "pending-modal-btn pending-modal-btn--reject",
-                      title: "Refuser" do %>
-                    <i data-lucide="x" style="width:14px;height:14px;"></i>
-                  <% end %>
-                </div>
-
-              </div>
-
-            <% end %>
-          <% else %>
-            <p class="pending-modal-empty">Aucune demande en attente pour le moment.</p>
-          <% end %>
-
+        <%# Boutons d'action %>
+        <div class="d-flex gap-3" style="padding: 16px 0 4px;">
+          <%# Confirmer → soumet le formulaire DELETE #delete-match-form %>
+          <button type="submit"
+                  form="delete-match-form"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(220,60,60,0.15); color:#dc3c3c; border:1px solid rgba(220,60,60,0.35);">
+            Oui, supprimer
+          </button>
+          <%# Annuler → ferme la modal %>
+          <button type="button"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                  data-bs-dismiss="modal">
+            Annuler
+          </button>
         </div>
 
       </div>
     </div>
   </div>
 
-  <%# Ouvre automatiquement la modale dès que l'organisateur arrive sur la page
-      — uniquement s'il y a au moins une demande en attente %>
-  <% if pending_modal_users.any? %>
-    <script>
-      // "turbo:load" se déclenche à chaque navigation Turbo (remplace DOMContentLoaded)
-      document.addEventListener("turbo:load", function openPendingModal() {
-        var modalEl = document.getElementById("pendingModal");
-        if (modalEl) {
-          // getOrCreateInstance réutilise l'instance Bootstrap existante
-          // → évite que le backdrop reste bloqué quand on ferme avec la croix
-          var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-          modal.show();
-        }
-        // On retire l'écouteur pour ne l'exécuter qu'une seule fois par visite
-        document.removeEventListener("turbo:load", openPendingModal);
-      });
-    </script>
-  <% end %>
+<% end %>
 
+<%# Les notifications aux participants (décision, annulation, etc.) sont désormais
+    gérées globalement via le canal personnel de chaque user dans application.html.erb. %>
+
+<%# ── Modal d'avis pour ce match (rendu uniquement si des avis sont en attente) %>
+<% if @match_pending_reviews.present? %>
+  <%= render "shared/review_modal", pending_review_matches: @match_pending_reviews, auto_open: false %>
 <% end %>
 
 <%# ══════════════════════════════════════════════════
@@ -1139,3 +1276,117 @@
     </div>
   </div>
 </div>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL "DEMANDE ACCEPTÉE" — affiché automatiquement après avoir rejoint
+    Déclenché par flash[:show_calendar_modal] (posé par join_automatically)
+    Contient un bouton pour ajouter le match à un calendrier externe
+    ══════════════════════════════════════════════════ %>
+<% if flash[:show_calendar_modal] && @match.date.present? && @match.time.present? %>
+  <%
+    # Construit les URLs calendrier pour la modale
+    d = @match.date
+    t = @match.time
+    start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
+    end_dt   = start_dt + 90.minutes
+    gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+    gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+    google_cal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \
+                     "&text=#{CGI.escape(@match.title)}" \
+                     "&dates=#{gc_start}/#{gc_end}" \
+                     "&location=#{CGI.escape(@match.place.to_s)}" \
+                     "&details=#{CGI.escape("Match #{@match.title} - Niveau : #{@match.level}")}"
+  %>
+
+  <div class="modal fade" id="joinedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content joined-modal-content">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="joined-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône de succès %>
+        <div class="joined-modal-icon">
+          <i data-lucide="circle-check-big" style="width:30px;height:30px;"></i>
+        </div>
+
+        <%# Titre %>
+        <div class="joined-modal-title">Demande acceptée !</div>
+
+        <%# Sous-titre personnalisé avec le nom du match %>
+        <p class="joined-modal-subtitle">
+          Tu as été accepté dans le match <strong><%= @match.title %></strong>. Bonne chance !
+        </p>
+
+        <%# Séparateur %>
+        <div class="joined-modal-separator"></div>
+
+        <%# Bouton "Ajouter à mon calendrier" — ouvre un dropdown vers Google/Apple/Outlook %>
+        <div class="dropdown joined-modal-cal-wrapper">
+          <button class="btn joined-modal-btn-calendar"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false">
+            <i data-lucide="calendar-plus" style="width:16px;height:16px;"></i>
+            Ajouter à mon calendrier
+          </button>
+
+          <%# Menu déroulant des options calendrier %>
+          <ul class="dropdown-menu match-calendar-menu w-100">
+            <%# Google Calendar — ouvre dans un nouvel onglet %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= google_cal_url %>"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                <span class="match-calendar-item-icon">🗓️</span>
+                Google Calendar
+              </a>
+            </li>
+            <%# Apple Calendar — télécharge le fichier .ics %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= calendar_match_path(@match) %>">
+                <span class="match-calendar-item-icon">🍎</span>
+                Apple Calendar
+              </a>
+            </li>
+            <%# Outlook — compatible avec le même fichier .ics %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= calendar_match_path(@match) %>">
+                <span class="match-calendar-item-icon">📧</span>
+                Outlook
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <%# Bouton de fermeture principal %>
+        <button type="button"
+                class="btn joined-modal-btn-dismiss"
+                data-bs-dismiss="modal">
+          Super, j'ai compris !
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <%# Ouvre automatiquement la modale au chargement de la page %>
+  <script>
+    document.addEventListener("turbo:load", function openJoinedModal() {
+      var modalEl = document.getElementById("joinedModal");
+      if (modalEl) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+      document.removeEventListener("turbo:load", openJoinedModal);
+    });
+  </script>
+<% end %>

@@ -1,0 +1,249 @@
+// =====================================================
+// FLIP CLOCK COUNTDOWN — Effet "tableau d'aéroport"
+//
+// Principe : chaque unité contient 4 demi-panneaux
+//
+//  ┌──────────────┐
+//  │  .fc-top     │  moitié haute statique (nouveau chiffre)
+//  ├──────────────┤  ← ligne de pliage
+//  │  .fc-bottom  │  moitié basse statique (nouveau chiffre)
+//  └──────────────┘
+//
+//  .fc-flap   → par-dessus fc-top : montre l'ANCIEN chiffre, bascule vers le bas
+//  .fc-reveal → par-dessus fc-bottom : montre le NOUVEAU chiffre, se déplie depuis le bas
+//
+// Technique d'affichage du demi-chiffre :
+//   Le span interne a height = $fc-h (hauteur totale) + line-height = $fc-h
+//   → le chiffre est visuellement centré sur la hauteur totale
+//   → overflow:hidden sur le parent clip à la moitié visible
+//   Pour la moitié BASSE : margin-top: -$fc-half décale le span vers le haut
+//   → seule la partie inférieure du chiffre reste visible
+// =====================================================
+
+// ── Dimensions ─────────────────────────────────────
+$fc-w:    62px;   // largeur d'une tuile
+$fc-h:    78px;   // hauteur totale d'une tuile
+$fc-half: 39px;   // moitié exacte
+$fc-r:    8px;    // border-radius des coins
+
+// ── Couleurs ───────────────────────────────────────
+$fc-bg:     #222222;                       // fond uniforme (haut et bas)
+$fc-border: rgba(255, 255, 255, 0.1);      // contour de la tuile
+$fc-fold:   rgba(0, 0, 0, 0.25);          // ligne de pliage centrale (subtile)
+
+// ── Mixin : chiffre pleine hauteur ──────────────────
+// display:block + line-height = $fc-h centre le texte sur la hauteur totale
+// Le parent (height:$fc-half; overflow:hidden) ne montre que sa moitié
+@mixin fc-number {
+  display: block;
+  width: 100%;
+  height: $fc-h;             // pleine hauteur de la tuile
+  line-height: $fc-h;        // centre verticalement le chiffre dans $fc-h
+  text-align: center;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;   // chiffres à largeur fixe → pas de saut
+  letter-spacing: -0.03em;
+}
+
+// ── Layout global ───────────────────────────────────
+.countdown-title {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.01em;
+}
+
+.countdown-sep {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: none !important;
+}
+
+.countdown-title {
+  border: none !important;
+}
+
+.countdown-wrapper {
+  display: flex;
+  align-items: flex-end;     // aligne le bas des tuiles et des ":" ensemble
+  justify-content: center;
+  border: none !important;
+}
+
+// ── Séparateur ":" entre les unités ─────────────────
+// margin-bottom positionne le ":" au centre exact des tuiles (align-items: flex-end sur le wrapper).
+// Calcul : $fc-half (centre tuile) + gap (.45rem) + hauteur label (~0.75rem) - demi-hauteur séparateur (~0.9rem)
+// = $fc-half + 0.3rem ≈ 43px
+.flip-separator {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1;
+  margin-bottom: calc(#{$fc-half} + 0.3rem);  // centre les ":" au milieu des tuiles noires
+  padding: 0 4px;
+}
+
+// ── Unité individuelle (tuile + label) ──────────────
+.flip-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.flip-unit__label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: lowercase;
+  letter-spacing: 0.06em;
+}
+
+// ── Flip card (conteneur 3D) ────────────────────────
+.flip-card {
+  position: relative;
+  width: $fc-w;
+  height: $fc-h;
+  perspective: 220px;            // profondeur de l'effet 3D
+  perspective-origin: 50% 50%;
+}
+
+// ── Moitié haute statique ───────────────────────────
+// Fond permanent : montre le NOUVEAU chiffre (haut)
+// Visible dès que .fc-flap bascule → transition fluide
+.fc-top {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: $fc-half;
+  overflow: hidden;
+  background: $fc-bg;
+  border-radius: $fc-r $fc-r 0 0;
+  border: 1px solid $fc-border;
+  border-bottom: 1px solid $fc-fold;   // ligne de pliage
+
+  span { @include fc-number; }
+}
+
+// ── Moitié basse statique ───────────────────────────
+// Fond permanent : montre le NOUVEAU chiffre (bas)
+// Visible dès que .fc-reveal se déplie → transition fluide
+.fc-bottom {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  height: $fc-half;
+  overflow: hidden;
+  background: $fc-bg;
+  border-radius: 0 0 $fc-r $fc-r;
+  border: 1px solid $fc-border;
+  border-top: none;     // la ligne de pliage est gérée par fc-top uniquement
+
+  span {
+    @include fc-number;
+    // Décale le span vers le haut de $fc-half
+    // → le parent clip montre uniquement la moitié BASSE du chiffre
+    margin-top: -$fc-half;
+  }
+}
+
+// ── Flap animé (moitié haute de l'ANCIENNE valeur) ──
+// Par-dessus fc-top (z-index:2), montre l'ancienne valeur
+// Au flip : bascule de 0° → −90° (tombe vers le bas, disparaît)
+.fc-flap {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: $fc-half;
+  overflow: hidden;
+  background: $fc-bg;
+  border-radius: $fc-r $fc-r 0 0;
+  border: 1px solid $fc-border;
+  border-bottom: 1px solid $fc-fold;
+  transform-origin: center bottom;   // axe de rotation = ligne de pliage centrale
+  z-index: 2;
+
+  span { @include fc-number; }
+
+  &.flipping {
+    animation: fc-fold 0.32s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  }
+}
+
+// ── Reveal animé (moitié basse de la NOUVELLE valeur) ──
+// Par-dessus fc-bottom (z-index:2), replié en dessous au départ (rotateX 90°)
+// Au flip : se déplie de 90° → 0° (remonte, apparaît) avec un délai = durée du fold
+.fc-reveal {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  height: $fc-half;
+  overflow: hidden;
+  background: $fc-bg;
+  border-radius: 0 0 $fc-r $fc-r;
+  border: 1px solid $fc-border;
+  border-top: none;
+  transform-origin: center top;    // axe de rotation = ligne de pliage centrale
+  transform: rotateX(90deg);       // caché par défaut (replié en dessous)
+  z-index: 2;
+
+  span {
+    @include fc-number;
+    margin-top: -$fc-half;  // idem fc-bottom : montre la moitié basse
+  }
+
+  &.revealing {
+    // Délai identique à la durée du fold pour que l'animation se raccorde
+    animation: fc-unfold 0.32s cubic-bezier(0, 0.55, 0.45, 1) 0.3s forwards;
+  }
+}
+
+// ── Keyframes ──────────────────────────────────────
+
+// Fold : le flap tombe vers le bas (vue 3D grâce à perspective sur .flip-card)
+@keyframes fc-fold {
+  from { transform: rotateX(0deg); }
+  to   { transform: rotateX(-90deg); }
+}
+
+// Unfold : le reveal remonte depuis le bas
+@keyframes fc-unfold {
+  from { transform: rotateX(90deg); }
+  to   { transform: rotateX(0deg); }
+}
+
+
+// ── État "match en cours" ────────────────────────────
+.countdown-started {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0;
+
+  .countdown-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1EDD88;
+    box-shadow: 0 0 8px #1EDD88;
+    margin-right: 0.45rem;
+    animation: pulse-dot 1.2s ease-in-out infinite;
+  }
+
+  span {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1EDD88;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}

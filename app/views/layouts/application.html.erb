@@ -24,9 +24,21 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   </head>
 
-  <body>
+  <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler
+      automatiquement jusqu'à la première erreur de formulaire si elle existe %>
+  <body data-controller="scroll-to-error">
     <%= render "shared/navbar" %>
     <%= render "shared/flashes" %>
+
+    <%# ── Canal de notifications personnelles ──────────────────────────────────
+        Chaque user connecté écoute son propre canal Turbo Stream.
+        Toutes les notifications en temps réel (décision, annulation, joueur quitte,
+        invitation reçue) sont broadcastées sur ce canal depuis les controllers.
+        Le conteneur vide reçoit les modals injectées dynamiquement. %>
+    <% if user_signed_in? %>
+      <%= turbo_stream_from "user_#{current_user.id}_notifications" %>
+      <div id="global_notification_container"></div>
+    <% end %>
 
     <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
     <main>
@@ -40,6 +52,24 @@
     <%# Doit être EN DEHORS du <main> pour que position:fixed fonctionne correctement %>
     <%= render "shared/sticky_chat" %>
 
+    <%# Modal post-match : s'affiche à la 1ère connexion après un match terminé %>
+    <%# @pending_review_matches est chargé par ApplicationController#load_review_modal_data %>
+    <% if user_signed_in? && @pending_review_matches.present? %>
+      <%= render "shared/review_modal", pending_review_matches: @pending_review_matches %>
+      <%# Script séparé : ouvre la modal automatiquement après connexion %>
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          var el = document.getElementById("review-modal");
+          if (el) { new bootstrap.Modal(el).show(); }
+        });
+      </script>
+    <% end %>
+
+    <%# Modals provenant des vues (ex: modal avis profil) %>
+    <%# Rendus ici — en dehors de tout stacking context — pour que Bootstrap puisse
+        gérer correctement z-index et backdrop sans conflit de positionnement CSS %>
+    <%= yield :modals %>
+
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Appelé en bas de body pour que le DOM soit chargé %>
     <script>
@@ -51,11 +81,35 @@
       document.addEventListener("turbo:render", () => lucide.createIcons());
       document.addEventListener("turbo:frame-render", () => lucide.createIcons());
 
-      // Turbo Stream (ex: nouvelle notification via ActionCable) — l'événement "before-stream-render"
-      // se déclenche AVANT que le DOM soit modifié, donc on utilise setTimeout pour attendre
-      // que le remplacement du fragment soit terminé avant de ré-initialiser les icônes Lucide
-      document.addEventListener("turbo:before-stream-render", () => {
-        setTimeout(() => lucide.createIcons(), 0);
+      // Turbo Stream (ex: nouvelle notification via ActionCable) — on intercepte la fonction
+      // de rendu pour appeler lucide.createIcons() et ouvrir les modals APRÈS que le DOM a été modifié.
+      // C'est plus fiable que les <script> inline qui ne s'exécutent pas toujours avec Turbo Stream.
+      document.addEventListener("turbo:before-stream-render", (event) => {
+        const originalRender = event.detail.render;
+        event.detail.render = function(streamElement) {
+          originalRender(streamElement); // mise à jour du DOM
+
+          lucide.createIcons(); // ré-initialise les icônes APRÈS le DOM
+
+          // Ouvre automatiquement toute modal marquée data-auto-open="true"
+          // (injectée via Turbo Stream depuis les partials de notification)
+          document.querySelectorAll("[data-auto-open='true']").forEach(function(el) {
+            // Retire l'attribut pour éviter de ré-ouvrir si le DOM est re-rendu
+            el.removeAttribute("data-auto-open");
+
+            if (typeof bootstrap !== "undefined") {
+              bootstrap.Modal.getOrCreateInstance(el).show();
+
+              // Si une URL de redirection est définie, on redirige à la fermeture
+              var redirectUrl = el.getAttribute("data-redirect-url");
+              if (redirectUrl) {
+                el.addEventListener("hidden.bs.modal", function() {
+                  window.location.href = redirectUrl;
+                }, { once: true });
+              }
+            }
+          });
+        };
       });
     </script>
   </body>
