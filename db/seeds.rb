@@ -321,7 +321,7 @@ if users_with_profil.size >= 2
     .where("(matches.date + matches.time) < ?", Time.current - 1.hour)
     .group("matches.id")
     .having("COUNT(match_users.id) >= 2")
-    .first
+    .last
 
   if completed_match
     # Récupère les 2 premiers participants approuvés de ce match
@@ -339,21 +339,17 @@ if users_with_profil.size >= 2
       Avis.find_or_create_by!(
         reviewer:      user_a,
         reviewed_user: user_b,
-        match:         completed_match
-      ) do |a|
-        a.rating  = 5
-        a.content = "Super joueur, ponctuel et fair-play. Je recommande !"
-      end
+        match:         completed_match,
+        rating: 5,
+        content: "Super joueur, ponctuel et fair-play. Je recommande !")
 
       # Avis de B vers A
       Avis.find_or_create_by!(
         reviewer:      user_b,
         reviewed_user: user_a,
-        match:         completed_match
-      ) do |a|
-        a.rating  = 4
-        a.content = "Bonne technique, bon esprit d'équipe."
-      end
+        match:         completed_match,
+        rating: 5,
+        content: "Bonne technique, bon esprit d'équipe.")
 
       puts "✅ #{Avis.count} avis de test créés (match : #{completed_match.title})."
     else
