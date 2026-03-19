@@ -165,7 +165,10 @@ class ProfilsController < ApplicationController
   end
 
   # Cherche un match où current_user et other_user ont joué ensemble,
-  # où le match est terminé, dans la fenêtre de 7j, et pas encore noté
+  # où le match est terminé, dans la fenêtre de 7j, et pas encore noté.
+  # PRIORITÉ : si other_user a déjà laissé un avis non-mutuel à current_user,
+  # on retourne CE match en premier pour que les deux avis soient sur le même match
+  # et deviennent mutuels (visibles publiquement).
   def find_eligible_match_for_review(other_user)
     # Pas d'avis possible sur son propre profil
     return nil if current_user == other_user
@@ -188,7 +191,24 @@ class ProfilsController < ApplicationController
     reviewable_ids = common_ids - already_reviewed_ids
     return nil if reviewable_ids.empty?
 
-    # Retourne le premier match éligible : terminé (>1h) ET dans les 7 derniers jours
+    # Cherche si other_user a déjà laissé un avis non-mutuel à current_user
+    # sur l'un des matchs reviewable → on le priorise pour créer la mutualité
+    pending_match_id = Avis.non_mutual
+                           .where(reviewer_id: other_user.id, reviewed_user_id: current_user.id)
+                           .where(match_id: reviewable_ids)
+                           .pluck(:match_id)
+                           .first
+
+    # Si un tel match existe et est encore dans la fenêtre, on le retourne en priorité
+    if pending_match_id.present?
+      priority_match = Match.where(id: pending_match_id)
+                            .where("(date + time) < ?", Time.current - 1.hour)
+                            .where("(date + time) > ?", Time.current - 7.days - 1.hour)
+                            .first
+      return priority_match if priority_match.present?
+    end
+
+    # Sinon, retourne le premier match éligible : terminé (>1h) ET dans les 7 derniers jours
     Match.where(id: reviewable_ids)
          .where("(date + time) < ?", Time.current - 1.hour)
          .where("(date + time) > ?", Time.current - 7.days - 1.hour)
