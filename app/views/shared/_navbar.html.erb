@@ -11,7 +11,7 @@
 
     <%# ── Logo (toujours visible) ── %>
     <%= link_to root_path, class: "navbar-brand" do %>
-      <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-Up", style: "height: 28px; width: auto;" %>
+      <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-Up", class: "navbar-logo" %>
     <% end %>
 
     <%# ── Liens du centre (desktop uniquement, cachés sur mobile) ── %>
@@ -130,7 +130,7 @@
                 alt: display_name || current_user.email %>
           </button>
 
-          <%# Dropdown : Mon profil / Mon compte / Qui sommes-nous ? / Déconnexion %>
+          <%# Dropdown desktop : Mon profil / Mon compte / Déconnexion %>
           <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
             <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
               <i data-lucide="user" style="width:14px;height:14px;"></i> Mon profil
@@ -138,10 +138,6 @@
             <%= link_to edit_user_registration_path,
                 class: "dropdown-item d-flex align-items-center gap-2" do %>
               <i data-lucide="settings" style="width:14px;height:14px;"></i> Mon compte
-            <% end %>
-            <%# "Qui sommes-nous ?" accessible depuis le dropdown (mobile + desktop) %>
-            <%= link_to about_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
-              <i data-lucide="info" style="width:14px;height:14px;"></i> Qui sommes-nous ?
             <% end %>
             <div class="dropdown-divider"></div>
             <%= link_to destroy_user_session_path,

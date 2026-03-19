@@ -15,8 +15,9 @@
   align-items: center;
   padding: 0;
 
-  img {
-    height: 30px;
+  // Taille desktop
+  .navbar-logo {
+    height: 28px;
     width: auto;
   }
 }
@@ -224,15 +225,24 @@ body.modal-open {
 }
 
 // ── Alignement mobile : logo + cloche + avatar sur la même ligne ───────────
-// Sans navbar-expand-lg, on force align-items: center sur le container
 @media (max-width: 991.98px) {
+  // Force l'alignement vertical centré sur tous les éléments du container
   .navbar-dark-custom > .container {
-    align-items: center; // aligne verticalement logo et actions droite
+    align-items: center;
+    display: flex;
   }
 
-  // Logo légèrement réduit sur mobile pour mieux s'intégrer avec les icônes
-  .navbar-dark-custom .navbar-brand img {
-    height: 22px;
+  // Supprime les paddings Bootstrap du brand qui décalent l'alignement
+  .navbar-dark-custom .navbar-brand {
+    padding-top: 0;
+    padding-bottom: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  // Logo réduit sur mobile — sans inline style bloquant
+  .navbar-dark-custom .navbar-brand .navbar-logo {
+    height: 18px;
   }
 }
 
