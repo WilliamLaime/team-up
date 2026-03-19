@@ -1056,8 +1056,8 @@
               <%= render @match.messages.includes(:user).order(:created_at) %>
             <% else %>
               <%# id="chat-empty" ciblé par Stimulus pour suppression au 1er message %>
-              <div class="chat-empty text-center text-muted py-5" id="chat-empty">
-                <div class="mb-2" style="font-size: 2rem;">💬</div>
+              <div class="chat-empty text-center py-5" id="chat-empty">
+                <div class="mb-2" style="font-size: 2rem;">🧊</div>
                 <p>Personne n'a encore écrit. Brise la glace !</p>
               </div>
             <% end %>

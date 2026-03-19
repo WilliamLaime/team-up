@@ -190,7 +190,10 @@
   height: 420px;
   overflow-y: auto;
   padding: 16px 14px;
-  background-color: #444444; // fond du chat
+  background-image: asset-url('fond_chat.png'); // image de fond du chat
+  background-size: cover;      // couvre toute la zone
+  background-position: center; // centré
+  background-repeat: no-repeat;
   display: flex;
   flex-direction: column;
   gap: 6px; // espace entre les messages
@@ -306,7 +309,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: $dark-muted; // texte clair sur fond sombre
+  color: white; // texte blanc sur l'image de fond
 }
 
 // ── Formulaire d'envoi ────────────────────────────────────────────────────────
