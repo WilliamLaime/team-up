@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_083812) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_19_111913) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -156,7 +156,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_083812) do
     t.integer "homme_du_match_count", default: 0, null: false
     t.string "last_name"
     t.string "level"
-    t.decimal "localisation"
+    t.string "localisation"
     t.string "phone"
     t.string "role"
     t.integer "stat_points", default: 0, null: false
@@ -166,6 +166,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_083812) do
     t.integer "xp", default: 0, null: false
     t.integer "xp_level", default: 1, null: false
     t.index ["user_id"], name: "index_profils_on_user_id"
+  end
+
+  create_table "sport_profils", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "level"
+    t.bigint "profil_id", null: false
+    t.string "role"
+    t.bigint "sport_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["profil_id", "sport_id"], name: "index_sport_profils_on_profil_id_and_sport_id", unique: true
+    t.index ["profil_id"], name: "index_sport_profils_on_profil_id"
+    t.index ["sport_id"], name: "index_sport_profils_on_sport_id"
   end
 
   create_table "sports", force: :cascade do |t|
@@ -240,6 +252,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_083812) do
   add_foreign_key "messages", "users"
   add_foreign_key "notifications", "users"
   add_foreign_key "profils", "users"
+  add_foreign_key "sport_profils", "profils"
+  add_foreign_key "sport_profils", "sports"
   add_foreign_key "user_achievements", "achievements"
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_sports", "sports"

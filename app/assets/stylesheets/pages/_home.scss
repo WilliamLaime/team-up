@@ -392,22 +392,41 @@
     }
   }
 
-  // Mockup de chat (côté droit)
+  // Image de la fenêtre de dialogue (côté droit)
+  .cta-chat-image {
+    max-width: 100%;
+    width: 276px;        // réduit de 40% (460 × 0.6)
+    height: auto;
+    display: block;
+  }
+
+  // Ancien mockup HTML (conservé au cas où mais plus utilisé)
   .cta-chat-mockup {
     background: $dark-surface;
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 8px;
-    padding: 1.25rem;
+    padding: 0;          // on enlève le padding global pour contrôler zone par zone
     max-width: 400px;
     margin: 0 auto;
+    overflow: hidden;    // coupe les coins arrondis proprement
+
+    // Zone messages avec l'image de fond
+    .cta-chat-messages-zone {
+      background-image: asset-url('fond_chat.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      padding: 1rem 1.25rem; // même padding qu'avant pour les messages
+      display: flex;
+      flex-direction: column;
+    }
 
     .chat-header {
+      padding: 1.25rem 1.25rem 0.75rem; // padding externe remis
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      padding-bottom: 0.75rem;
       border-bottom: 1px solid rgba(255,255,255,0.08);
-      margin-bottom: 0.75rem;
 
       .chat-group-icon {
         width: 36px;
@@ -559,7 +578,7 @@
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 12px;
       padding: 0.55rem 0.75rem;
-      margin-top: 0.75rem;
+      margin: 0.75rem 1.25rem 1.25rem; // padding externe remis
 
       // Texte placeholder grisé
       .chat-input-placeholder {

@@ -326,7 +326,10 @@
   flex: 1;
   overflow-y: auto;
   padding: 8px;
-  background-color: #444444;
+  background-image: asset-url('fond_chat.png'); // image de fond du chat
+  background-size: cover;      // couvre toute la zone
+  background-position: center; // centré
+  background-repeat: no-repeat;
   display: flex;
   flex-direction: column;
   gap: 4px;
