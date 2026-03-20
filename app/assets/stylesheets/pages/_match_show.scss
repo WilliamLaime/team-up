@@ -316,6 +316,7 @@
 
 .match-show-wrapper {
   background-color: $dark-bg;
+  min-height: 100vh; // évite le fond blanc en bas sur les grands écrans
   padding: 2.5rem 0 4rem;
 
   // Sur grand écran, la colonne droite est sticky :

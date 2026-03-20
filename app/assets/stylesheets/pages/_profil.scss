@@ -515,6 +515,87 @@
       transition: background-color 5000s ease-in-out 0s !important;
     }
   }
+
+  // ── GRILLE DE BADGES (armoire à trophées) ─────────────────────────────────
+  // 8 colonnes sur desktop, moins sur mobile pour éviter le débordement
+  .achievement-badge-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr); // 8 colonnes desktop
+    gap: 0.55rem;
+    margin-bottom: 0.5rem;
+  }
+
+  // ── RESPONSIVE MOBILE ──────────────────────────────────────────────────────
+  // La carte est conçue pour desktop (570px hauteur fixe).
+  // Sur mobile, le contenu s'enroule davantage → on augmente la hauteur
+  // et on réduit les marges pour que tout rentre dans le cadre SVG.
+  @media (max-width: 575.98px) {
+
+    // Carte plus haute sur mobile pour absorber le contenu qui s'enroule
+    .profil-flip-inner {
+      height: 700px;
+    }
+
+    // IMPORTANT : sur mobile, on clip les faces pour que le contenu ne déborde pas
+    // hors du cadre SVG. L'ornement est dans les bounds de la face (pas de dépassement
+    // au-delà de y=0), donc overflow:hidden est safe ici.
+    // NE PAS mettre overflow:hidden sur .profil-flip-inner car ça casse le 3D flip.
+    .profil-flip-front,
+    .profil-flip-back {
+      overflow: hidden;
+    }
+
+    // Marges ajustées pour mobile : margin-top suffit à passer sous l'ornement SVG
+    // + les bordures latérales du SVG sont proportionnellement plus étroites
+    .profil-card-content {
+      margin: calc(3rem + 20px) calc(1rem + 8px) 0.8rem;
+    }
+
+    // Sur mobile, le verso (armoire) peut scroller si le contenu est trop grand.
+    // Les tooltips hover n'ont pas de sens sur touch, on peut donc re-clip.
+    .profil-flip-back .profil-card-content {
+      overflow-y: auto !important;
+    }
+
+    // Platinum : ajustement de la marge haute
+    .card-tier-platinum .profil-card-content {
+      margin-top: calc(3.8rem + 20px);
+    }
+
+    // Elite : hauteur et marges adaptées
+    .card-tier-elite .profil-flip-inner {
+      height: 800px;
+    }
+    .card-tier-elite .profil-card-content {
+      margin: calc(4.5rem + 20px) calc(1.5rem + 8px) 1.5rem;
+    }
+
+    // Grille de badges : 5 colonnes sur mobile
+    // Les badges sont réduits en taille (inline style généré par le helper)
+    // on réduit via CSS pour qu'ils rentrent mieux
+    .achievement-badge-grid {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.4rem;
+    }
+
+    // Réduction de la taille des badges sur mobile
+    // Le helper génère width/height en inline style → on les écrase avec !important
+    .achievement-badge-grid > div {
+      width: 38px !important;
+      height: 38px !important;
+    }
+    // L'emoji à l'intérieur (span) : font-size proportionnel au badge réduit (38×0.58≈22px)
+    .achievement-badge-grid > div > span:first-child {
+      font-size: 22px !important;
+    }
+  }
+
+  // Tablette (sm) : 6 colonnes
+  @media (min-width: 576px) and (max-width: 767.98px) {
+    .achievement-badge-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+  }
 }
 
 // ── Tooltip hover sur les badges de l'armoire à trophées ─────────────────────
