@@ -11,6 +11,7 @@
 <%# Valeurs par défaut %>
 <% direction   ||= "forward" %>
 <% extra_class ||= nil %>
+<% url         ||= nil %>
 
 <%# Choix de l'icône selon la direction %>
 <% icon      = direction == "back" ? "arrow-left" : "arrow-right" %>
@@ -20,12 +21,21 @@
 <%# Construction des classes CSS du lien %>
 <% link_classes = ["nav-button", "nav-button--#{direction}", extra_class].compact.join(" ") %>
 
-<%# Pour les boutons "retour" : history.back() pour revenir à la page précédente %>
+<%# Pour les boutons "retour" : lien vers url si fournie, sinon history.back() %>
 <% if direction == "back" %>
-  <button type="button" class="<%= link_classes %>" onclick="history.back()" style="background:none; border:none; padding:0; cursor:pointer;">
-    <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
-    <%= label %>
-  </button>
+  <% if url.present? %>
+    <%# Si une URL est fournie, on l'utilise comme lien classique %>
+    <%= link_to url, class: link_classes do %>
+      <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
+      <%= label %>
+    <% end %>
+  <% else %>
+    <%# Sinon, on utilise history.back() du navigateur %>
+    <button type="button" class="<%= link_classes %>" onclick="history.back()" style="background:none; border:none; padding:0; cursor:pointer;">
+      <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
+      <%= label %>
+    </button>
+  <% end %>
 <%# Pour les boutons "forward" : lien classique vers l'url fournie %>
 <% else %>
   <%= link_to url, class: link_classes do %>
