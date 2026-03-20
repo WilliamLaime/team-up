@@ -9,6 +9,7 @@
   min-height: calc(100vh - 130px);
   padding: 2.5rem 0 4rem;
   position: relative;
+  overflow-x: hidden; // empêche le scrollbar horizontal sur Windows (causé par overflow:visible de l'ornement SVG)
 
   // Dégradé vert radial en haut à gauche — identique au hero de la homepage
   &::before {
@@ -380,6 +381,12 @@
   .profil-flip-back {
     transform: rotateY(180deg);
     pointer-events: none; // désactivé par défaut (face cachée)
+
+    // Le contenu du verso doit laisser déborder les tooltips (hover badges)
+    // overflow-y:auto du profil-card-content les coupait sur les bords
+    .profil-card-content {
+      overflow: visible;
+    }
   }
 
   // Quand la carte est retournée :
