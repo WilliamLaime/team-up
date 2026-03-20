@@ -253,7 +253,7 @@
                 %>
 
                 <%# Grille — chaque badge déclenche achievement-modal#open via le helper %>
-                <div data-controller="achievement-tooltip" style="display:grid; grid-template-columns:repeat(8, 1fr); gap:0.55rem; margin-bottom:0.5rem;">
+                <div data-controller="achievement-tooltip" class="achievement-badge-grid">
                   <% all_achievements.each do |achievement| %>
                     <% is_unlocked = unlocked_ids.include?(achievement.id) %>
                     <%= achievement_badge(achievement, is_unlocked: is_unlocked, size: 44) %>
