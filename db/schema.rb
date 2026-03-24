@@ -68,6 +68,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_24_133459) do
     t.index ["reviewer_id"], name: "index_avis_on_reviewer_id"
   end
 
+  create_table "friendships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "friend_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["friend_id"], name: "index_friendships_on_friend_id"
+    t.index ["user_id", "friend_id"], name: "index_friendships_on_user_id_and_friend_id", unique: true
+    t.index ["user_id"], name: "index_friendships_on_user_id"
+  end
+
   create_table "match_users", force: :cascade do |t|
     t.datetime "chat_dismissed_at"
     t.datetime "created_at", null: false
@@ -392,6 +403,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_24_133459) do
   add_foreign_key "avis", "matches"
   add_foreign_key "avis", "users", column: "reviewed_user_id"
   add_foreign_key "avis", "users", column: "reviewer_id"
+  add_foreign_key "friendships", "users"
+  add_foreign_key "friendships", "users", column: "friend_id"
   add_foreign_key "match_users", "matches"
   add_foreign_key "match_users", "users"
   add_foreign_key "match_votes", "matches"
