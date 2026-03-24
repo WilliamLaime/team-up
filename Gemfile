@@ -48,6 +48,8 @@ gem "cloudinary"
 gem "sprockets-rails"
 gem "bootstrap", "~> 5.3"
 gem "devise"
+gem "omniauth-google-oauth2"          # Provider OAuth pour Google
+gem "omniauth-rails_csrf_protection"  # Protection CSRF obligatoire avec OmniAuth sur Rails
 gem "autoprefixer-rails"
 gem "font-awesome-sass", "~> 6.1"
 gem "simple_form", github: "heartcombo/simple_form"
@@ -73,6 +75,8 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  # Ouvre les emails dans le navigateur au lieu de les envoyer (utile pour tester la confirmation d'email)
+  gem "letter_opener"
 end
 
 group :test do
