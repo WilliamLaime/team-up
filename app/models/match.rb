@@ -66,6 +66,11 @@ class Match < ApplicationRecord
   # "private" → accessible uniquement via le lien avec token
   VISIBILITY_OPTIONS = ["public", "private"].freeze
 
+  # Restrictions de genre disponibles pour un match
+  # "tous"    → tout le monde peut rejoindre
+  # "feminin" → réservé aux joueuses (genre "femme")
+  GENRE_RESTRICTIONS = %w[tous feminin].freeze
+
   # Génère le token avant la création si le match est privé
   before_create :generate_private_token, if: :private?
 

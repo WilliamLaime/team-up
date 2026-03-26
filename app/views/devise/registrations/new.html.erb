@@ -233,6 +233,87 @@
               </div>
             </div>
 
+            <%# ── Sélection du genre ─────────────────────────────────────────── %>
+            <%# Valeur pré-remplie si le formulaire a été soumis avec une erreur %>
+            <% genre_actuel = params.dig(:user, :genre).presence || resource.genre %>
+
+            <%# Champ caché qui sera soumis avec le formulaire %>
+            <%= f.hidden_field :genre, value: genre_actuel, id: "user_genre_value" %>
+
+            <%# id="genre-field" → cible du scroll automatique en cas d'erreur serveur %>
+            <div id="genre-field" class="mb-3">
+              <label class="form-label fw-semibold mb-2">
+                Genre
+                <span class="required-star">*</span>
+              </label>
+
+              <%# Boutons de sélection genre — data-genre lu par le script ci-dessous %>
+              <div class="d-flex gap-2 flex-wrap genre-btn-group">
+                <% [["femme", "Femme"], ["homme", "Homme"], ["autre", "Autre"]].each do |valeur, libelle| %>
+                  <% est_selectionne = genre_actuel == valeur %>
+                  <button type="button"
+                          class="genre-btn btn"
+                          data-genre="<%= valeur %>"
+                          data-active="<%= est_selectionne ? 'true' : 'false' %>"
+                          style="padding:0.45rem 1.1rem; border-radius:0.5rem; font-size:0.9rem;
+                                 border: 2px solid <%= est_selectionne ? '#1EDD88' : 'rgba(255,255,255,0.3)' %>;
+                                 background: <%= est_selectionne ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.06)' %>;
+                                 color: <%= est_selectionne ? '#1EDD88' : 'rgba(255,255,255,0.85)' %>;">
+                    <%= libelle %>
+                  </button>
+                <% end %>
+              </div>
+
+              <%# Erreur serveur : affiché si le formulaire est soumis sans genre %>
+              <% if resource.errors[:genre].any? %>
+                <small class="text-danger d-block mt-2">
+                  <i data-lucide="alert-circle" style="width:13px;height:13px;vertical-align:middle;margin-right:3px;"></i>
+                  <%= resource.errors[:genre].first %>
+                </small>
+              <% end %>
+
+              <%# Message d'erreur client — affiché par le script si soumis sans genre %>
+              <small class="text-danger d-none" id="genre-error-client">
+                Sélectionne ton genre pour continuer.
+              </small>
+
+              <%# Script de sélection genre + validation client-side %>
+              <script>
+                document.querySelectorAll('.genre-btn-group .genre-btn').forEach(function(btn) {
+                  btn.addEventListener('click', function() {
+                    // Met à jour le champ caché avec la valeur du bouton cliqué
+                    document.getElementById('user_genre_value').value = btn.dataset.genre;
+                    // Cache le message d'erreur client si un genre est sélectionné
+                    document.getElementById('genre-error-client').classList.add('d-none');
+                    // Réinitialise le style de tous les boutons
+                    document.querySelectorAll('.genre-btn-group .genre-btn').forEach(function(b) {
+                      b.style.border = '2px solid rgba(255,255,255,0.3)';
+                      b.style.background = 'rgba(255,255,255,0.06)';
+                      b.style.color = 'rgba(255,255,255,0.85)';
+                    });
+                    // Active le style du bouton cliqué
+                    btn.style.border = '2px solid #1EDD88';
+                    btn.style.background = 'rgba(30,221,136,0.12)';
+                    btn.style.color = '#1EDD88';
+                  });
+                });
+
+                // Validation client-side : bloque la soumission si aucun genre sélectionné
+                var form = document.querySelector('form[data-action*="sport-select#validate"]');
+                if (form) {
+                  form.addEventListener('submit', function(e) {
+                    var genreValue = document.getElementById('user_genre_value').value;
+                    if (!genreValue) {
+                      e.preventDefault();
+                      // Affiche le message d'erreur et scroll vers le champ genre
+                      document.getElementById('genre-error-client').classList.remove('d-none');
+                      document.getElementById('genre-field').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  });
+                }
+              </script>
+            </div>
+
             <%= f.input :email,
                         label: "Email",
                         required: true,
