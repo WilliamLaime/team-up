@@ -295,7 +295,8 @@ class ProfilsController < ApplicationController
     # Note : :role ici est le POSTE SPORTIF du joueur (ex: "attaquant", "gardien"),
     # pas un rôle système/admin — Brakeman génère un faux positif sur ce champ.
     params.require(:profil).permit( # brakeman: ignore
-      :first_name, :last_name, :address, :description, :level, :phone, :role, :localisation, :time_available, :avatar
+      :first_name, :last_name, :address, :description,
+      :level, :phone, :role, :localisation, :time_available, :avatar
     )
   end
 end

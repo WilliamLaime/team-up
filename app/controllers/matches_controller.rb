@@ -14,8 +14,8 @@ class MatchesController < ApplicationController
     if params[:mine].present? && user_signed_in?
       # Historique : TOUS les matchs de l'user (participants ou organisateur), triés du plus récent
       @matches = policy_scope(Match)
-        .where(id: current_user.match_users.select(:match_id))
-        .order(date: :desc, time: :desc)
+                 .where(id: current_user.match_users.select(:match_id))
+                 .order(date: :desc, time: :desc)
 
       # Filtre statut :
       #   ?status=completed → matchs terminés (> 1h après le début)
@@ -28,7 +28,11 @@ class MatchesController < ApplicationController
     else
       # Index public : uniquement les matchs ouverts à l'inscription et publics
       # visible_for_genre filtre les matchs "féminin" pour ne les montrer qu'aux femmes
-      @matches = policy_scope(Match).upcoming.publicly_visible.visible_for_genre(current_user).order(date: :asc, time: :asc)
+      @matches = policy_scope(Match)
+                 .upcoming
+                 .publicly_visible
+                 .visible_for_genre(current_user)
+                 .order(date: :asc, time: :asc)
       apply_filters
     end
   end
@@ -162,9 +166,9 @@ class MatchesController < ApplicationController
     # On exclut les "rejected" car ils n'ont plus de place et ne sont plus actifs.
     # IMPORTANT : on broadcast AVANT @match.destroy → le canal ActionCable doit encore exister.
     participants = @match.match_users
-      .where.not(role: "organisateur")
-      .where(status: ["approved", "pending", "waiting"])
-      .includes(:user)
+                         .where.not(role: "organisateur")
+                         .where(status: ["approved", "pending", "waiting"])
+                         .includes(:user)
 
     # Notifie chaque participant en temps réel si il est sur la page du match
     participants.each do |mu|
