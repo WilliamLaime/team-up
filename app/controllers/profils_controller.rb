@@ -18,8 +18,8 @@ class ProfilsController < ApplicationController
     # Charge les demandes d'ami en attente reçues par l'utilisateur connecté
     # (pour afficher les boutons Accepter / Refuser sur son propre profil)
     @pending_friend_requests = current_user.inverse_friendships
-                                            .pending
-                                            .includes(user: :profil)
+                                           .pending
+                                           .includes(user: :profil)
 
     # Nombre de matchs réellement joués :
     # - status "approved" → l'user était bien inscrit (pas en file d'attente ni en attente)
@@ -104,7 +104,7 @@ class ProfilsController < ApplicationController
     @hidden_review_from_this_user = user_signed_in? &&
                                     current_user != @profil_user &&
                                     Avis.non_mutual.exists?(
-                                      reviewer_id:      @profil_user.id,
+                                      reviewer_id: @profil_user.id,
                                       reviewed_user_id: current_user.id
                                     )
 
@@ -125,7 +125,7 @@ class ProfilsController < ApplicationController
     attribute = params[:attribute]
 
     # Sécurité : on n'accepte que les 4 attributs connus (pas d'injection SQL possible)
-    if Profil::STAT_ATTRIBUTES.include?(attribute) && @profil.stat_points > 0
+    if Profil::STAT_ATTRIBUTES.include?(attribute) && @profil.stat_points.positive?
       @profil.increment!(attribute.to_sym)   # +1 sur l'attribut choisi
       @profil.decrement!(:stat_points)       # -1 point disponible
     end
@@ -230,8 +230,8 @@ class ProfilsController < ApplicationController
 
     # Exclut les matchs où current_user a déjà noté other_user
     already_reviewed_ids = Avis.where(
-      reviewer_id:       current_user.id,
-      reviewed_user_id:  other_user.id
+      reviewer_id: current_user.id,
+      reviewed_user_id: other_user.id
     ).pluck(:match_id)
 
     reviewable_ids = common_ids - already_reviewed_ids
@@ -282,8 +282,8 @@ class ProfilsController < ApplicationController
       safe_name = File.basename(preset_name)
       preset_path = Rails.root.join("app", "assets", "images", "avatar_png", "#{safe_name}.png")
       {
-        io:           File.open(preset_path),
-        filename:     "avatar_#{preset_name}.png",
+        io: File.open(preset_path),
+        filename: "avatar_#{preset_name}.png",
         content_type: "image/png"
       }
     end
