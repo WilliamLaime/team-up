@@ -614,6 +614,57 @@
             </div>
           </div><%# fin toggle visibilité %>
 
+          <%# ── Restriction de genre ───────────────────────────────────────── %>
+          <%# "tous" : tout le monde peut rejoindre (défaut) %>
+          <%# "feminin" : uniquement les joueuses (genre "femme") %>
+          <div class="mb-0 mt-3">
+            <label class="form-label d-block">
+              Restriction de genre
+              <span class="css-tooltip"
+                    data-tip="'Tous' : tout le monde peut rejoindre. 'Féminin' : uniquement les joueuses.">
+                <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
+              </span>
+            </label>
+
+            <%# Champ caché mis à jour par les boutons ci-dessous %>
+            <%= f.hidden_field :genre_restriction,
+                value: (@match.genre_restriction.presence || "tous"),
+                id: "match_genre_restriction" %>
+
+            <%# Boutons de sélection — data-value lu par le script ci-dessous %>
+            <div class="d-flex gap-2 flex-wrap genre-restriction-btn-group">
+              <% [["tous", "Tous"], ["feminin", "Féminin uniquement"]].each do |valeur, libelle| %>
+                <% est_actif = (@match.genre_restriction.presence || "tous") == valeur %>
+                <button type="button"
+                        class="genre-restriction-btn btn"
+                        data-value="<%= valeur %>"
+                        style="padding:0.45rem 1.1rem; border-radius:0.5rem; font-size:0.85rem;
+                               border: 2px solid <%= est_actif ? '#1EDD88' : 'rgba(255,255,255,0.3)' %>;
+                               background: <%= est_actif ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.06)' %>;
+                               color: <%= est_actif ? '#1EDD88' : 'rgba(255,255,255,0.85)' %>;">
+                  <%= libelle %>
+                </button>
+              <% end %>
+            </div>
+
+            <%# Script de sélection — pas d'ERB dans les handlers pour éviter les injections %>
+            <script>
+              document.querySelectorAll('.genre-restriction-btn-group .genre-restriction-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                  document.getElementById('match_genre_restriction').value = btn.dataset.value;
+                  document.querySelectorAll('.genre-restriction-btn-group .genre-restriction-btn').forEach(function(b) {
+                    b.style.border = '2px solid rgba(255,255,255,0.3)';
+                    b.style.background = 'rgba(255,255,255,0.06)';
+                    b.style.color = 'rgba(255,255,255,0.85)';
+                  });
+                  btn.style.border = '2px solid #1EDD88';
+                  btn.style.background = 'rgba(30,221,136,0.12)';
+                  btn.style.color = '#1EDD88';
+                });
+              });
+            </script>
+          </div><%# fin restriction de genre %>
+
           <%# ── Ligne séparatrice ── %>
           <hr class="my-4">
 
