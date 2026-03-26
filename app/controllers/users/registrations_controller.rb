@@ -37,6 +37,19 @@ class Users::RegistrationsController < Devise::RegistrationsController
       return
     end
 
+    # ── Validation serveur : genre obligatoire ────────────────────────────────
+    genre = params.dig(:user, :genre).presence
+
+    unless genre.present? && User::GENRES.include?(genre)
+      # Construit le resource sans le sauvegarder pour réafficher le formulaire
+      build_resource(sign_up_params)
+      # Clé :genre → permet à la vue d'afficher l'erreur directement près du champ genre
+      resource.errors.add(:genre, "Sélectionne ton genre pour continuer.")
+      clean_up_passwords resource
+      respond_with resource
+      return
+    end
+
     super do |user|
       if user.persisted?
         profil_attrs = {
@@ -110,10 +123,12 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # Paramètres autorisés pour la création du compte
   # L'avatar et le preset ne sont PAS ici car ils sont gérés manuellement ci-dessus
+  # :genre → stocké directement sur la table users
   def sign_up_params
     params.require(:user).permit(
       :email, :password, :password_confirmation,
-      :first_name, :last_name
+      :first_name, :last_name,
+      :genre
     )
   end
 end

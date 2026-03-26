@@ -31,6 +31,13 @@ class User < ApplicationRecord
   # car la validation du Profil arrive trop tard et son erreur est ignorée.
   validates :first_name, presence: { message: "Le prénom est obligatoire" }, on: :create
   validates :last_name,  presence: { message: "Le nom est obligatoire" },    on: :create
+
+  # Valeurs autorisées pour le genre
+  GENRES = %w[femme homme autre].freeze
+
+  # Valide que le genre est l'une des valeurs autorisées si renseigné
+  # allow_nil: true → les anciens comptes (genre non rempli) restent valides
+  validates :genre, inclusion: { in: GENRES, message: "n'est pas valide" }, allow_nil: true
   has_many :match_users, dependent: :destroy
   has_many :matchs, through: :match_users
   has_many :notifications, dependent: :destroy

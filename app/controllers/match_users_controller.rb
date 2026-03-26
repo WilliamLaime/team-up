@@ -17,6 +17,17 @@ class MatchUsersController < ApplicationController
       return
     end
 
+    # ── Vérification de la restriction de genre ───────────────────────────────
+    # Si le match est réservé aux femmes ET que l'utilisateur n'est pas une femme,
+    # on bloque l'inscription avec un message explicatif.
+    # current_user.genre != "femme" inclut aussi les utilisateurs sans genre déclaré (nil).
+    if @match.genre_restriction == "feminin" && current_user.genre != "femme"
+      redirect_to match_path(@match, **match_redirect_options),
+                  alert: "Ce match est réservé aux joueuses. Seules les femmes peuvent s'inscrire."
+      return
+    end
+    # ── Fin vérification genre ────────────────────────────────────────────────
+
     # On récupère l'organisateur une seule fois pour les notifications
     organizer = @match.organizer_match_user&.user
 
