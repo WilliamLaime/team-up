@@ -116,15 +116,20 @@ class User < ApplicationRecord
     # Si pas trouvé, on en crée un nouveau (find_or_create_by)
     user = where(provider: auth.provider, uid: auth.uid).first
 
-    # Si l'user existe déjà via OAuth, on le retourne directement
-    return user if user
+    # Si l'user existe déjà via OAuth, on s'assure qu'il est confirmé et on le retourne
+    if user
+      # Auto-confirme si ce n'est pas déjà fait — Google a déjà vérifié l'email
+      user.update(confirmed_at: Time.current) if user.confirmed_at.nil?
+      return user
+    end
 
     # Sinon, on cherche par email (cas où l'user a un compte classique avec ce même email)
     user = find_by(email: auth.info.email)
 
     if user
       # L'user a un compte classique, on y associe son compte Google
-      user.update(provider: auth.provider, uid: auth.uid)
+      # On le confirme aussi — puisqu'il s'est authentifié via Google, l'email est valide
+      user.update(provider: auth.provider, uid: auth.uid, confirmed_at: user.confirmed_at || Time.current)
     else
       # Nouvel utilisateur : on crée le compte avec un mot de passe aléatoire
       # (il n'en aura pas besoin puisqu'il se connectera toujours via Google)
