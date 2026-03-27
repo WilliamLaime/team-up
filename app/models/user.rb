@@ -3,6 +3,7 @@ class User < ApplicationRecord
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
+         :confirmable,  # Envoie un email de confirmation à l'inscription — bloque la connexion tant que l'email n'est pas vérifié
          :omniauthable, omniauth_providers: [:google_oauth2] # Activation de la connexion via Google
   # dependent: :destroy supprime le profil automatiquement quand l'user est supprimé
   has_one :profil, dependent: :destroy
@@ -115,15 +116,20 @@ class User < ApplicationRecord
     # Si pas trouvé, on en crée un nouveau (find_or_create_by)
     user = where(provider: auth.provider, uid: auth.uid).first
 
-    # Si l'user existe déjà via OAuth, on le retourne directement
-    return user if user
+    # Si l'user existe déjà via OAuth, on s'assure qu'il est confirmé et on le retourne
+    if user
+      # Auto-confirme si ce n'est pas déjà fait — Google a déjà vérifié l'email
+      user.update(confirmed_at: Time.current) if user.confirmed_at.nil?
+      return user
+    end
 
     # Sinon, on cherche par email (cas où l'user a un compte classique avec ce même email)
     user = find_by(email: auth.info.email)
 
     if user
       # L'user a un compte classique, on y associe son compte Google
-      user.update(provider: auth.provider, uid: auth.uid)
+      # On le confirme aussi — puisqu'il s'est authentifié via Google, l'email est valide
+      user.update(provider: auth.provider, uid: auth.uid, confirmed_at: user.confirmed_at || Time.current)
     else
       # Nouvel utilisateur : on crée le compte avec un mot de passe aléatoire
       # (il n'en aura pas besoin puisqu'il se connectera toujours via Google)
@@ -132,6 +138,9 @@ class User < ApplicationRecord
         provider: auth.provider,
         uid: auth.uid,
         password: Devise.friendly_token[0, 20], # Mot de passe aléatoire obligatoire pour Devise
+        # confirmed_at renseigné maintenant → l'email Google est déjà vérifié par Google,
+        # pas besoin de renvoyer un email de confirmation depuis notre app
+        confirmed_at: Time.current,
         # first_name et last_name sont des attributs virtuels pour créer le Profil
         # On les récupère depuis les données Google
         first_name: auth.info.first_name.presence || auth.info.name&.split&.first || "Google",

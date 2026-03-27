@@ -25,7 +25,7 @@ Devise.setup do |config|
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
   # L'adresse qui apparaît comme expéditeur dans les emails Devise
-  config.mailer_sender = ENV.fetch("MAILER_FROM", "noreply@team-up.fr")
+  config.mailer_sender = ENV.fetch("MAILER_FROM", "noreply@teams-up-sport.fr")
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'
@@ -278,6 +278,7 @@ Devise.setup do |config|
   # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
 
   # Configuration Google OAuth — les clés sont dans le fichier .env
+  OmniAuth.config.full_host = Rails.env.production? ? "https://www.teams-up-sport.fr" : "http://localhost:3000"
   config.omniauth :google_oauth2, ENV["GOOGLE_CLIENT_ID"], ENV["GOOGLE_CLIENT_SECRET"]
 
   # ==> Warden configuration
