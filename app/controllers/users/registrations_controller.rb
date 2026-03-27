@@ -141,6 +141,13 @@ module Users
       allowed_types.include?(file.content_type) && file.size <= 5.megabytes
     end
 
+    # Redirection après inscription avec confirmation en attente (:confirmable activé)
+    # Devise appelle cette méthode quand l'utilisateur n'est pas encore confirmé
+    # On redirige vers l'accueil plutôt que vers la page précédente (qui peut être un match protégé)
+    def after_inactive_sign_up_path_for(_resource)
+      root_path
+    end
+
     # Paramètres autorisés pour la création du compte
     # L'avatar et le preset ne sont PAS ici car ils sont gérés manuellement ci-dessus
     # :genre → stocké directement sur la table users
