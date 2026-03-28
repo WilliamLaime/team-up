@@ -45,6 +45,14 @@ class MessagesController < ApplicationController
 
     elsif @conversation
       # ── Message privé ────────────────────────────────────────────────────
+
+      # Capture l'état AVANT le save : on en a besoin après pour choisir prepend vs replace
+      # - Premier message : l'item n'est pas encore dans la sidebar de l'expéditeur
+      # - Expéditeur avait masqué la conv : l'item a été retiré du DOM
+      # Dans les deux cas → prepend. Sinon → replace.
+      is_first_message    = !Message.exists?(private_conversation_id: @conversation.id)
+      sender_was_dismissed = @conversation.dismissed_for?(current_user)
+
       @message = @conversation.messages.build(
         content: message_params[:content],
         user: current_user
@@ -54,6 +62,34 @@ class MessagesController < ApplicationController
         # Met à jour le timestamp de lecture de l'expéditeur
         # pour ne pas voir son propre message comme non-lu
         @conversation.mark_read_for!(current_user)
+
+        # Si l'expéditeur avait masqué la conversation et ré-envoie un message (via page profil),
+        # on réactive son propre dismissed_at pour que la conv réapparaisse dans sa sidebar
+        if sender_was_dismissed
+          col = @conversation.sender_id == current_user.id ? :sender_dismissed_at : :recipient_dismissed_at
+          @conversation.update_column(col, nil)
+        end
+
+        # Met à jour la sidebar de l'expéditeur (aperçu du dernier message, sans badge non-lu)
+        # Fait ICI après mark_read_for! : unread_for?(current_user) retourne false → pas de voyant
+        # (Si on le faisait dans le model callback, mark_read_for! n'est pas encore appelé)
+        if is_first_message || sender_was_dismissed
+          # Item absent du DOM (premier message ou conv masquée) → on l'insère en haut
+          Turbo::StreamsChannel.broadcast_prepend_to(
+            "user_conversations_#{current_user.id}",
+            target:  "private-chat-sidebar-list",
+            partial: "shared/private_convo_item",
+            locals:  { conversation: @conversation, current_user: current_user }
+          )
+        else
+          # Item déjà présent → mise à jour simple
+          Turbo::StreamsChannel.broadcast_replace_to(
+            "user_conversations_#{current_user.id}",
+            target:  "private-convo-#{@conversation.id}",
+            partial: "shared/private_convo_item",
+            locals:  { conversation: @conversation, current_user: current_user }
+          )
+        end
 
         # Réinitialise le formulaire via Turbo Stream
         respond_to do |format|

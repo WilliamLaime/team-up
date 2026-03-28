@@ -26,6 +26,12 @@
   <%
     private_convos = PrivateConversation
       .where("sender_id = ? OR recipient_id = ?", current_user.id, current_user.id)
+      .where(
+        # Exclut les conversations que l'utilisateur a masquées
+        # sender_dismissed_at nil = pas dismissée pour le sender, idem pour recipient
+        "(sender_id = ? AND sender_dismissed_at IS NULL) OR (recipient_id = ? AND recipient_dismissed_at IS NULL)",
+        current_user.id, current_user.id
+      )
       .includes(:messages, sender: :profil, recipient: :profil)
       .order(updated_at: :desc)
   %>

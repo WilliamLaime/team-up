@@ -126,4 +126,27 @@ export default class extends Controller {
     })
     event.currentTarget.classList.add("sticky-chat-convo-link--active")
   }
+
+  // ── Fermer la modale puis naviguer vers le profil d'un utilisateur ─────────
+  // Appelé par data-action="click->sticky-chat#goToProfile" sur l'avatar/nom du chat privé.
+  // On ferme d'abord la modale (avec son animation), PUIS on navigue.
+  // L'événement "hidden.bs.modal" se déclenche une fois l'animation terminée.
+  goToProfile(event) {
+    const url = event.currentTarget.dataset.url
+    if (!url) return
+
+    const modal = document.getElementById("global-chat-modal")
+    const bsModal = modal ? bootstrap.Modal.getInstance(modal) : null
+
+    if (bsModal) {
+      // Écoute la fin de l'animation de fermeture (once: true → ne s'exécute qu'une seule fois)
+      modal.addEventListener("hidden.bs.modal", () => {
+        window.location.href = url
+      }, { once: true })
+      bsModal.hide()
+    } else {
+      // Si la modale n'est pas gérée par Bootstrap (cas rare), navigue directement
+      window.location.href = url
+    }
+  }
 }
