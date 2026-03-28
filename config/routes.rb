@@ -109,6 +109,10 @@ Rails.application.routes.draw do
   # GET  /private_conversations/:id         => charge le chat dans le panneau sticky
   # POST /private_conversations/:id/messages => envoie un message privé
   resources :private_conversations, only: [:show, :create] do
+    member do
+      patch  :mark_read  # Marque comme lu (appelé depuis chat_controller.js)
+      delete :dismiss    # Masque la conversation (bouton poubelle sidebar)
+    end
     resources :messages, only: [:create]
   end
 

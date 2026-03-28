@@ -11,19 +11,26 @@
   <div data-controller="chat"
        data-chat-current-user-id-value="<%= current_user.id %>"
        data-chat-conversation-id-value="<%= @conversation.id %>"
+       data-chat-mark-read-url-value="<%= mark_read_private_conversation_path(@conversation) %>"
        class="sticky-chat-inner">
 
     <%# Abonnement Turbo Stream — reçoit les nouveaux messages en temps réel %>
     <%= turbo_stream_from "private_chat_#{@conversation.id}" %>
 
-    <%# En-tête : avatar + nom de l'autre utilisateur %>
+    <%# En-tête du chat %>
     <% other = @conversation.other_user(current_user) %>
     <div class="sticky-chat-chat-header">
-      <%# Petit avatar de l'autre utilisateur %>
-      <%= user_avatar_tag other,
-          css_class: "chat-avatar-img",
-          style: "width:20px;height:20px;min-width:20px;border-radius:50%;object-fit:cover;overflow:hidden;flex-shrink:0;" %>
-      <%= truncate(other.display_name || other.email, length: 25) %>
+      <%# Avatar + nom cliquables : ferme la modale puis navigue vers le profil
+          data-action cible sticky-chat (controller parent) via goToProfile
+          data-url    : URL du profil transmise au controller JS %>
+      <span class="sticky-chat-profile-link"
+            data-action="click->sticky-chat#goToProfile"
+            data-url="<%= user_profil_path(other) %>">
+        <%= user_avatar_tag other,
+            css_class: "chat-avatar-img",
+            style: "width:20px;height:20px;min-width:20px;border-radius:50%;object-fit:cover;overflow:hidden;flex-shrink:0;" %>
+        <%= truncate(other.display_name || other.email, length: 25) %>
+      </span>
     </div>
 
     <%# Zone scrollable des messages
@@ -42,6 +49,19 @@
         </div>
       <% end %>
 
+    </div>
+
+    <%# Indicateur "X est en train d'écrire..." — identique au chat de match
+        Affiché/masqué par showTypingIndicator() dans chat_controller.js %>
+    <div class="chat-typing-indicator"
+         id="chat-typing"
+         data-chat-target="typing"
+         style="display: none;">
+      <span class="chat-typing-dots">
+        <span></span><span></span><span></span>
+      </span>
+      <span class="chat-typing-name" data-chat-target="typingName"></span>
+      est en train d'écrire...
     </div>
 
     <%# Formulaire d'envoi

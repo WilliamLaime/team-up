@@ -362,6 +362,23 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+}
+
+// Avatar + nom cliquables dans l'en-tête du chat privé
+.sticky-chat-profile-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 2px 6px;
+  margin: -2px -6px; // compense le padding pour ne pas décaler le texte
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: lighten($dark-bg, 8%);
+  }
 }
 
 // Zone scrollable des messages

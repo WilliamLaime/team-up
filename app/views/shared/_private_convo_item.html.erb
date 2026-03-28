@@ -57,4 +57,13 @@
 
   <% end %>
 
+  <%# Bouton poubelle — masque la conversation (visible au survol comme pour les chats match) %>
+  <%= button_to dismiss_private_conversation_path(conversation),
+      method: :delete,
+      class: "sticky-chat-dismiss-btn",
+      title: "Masquer cette conversation",
+      data: { turbo_stream: true } do %>
+    <i data-lucide="trash-2" style="width:11px;height:11px;"></i>
+  <% end %>
+
 </div>

@@ -19,6 +19,9 @@ class Message < ApplicationRecord
   # Callback uniquement pour les messages de match (réactive si dismissé)
   after_create_commit :reactivate_dismissed_conversations, if: :match_id?
 
+  # Callback pour les messages privés (réactive la conversation si elle était masquée)
+  after_create_commit :reactivate_dismissed_private_conversation, if: :private_conversation_id?
+
   private
 
   # ── Validation : match_id OU private_conversation_id doit être présent ────
@@ -41,20 +44,63 @@ class Message < ApplicationRecord
         )
       end
     elsif private_conversation_id?
-      # Message privé : notifie uniquement le destinataire (pas l'expéditeur)
       recipient = private_conversation.other_user(user)
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "user_conversations_#{recipient.id}",        # stream personnel du destinataire
-        target: "private-convo-#{private_conversation_id}", # l'item à remplacer dans sa sidebar
-        partial: "shared/private_convo_item",
-        locals: { conversation: private_conversation, current_user: recipient }
-      )
+
+      # ── Met à jour uniquement la sidebar du DESTINATAIRE ──────────────────
+      # L'expéditeur est géré dans MessagesController APRÈS mark_read_for!
+
+      # IMPORTANT : on utilise Message.where(...).count et NON private_conversation.messages.count
+      # car dans after_create_commit, private_conversation est le même objet Ruby que @conversation
+      # dans le controller (défini via messages.build). Son association messages est en cache
+      # avec seulement le nouveau message → count retournerait toujours 1 par erreur.
+      total_messages = Message.where(private_conversation_id: private_conversation_id).count
+
+      # Vérifie si le destinataire avait masqué la conversation AVANT la réactivation
+      # (reactivate_dismissed_private_conversation s'exécute après ce callback)
+      # Si oui → l'item n'est plus dans le DOM → prepend au lieu de replace
+      recipient_dismissed = private_conversation.dismissed_for?(recipient)
+
+      if total_messages == 1 || recipient_dismissed
+        # Premier message OU conversation réactivée après dismiss :
+        # l'item n'existe pas dans la sidebar du destinataire → on l'insère en haut
+        Turbo::StreamsChannel.broadcast_prepend_to(
+          "user_conversations_#{recipient.id}",
+          target: "private-chat-sidebar-list",
+          partial: "shared/private_convo_item",
+          locals: { conversation: private_conversation, current_user: recipient }
+        )
+      else
+        # Conversation existante et visible : l'item est déjà présent → on le remplace
+        # (met à jour l'aperçu du dernier message et le badge non-lu)
+        Turbo::StreamsChannel.broadcast_replace_to(
+          "user_conversations_#{recipient.id}",
+          target: "private-convo-#{private_conversation_id}",
+          partial: "shared/private_convo_item",
+          locals: { conversation: private_conversation, current_user: recipient }
+        )
+      end
     end
   end
 
   # ── Réactive les conversations de match dismissées ────────────────────────
   def reactivate_dismissed_conversations
     match.match_users.where.not(chat_dismissed_at: nil).update_all(chat_dismissed_at: nil)
+  end
+
+  # ── Réactive la conversation privée dismissée (nouveau message reçu) ───────
+  # On réactive UNIQUEMENT pour le destinataire du message
+  # L'expéditeur garde le contrôle de son propre masquage :
+  # s'il a masqué la conversation et envoie un nouveau message (via la page profil),
+  # on ne réaffiche pas la conv dans SA sidebar sans qu'il le demande
+  def reactivate_dismissed_private_conversation
+    recipient = private_conversation.other_user(user)
+
+    # Détermine quelle colonne effacer selon le rôle du destinataire
+    if recipient.id == private_conversation.sender_id
+      private_conversation.update_column(:sender_dismissed_at, nil)
+    else
+      private_conversation.update_column(:recipient_dismissed_at, nil)
+    end
   end
 
   # ── Diffuse le message en temps réel dans la zone de chat ─────────────────

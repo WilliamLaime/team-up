@@ -46,4 +46,27 @@ class PrivateConversation < ApplicationRecord
       update_column(:recipient_last_read_at, Time.current)
     end
   end
+
+  # ── Savoir si l'utilisateur a masqué cette conversation ───────────────────
+  def dismissed_for?(user)
+    if sender == user
+      sender_dismissed_at.present?
+    else
+      recipient_dismissed_at.present?
+    end
+  end
+
+  # ── Masquer la conversation pour un utilisateur ────────────────────────────
+  def dismiss_for!(user)
+    if sender == user
+      update_column(:sender_dismissed_at, Time.current)
+    else
+      update_column(:recipient_dismissed_at, Time.current)
+    end
+  end
+
+  # ── Réactiver la conversation (nouveau message reçu) ──────────────────────
+  def reactivate_for_all!
+    update_columns(sender_dismissed_at: nil, recipient_dismissed_at: nil)
+  end
 end
