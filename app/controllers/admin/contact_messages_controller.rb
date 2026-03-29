@@ -27,6 +27,32 @@ module Admin
       end
     end
 
+    # PATCH /admin/contact_messages/:id/mark_read
+    # Marque un message comme lu — appelé automatiquement quand on clique "Lire"
+    # Répond en Turbo Stream pour mettre à jour la ligne du tableau en temps réel
+    # Le modèle déclenche aussi broadcast_admin_badge via after_update_commit
+    def mark_read
+      @contact_message = ContactMessage.find(params[:id])
+
+      # Met à jour uniquement si le message n'est pas encore lu
+      # (évite un after_update_commit inutile si l'admin clique plusieurs fois)
+      @contact_message.update(lu: true) unless @contact_message.lu?
+
+      respond_to do |format|
+        # Turbo Stream : remplace la ligne du tableau pour refléter le nouvel état lu
+        # (point gris, texte normal, bouton "Non lu" à la place de "Lu")
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "contact_message_#{@contact_message.id}",
+            partial: "admin/contact_messages/contact_message",
+            locals:  { msg: @contact_message }
+          )
+        end
+        # Fallback HTML si Turbo n'est pas disponible
+        format.html { redirect_to admin_contact_messages_path }
+      end
+    end
+
     # DELETE /admin/contact_messages/:id
     # Supprime un message de contact et retire sa ligne du tableau via Turbo Stream
     def destroy
