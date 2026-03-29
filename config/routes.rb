@@ -141,6 +141,7 @@ Rails.application.routes.draw do
     resources :contact_messages, only: [:index, :destroy] do
       member do
         patch :toggle_lu
+        patch :mark_read  # Marque comme lu quand on clique "Lire" (ouvre la modale)
         post :reply
       end
       collection do
