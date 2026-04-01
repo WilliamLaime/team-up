@@ -27,21 +27,29 @@ export default class extends Controller {
     "placeInput",        // Champ texte : lieu (avec autocomplete)
     "dateInput",         // Champ date
     "sportInput",        // Select sport : déclenche updateSport au changement
-    "playersInput",      // Input caché : nombre de joueurs (mis à jour par le compteur)
-    "playersCount",      // Span visible : chiffre du compteur affiché à l'écran
-    "minusBtn",          // Bouton "−" du compteur (pour changer sa couleur)
-    "plusBtn",           // Bouton "+" du compteur (pour changer sa couleur)
+    "playersInput",      // Input caché : nombre de joueurs manquants (partagé standard + libre)
+    "playersCount",      // Span visible : chiffre du compteur standard affiché à l'écran
+    "minusBtn",          // Bouton "−" du compteur standard (pour changer sa couleur)
+    "plusBtn",           // Bouton "+" du compteur standard (pour changer sa couleur)
     "levelInput",        // Input caché : niveau sélectionné (mis à jour par les boutons)
     "validationToggle",  // Checkbox du toggle Manuel/Automatique
     "priceInput",        // Champ numérique : prix par joueur
     "bannerImageInput",  // Input caché : URL de l'image de la banner (soumise avec le formulaire)
 
     // ── Format ────────────────────────────────────────────
-    "formatWrapper",     // Div englobant les boutons de format (affiché/caché selon sport)
+    "formatWrapper",     // Div englobant les boutons de format
     "formatInput",       // Input caché : valeur du format soumise avec le formulaire
     "formatButtons",     // Div recevant les boutons de format générés dynamiquement
-    "recapFormatRow",    // Ligne "Format" dans le récap (masquée si mono-format)
+    "recapFormatRow",    // Ligne "Format" dans le récap
     "recapFormat",       // Valeur du format dans la ligne récap
+
+    // ── Sections joueurs : standard vs Libre ─────────────
+    "standardPlayerSection",  // Div compteur unique "manquants" (caché en mode Libre)
+    "libreSection",           // Div deux compteurs présents + manquants (visible en mode Libre)
+
+    // ── Champs Libre : saisie directe ──────────────────────
+    "playersPresentInput",    // Input number : joueurs présents (players_present soumis)
+    "playersLibreInput",      // Input number visible : joueurs manquants (synchronise playersInput)
 
     // ── Éléments du récapitulatif (destinations) ──────────
     "recapTitle",        // Zone affichant le titre dans la sidebar
@@ -54,6 +62,8 @@ export default class extends Controller {
     "recapLevel",        // Valeur du niveau dans la ligne
     "recapValidation",   // Zone affichant le mode de validation (Manuel / Automatique)
     "recapPrice",        // Zone affichant le prix par joueur (en bas du récap, en blanc)
+    "recapPresentRow",   // Ligne "Présents" dans le récap (visible uniquement en mode Libre)
+    "recapPresent",      // Valeur "joueurs présents" dans la ligne récap
     "formCol"            // Colonne gauche (col-lg-7) — sert à mesurer son bas pour l'alignement
   ]
 
@@ -78,7 +88,6 @@ export default class extends Controller {
     this.updatePrice()
     // Initialise les couleurs des boutons − et + selon la valeur de départ
     this.updateCounterButtons(parseInt(this.playersInputTarget.value) || 4)
-
   }
 
   // ══════════════════════════════════════════════════════════
@@ -151,24 +160,25 @@ export default class extends Controller {
     if (sportId && formatsMap[sportId]) {
       const formats = formatsMap[sportId]
 
-      // Met à jour le max global pour ce sport
+      // Met à jour le max global pour ce sport (compact exclut nil du format Libre)
       this.maxPlayers = maxMap[sportId] || 9
 
       // Met à jour le récap sport
       this.recapSportTarget.textContent = nameMap[sportId] || "—"
 
-      // N'affiche le sélecteur et la ligne récap que s'il y a plusieurs formats possibles
-      if (formats.length > 1) {
-        this._renderFormatButtons(formats)
-        this.formatWrapperTarget.style.display = ""
-        this.recapFormatRowTarget.style.display = ""
-      } else {
-        this.formatWrapperTarget.style.display = "none"
-        this.recapFormatRowTarget.style.display = "none"
-      }
+      // Tous les sports ont maintenant au moins 2 formats (sport-specific + Libre)
+      // → le sélecteur de format est toujours affiché
+      this._renderFormatButtons(formats)
+      this.formatWrapperTarget.style.display = ""
+      this.recapFormatRowTarget.style.display = ""
 
-      // Sélectionne automatiquement le premier format (applique aussi le compteur)
-      this._applyFormat(formats[0])
+      // En mode édition, restaure le format sauvegardé ; sinon applique le premier format
+      const savedFormat = this.formatInputTarget.value
+      const allBtns     = this.formatButtonsTarget.querySelectorAll(".match-level-btn")
+      const matchedFmt  = formats.find(f => f.label === savedFormat) || formats[0]
+      const matchedBtn  = Array.from(allBtns).find(b => b.dataset.label === savedFormat) || allBtns[0]
+      this._applyFormat(matchedFmt, matchedBtn)
+
     } else {
       // Aucun sport sélectionné
       this.maxPlayers = 9
@@ -190,6 +200,7 @@ export default class extends Controller {
       btn.type = "button"
       btn.className = "match-level-btn" + (index === 0 ? " active" : "")
       btn.textContent = fmt.label
+      // dataset.players stocke "null" (string) pour le format Libre
       btn.dataset.players = fmt.players
       btn.dataset.label   = fmt.label
       // Styles inline garantis (évite tout conflit Bootstrap/navigateur)
@@ -223,6 +234,7 @@ export default class extends Controller {
   }
 
   // Applique un format : met à jour le compteur, le max et l'input caché
+  // Détecte si c'est le format Libre (players === null) pour basculer l'interface
   _applyFormat(fmt, clickedBtn = null) {
     // Met à jour l'input caché format (soumis avec le formulaire)
     this.formatInputTarget.value = fmt.label
@@ -230,15 +242,56 @@ export default class extends Controller {
     // Met à jour la ligne récap format
     this.recapFormatTarget.textContent = fmt.label
 
-    // Le max devient le nombre exact de joueurs du format (ex: 3v3 → max 5)
-    this.maxPlayers = fmt.players
+    // Détermine si c'est le format Libre (players vaut null ou undefined)
+    const isLibre = fmt.players === null || fmt.players === undefined || fmt.players === "null"
 
-    // Démarre toujours à 1 joueur manquant (l'utilisateur incrémente jusqu'au max)
-    const count = 1
-    this.playersInputTarget.value       = count
-    this.playersCountTarget.textContent = count
-    this.recapPlayersTarget.textContent = count
-    this.updateCounterButtons(count)
+    if (isLibre) {
+      // ── Mode Libre : 2 compteurs indépendants, pas de max ──
+      this.maxPlayers = 99 // limite pratique, sans contrainte réelle
+
+      // Affiche la section Libre, cache la section standard
+      this.libreSectionTarget.style.display     = ""
+      this.standardPlayerSectionTarget.style.display = "none"
+
+      // Affiche la ligne "Présents" dans le récap
+      this.recapPresentRowTarget.style.display = ""
+
+      // Initialise les deux compteurs avec les valeurs existantes (utile en mode édition)
+      // Initialise les champs avec les valeurs existantes (utile en mode édition)
+      const presentVal = parseInt(this.playersPresentInputTarget.value) || 1
+      const libreVal   = parseInt(this.playersInputTarget.value) || 1
+
+      // Pré-remplit les deux inputs visibles
+      this.playersPresentInputTarget.value = presentVal
+      this.playersLibreInputTarget.value   = libreVal
+      // S'assure que le hidden field partagé est à jour
+      this.playersInputTarget.value        = libreVal
+      // Met à jour le récap
+      this.recapPresentTarget.textContent  = presentVal
+      this.recapPlayersTarget.textContent  = libreVal
+
+    } else {
+      // ── Mode standard : 1 compteur avec max défini par le format ──
+      this.maxPlayers = fmt.players
+
+      // Cache la section Libre, affiche la section standard
+      this.libreSectionTarget.style.display         = "none"
+      this.standardPlayerSectionTarget.style.display = ""
+
+      // Cache la ligne "Présents" dans le récap
+      this.recapPresentRowTarget.style.display = "none"
+
+      // Efface players_present pour ne pas soumettre une valeur résiduelle
+      // (évite que la validation Rails échoue sur un match repassé en format standard)
+      this.playersPresentInputTarget.value = ""
+
+      // Démarre toujours à 1 joueur manquant (l'utilisateur incrémente jusqu'au max)
+      const count = 1
+      this.playersInputTarget.value       = count
+      this.playersCountTarget.textContent = count
+      this.recapPlayersTarget.textContent = count
+      this.updateCounterButtons(count)
+    }
 
     // Met à jour l'état "active" des boutons de format avec styles inline
     if (clickedBtn) {
@@ -307,7 +360,7 @@ export default class extends Controller {
     }
   }
 
-  // ── Nombre de joueurs : décrémenter ("-") ────────────────
+  // ── Nombre de joueurs standard : décrémenter ("-") ────────────────
   decrement() {
     const input = this.playersInputTarget
     const current = parseInt(input.value) || 1
@@ -321,7 +374,7 @@ export default class extends Controller {
     }
   }
 
-  // ── Nombre de joueurs : incrémenter ("+") ────────────────
+  // ── Nombre de joueurs standard : incrémenter ("+") ────────────────
   increment() {
     const input = this.playersInputTarget
     const current = parseInt(input.value) || 1
@@ -336,7 +389,7 @@ export default class extends Controller {
     }
   }
 
-  // ── Met à jour la couleur des boutons − et + selon la valeur ──
+  // ── Met à jour la couleur des boutons − et + du compteur standard ──
   // Règle :
   //   val = 1      → "-" gris (minimum atteint), "+" vert
   //   val = max    → "-" vert, "+" gris (maximum atteint)
@@ -361,11 +414,30 @@ export default class extends Controller {
     }
   }
 
-  // ── Synchroniser le récap avec la valeur actuelle ────────
+  // ── Synchroniser le récap avec la valeur actuelle (standard) ────────
   updatePlayers() {
     const val = this.playersInputTarget.value || "—"
     this.playersCountTarget.textContent = val
     this.recapPlayersTarget.textContent  = val
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // Champs Libre : saisie directe (pas de boutons +/-)
+  // ══════════════════════════════════════════════════════════
+
+  // Appelé à chaque frappe dans le champ "Présents" — met à jour le récap
+  changePresent() {
+    const val = Math.max(1, parseInt(this.playersPresentInputTarget.value) || 1)
+    this.playersPresentInputTarget.value = val
+    this.recapPresentTarget.textContent  = val
+  }
+
+  // Appelé à chaque frappe dans le champ "Manquants" — met à jour playersInput (hidden) + récap
+  changeLibre() {
+    const val = Math.max(1, parseInt(this.playersLibreInputTarget.value) || 1)
+    this.playersLibreInputTarget.value  = val
+    this.playersInputTarget.value       = val   // hidden field soumis avec le formulaire
+    this.recapPlayersTarget.textContent = val
   }
 
   // ── Niveau : sélectionner un bouton ──────────────────────

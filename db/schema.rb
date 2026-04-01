@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_31_074710) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_01_074709) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -127,6 +127,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_074710) do
     t.string "level"
     t.string "place"
     t.integer "player_left"
+    t.integer "players_present"
     t.integer "price_per_player", default: 0
     t.string "private_token"
     t.bigint "sport_id"

@@ -409,7 +409,7 @@ class MatchesController < ApplicationController
   def match_params
     params.require(:match).permit(
       :title, :description, :date, :time, :place, :venue_id,
-      :level, :player_left, :validation_mode, :price_per_player,
+      :level, :player_left, :players_present, :validation_mode, :price_per_player,
       :sport_id, :format, :banner_image, :visibility,
       :genre_restriction # Restriction de genre : "tous" ou "feminin"
     )

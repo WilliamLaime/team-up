@@ -724,12 +724,20 @@
 
           <%# Bloc format + places libres
               Affiche le format du match (ex : "6v6") comme élément principal
-              et le nombre de places libres en dessous %>
+              et le nombre de places libres en dessous
+              Format Libre : affiche présents / total (présents + manquants) %>
           <div class="match-spots-display">
 
-            <%# Format affiché en grand — si pas de format, on affiche le total calculé %>
+            <%# Format affiché en grand ─────────────────────────────────────────
+                Libre : "présents / total" (ex : "3/8")
+                Autre format : label du format (ex : "5v5")
+                Pas de format : approuvés / total estimé (fallback) %>
             <div class="match-spots-fraction">
-              <% if @match.format.present? %>
+              <% if @match.libre? && @match.players_present.present? %>
+                <%# Format Libre : présents / (présents + manquants) %>
+                <% total_libre = @match.players_present + @match.player_left.to_i %>
+                <%= @match.players_present %><span class="match-spots-sep">/</span><%= total_libre %>
+              <% elsif @match.format.present? %>
                 <%= @match.format %>
               <% else %>
                 <%# Fallback : approuvés / total estimé %>

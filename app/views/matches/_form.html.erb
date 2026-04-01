@@ -425,28 +425,29 @@
             <h2 class="match-form-section-title">Détails du match</h2>
           </div>
 
-          <%# ── Sélecteur de format — visible uniquement pour les sports multi-formats ── %>
+          <%# ── Sélecteur de format — affiché pour tous les sports (chaque sport a un format Libre) ── %>
           <div class="mb-4" data-match-form-target="formatWrapper" style="display:none;">
             <label class="form-label d-block">Format <span class="required-star">*</span></label>
             <%= f.hidden_field :format, data: { "match-form-target": "formatInput" } %>
             <div class="match-level-buttons" data-match-form-target="formatButtons"></div>
           </div>
 
-          <%# ── Compteur : Nombre de joueurs manquants ── %>
-          <div class="mb-4">
+          <%# ── Compteur standard : Nombre de joueurs manquants (caché en mode Libre) ── %>
+          <div class="mb-4"
+               data-match-form-target="standardPlayerSection"
+               style="<%= @match.libre? ? 'display:none;' : '' %>">
             <label class="form-label d-block">Nombre de joueurs manquants <span class="required-star">*</span></label>
 
             <%# Input caché : sa valeur est la vraie valeur soumise avec le formulaire.
                 Le compteur visible (+/-) met à jour cet input via Stimulus.
-                Valeur par défaut : 4 si non défini %>
+                Valeur par défaut : 1 si non défini %>
             <%= f.hidden_field :player_left,
                 value: (@match.player_left || 1),
                 data: { "match-form-target": "playersInput" } %>
 
             <div class="match-player-counter">
 
-              <%# Bouton "−" : appelle decrement() dans le contrôleur Stimulus
-                  data-match-form-target="minusBtn" → Stimulus y accède pour changer sa couleur %>
+              <%# Bouton "−" : appelle decrement() dans le contrôleur Stimulus %>
               <button type="button"
                       class="counter-btn counter-btn-minus"
                       data-action="click->match-form#decrement"
@@ -459,8 +460,7 @@
                 <%= @match.player_left || 1 %>
               </span>
 
-              <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus
-                  data-match-form-target="plusBtn" → Stimulus y accède pour changer sa couleur %>
+              <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus %>
               <button type="button"
                       class="counter-btn"
                       data-action="click->match-form#increment"
@@ -468,7 +468,43 @@
                       aria-label="Augmenter le nombre de joueurs">+</button>
 
             </div>
-          </div><%# fin compteur %>
+          </div><%# fin compteur standard %>
+
+          <%# ── Section Libre : 2 compteurs (présents + manquants) — visible uniquement si format Libre ── %>
+          <div class="mb-4"
+               data-match-form-target="libreSection"
+               style="<%= @match.libre? ? '' : 'display:none;' %>">
+
+            <%# ── Deux champs numériques côte à côte ── %>
+            <div class="d-flex gap-4">
+
+              <%# Champ 1 : Joueurs déjà présents (amis hors-app, soumis via players_present) %>
+              <div>
+                <label class="form-label d-block">Déjà confirmés <span class="required-star">*</span></label>
+                <%= f.number_field :players_present,
+                    min: 1,
+                    value: (@match.players_present || 1),
+                    class: "form-control",
+                    data: {
+                      "match-form-target": "playersPresentInput",
+                      "action": "input->match-form#changePresent"
+                    } %>
+              </div>
+
+              <%# Champ 2 : Places à remplir via l'app (écrit dans playersInput = player_left) %>
+              <div>
+                <label class="form-label d-block">Joueurs recherchés <span class="required-star">*</span></label>
+                <input type="number"
+                       min="1"
+                       value="<%= @match.player_left || 1 %>"
+                       class="form-control"
+                       data-match-form-target="playersLibreInput"
+                       data-action="input->match-form#changeLibre">
+              </div>
+
+            </div><%# fin flex wrapper %>
+
+          </div><%# fin section Libre %>
 
           <%# ── Boutons de niveau ── %>
           <div class="mb-4">
@@ -796,6 +832,16 @@
           <div class="match-recap-row" data-match-form-target="recapFormatRow" style="display:none;">
             <span class="recap-label">Format</span>
             <span class="recap-value" data-match-form-target="recapFormat">—</span>
+          </div>
+
+          <%# ── Ligne Présents (visible uniquement en mode Libre) ── %>
+          <div class="match-recap-row"
+               data-match-form-target="recapPresentRow"
+               style="<%= @match.libre? ? '' : 'display:none;' %>">
+            <span class="recap-label">Présents</span>
+            <span class="recap-value" data-match-form-target="recapPresent">
+              <%= @match.players_present || 1 %>
+            </span>
           </div>
 
           <%# ── Ligne Joueurs recherchés ── %>

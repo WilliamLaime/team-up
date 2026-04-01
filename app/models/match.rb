@@ -137,8 +137,18 @@ class Match < ApplicationRecord
             presence: true,
             numericality: { only_integer: true, greater_than: 0, message: "doit être au moins 1" }
 
+  # Validation : joueurs présents obligatoire uniquement pour le format Libre
+  validates :players_present,
+            numericality: { only_integer: true, greater_than: 0, message: "doit être au moins 1" },
+            if: -> { libre? }
+
   # Validation : le match doit être prévu au minimum 30 minutes à l'avance
   validate :match_must_be_at_least_30min_in_future, on: %i[create update]
+
+  # Retourne vrai si le format du match est "Libre" (taille d'équipe définie librement)
+  def libre?
+    format == "Libre"
+  end
 
   # Retourne vrai si le match est en mode validation manuelle
   def manual_validation?
