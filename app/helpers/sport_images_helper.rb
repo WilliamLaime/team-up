@@ -79,6 +79,11 @@ module SportImagesHelper
     SPORT_IMAGES[sport_slug.to_s] || SPORT_IMAGES["football"]
   end
 
+  # Retourne l'URL d'une image misc par clé (:multisports, :multisports_img, :padel_icon)
+  def sport_misc_image(key)
+    SPORT_MISC_IMAGES[key]
+  end
+
   # Retourne l'URL de couverture pour un match :
   # - utilise match.banner_image si définie manuellement
   # - sinon rotation déterministe : le même match aura toujours la même image

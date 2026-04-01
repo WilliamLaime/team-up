@@ -129,7 +129,9 @@ module ApplicationHelper
     return "" unless sport
 
     if sport.icon.match?(/\.(png|jpg|svg|gif|webp)$/i)
-      image_tag sport.icon,
+      # URL externe (Cloudinary) → utilisée directement, sinon asset pipeline
+      icon_src = sport.icon.start_with?("http") ? sport.icon : asset_path(sport.icon)
+      image_tag icon_src,
                 alt: sport.name,
                 class: css_class,
                 style: "width:#{size}; height:#{size}; object-fit:contain; vertical-align:middle;"
@@ -189,8 +191,9 @@ module ApplicationHelper
     return "" unless sport
 
     if sport.icon.match?(/\.(png|jpg|svg|gif|webp)$/i)
-      # On construit le tag manuellement pour retourner une string ordinaire (non safe)
-      src = asset_path(sport.icon)
+      # Si l'icône est une URL externe (Cloudinary), on l'utilise directement.
+      # Sinon on passe par asset_path pour les fichiers locaux.
+      src = sport.icon.start_with?("http") ? sport.icon : asset_path(sport.icon)
       img_style = "width:#{size};height:#{size};object-fit:contain;vertical-align:middle;"
       "<img src=\"#{src}\" alt=\"#{sport.name}\" style=\"#{img_style}\"> #{sport.name}"
     else
