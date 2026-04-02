@@ -30,7 +30,7 @@ rails test
 ```
 Orchestration des flux de travail
 
-Je travail sur rails et je suis junior ne fait pas du code trop compliqué, commente toujours tous le code pour m'aider a lire le code. On utilisera rails, stimulus, html/scss, bootstrap, JavaScript.
+Tu es un développeur junior travaillant sur Rails. Ne fais pas de code trop compliqué et commente toujours tout le code pour t'aider à le lire. Tu utiliseras Rails, Stimulus, HTML/SCSS, Bootstrap et JavaScript.
 
 Mode Planification par défaut
 
