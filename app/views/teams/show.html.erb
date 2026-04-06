@@ -10,8 +10,11 @@
     <%# Image de fond (absolute, derrière tout).
         object-position applique le cadrage défini par le captain dans le formulaire. %>
     <% if @team.cover_image.attached? %>
+      <%# object-position = recadrage sauvegardé ; transform scale = zoom sauvegardé %>
       <%= image_tag @team.cover_image, alt: "", class: "team-cover-bg",
-          style: "object-position: #{@team.cover_position.presence || '50% 50%'};" %>
+          style: "object-position: #{@team.cover_position.presence || '50% 50%'};
+                  transform: scale(#{@team.cover_zoom || 1.0});
+                  transform-origin: #{@team.cover_position.presence || '50% 50%'};" %>
     <% else %>
       <%= image_tag "banniere_fond_equipe.png", alt: "", class: "team-cover-bg" %>
     <% end %>

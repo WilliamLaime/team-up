@@ -137,6 +137,6 @@ class TeamsController < ApplicationController
 
   # Paramètres autorisés pour la création/modification d'une équipe
   def team_params
-    params.require(:team).permit(:name, :description, :badge_image, :badge_svg, :cover_image, :cover_position)
+    params.require(:team).permit(:name, :description, :badge_image, :badge_svg, :cover_image, :cover_position, :cover_zoom)
   end
 end
