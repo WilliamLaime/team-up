@@ -307,7 +307,12 @@ class ProfilsController < ApplicationController
         sp = SportProfil.find_or_initialize_by(profil: @profil, sport_id: sport_id.to_i)
         sp.level = sp_params[:level].presence
         sp.role  = sp_params[:role].presence
-        sp.save!
+        # save (sans !) pour ne pas propager une exception non gérée → 500
+        unless sp.save
+          @profil.errors.add(:base, "Erreur sur le sport #{sport_id} : #{sp.errors.full_messages.join(', ')}")
+          render :edit, status: :unprocessable_entity
+          return
+        end
       end
 
       # Supprime les SportProfil des sports désélectionnés
