@@ -62,6 +62,11 @@ gem "active_storage_validations" # Validation du type et de la taille des fichie
 gem "valid_email2" # Validation format + existence MX record des emails
 gem "csv"
 
+# SEO — gestion centralisée des balises <title>, <meta description>, OpenGraph, Twitter Card
+gem "meta-tags"
+# SEO — génération automatique du sitemap.xml pour les moteurs de recherche
+gem "sitemap_generator"
+
 group :development, :test do
   gem "dotenv-rails"
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

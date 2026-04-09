@@ -9,6 +9,10 @@ class PagesController < ApplicationController
 
   def about
     # Pas de données à charger — page statique
+    set_meta_tags(
+      title:       "Qui sommes-nous ?",
+      description: "Découvrez l'histoire de Teams-up, l'application qui connecte les sportifs amateurs pour créer des matchs et former des équipes près de chez eux."
+    )
   end
 
   # Page affichée juste après l'inscription, avant confirmation de l'email.
@@ -27,25 +31,50 @@ class PagesController < ApplicationController
     # Initialise un objet vide pour que form_with puisse construire le formulaire
     # Cet objet sera aussi utilisé pour ré-afficher les erreurs si le POST échoue
     @contact_message = ContactMessage.new
+    set_meta_tags(
+      title:       "Contact",
+      description: "Une question, un bug, une suggestion ? Contactez l'équipe Teams-up. Nous répondons sous 48h."
+    )
   end
 
   def partenariat
-    # Page statique — pas de données à charger
-    # Présente les opportunités de partenariat et renvoie vers /contact pour la prise de contact
+    # Page statique — présente les opportunités de collaboration professionnelle
+    set_meta_tags(
+      title:       "Partenariat",
+      description: "Devenez partenaire de Teams-up et touchez une communauté de sportifs passionnés. Associations, salles de sport, équipementiers — parlons-en."
+    )
   end
 
   def confidentialite
     # Page Politique de confidentialité — page statique RGPD
+    set_meta_tags(
+      title:       "Politique de confidentialité",
+      # noindex : cette page légale ne doit pas apparaître dans Google
+      noindex:     true
+    )
   end
 
   def conditions
     # Page Conditions générales d'utilisation — page statique
+    set_meta_tags(
+      title:   "Conditions générales d'utilisation",
+      # noindex : cette page légale ne doit pas apparaître dans Google
+      noindex: true
+    )
   end
 
   def home
     @available_matches_count = load_available_matches_count
     @matches = load_upcoming_matches
     @hero_match = load_hero_match
+
+    # La page d'accueil a un titre complet sans séparateur — on veut "Teams-up" seul, pas "X | Teams-up"
+    set_meta_tags(
+      site:        "Teams-up",
+      title:       false, # Désactive le titre de page → affiche uniquement le site name
+      description: "Crée ou rejoins un match de sport amateur près de chez toi en 30 secondes. Football, basket, tennis et bien plus — #{@available_matches_count} matchs disponibles.",
+      og: { title: "Teams-up — Trouve un match de sport amateur" }
+    )
   end
 
   private

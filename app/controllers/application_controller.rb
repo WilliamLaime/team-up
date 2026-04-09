@@ -1,5 +1,14 @@
 class ApplicationController < ActionController::Base
+  # ── Redirection 301 : .com → .fr ──────────────────────────────────────────
+  # Doit être le PREMIER before_action pour intercepter toutes les requêtes
+  # avant toute logique métier (auth, meta tags, etc.).
+  # 301 = redirection permanente → Google transfère tout le "link juice" SEO vers le .fr
+  before_action :redirect_com_to_fr
+
   before_action :authenticate_user!
+  # Initialise les meta tags SEO par défaut avant chaque action.
+  # Chaque controller peut appeler set_meta_tags() pour surcharger ces valeurs.
+  before_action :set_default_meta_tags
   include Pundit::Authorization
 
   # Pundit: allow-list approach
@@ -39,6 +48,73 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  # ── Redirection permanente tous domaines → www.teams-up-sport.fr ──────────
+  #
+  # Domaines Heroku détectés (tous redirigent vers le domaine canonique) :
+  #   - teams-up-sport.com       (sans www)
+  #   - www.teams-up-sport.com
+  #   - teams-up-sport.fr        (sans www)
+  #   - www.teams-up.fit
+  #
+  # Le domaine canonique (jamais redirigé) : www.teams-up-sport.fr
+  #
+  # 301 = redirection permanente → Google transfère tout le "link juice" SEO
+  # vers un seul domaine au lieu de le diluer sur 3.
+  CANONICAL_HOST = "www.teams-up-sport.fr".freeze
+
+  def redirect_com_to_fr
+    # En développement ou test, on ne redirige pas (host = localhost)
+    return if Rails.env.local?
+    # Si on est déjà sur le bon domaine, rien à faire
+    return if request.host == CANONICAL_HOST
+
+    redirect_to "https://#{CANONICAL_HOST}#{request.fullpath}",
+                status:           :moved_permanently, # 301 — permanent pour Google
+                allow_other_host: true                # Rails 7+ exige ce flag cross-domain
+  end
+
+  # ── Meta tags SEO par défaut ───────────────────────────────────────────────
+  #
+  # Ces valeurs s'appliquent à toutes les pages tant qu'un controller ne les
+  # surcharge pas avec set_meta_tags(). Elles garantissent qu'aucune page
+  # ne part jamais sans title ni description dans les résultats Google.
+  #
+  # Structure du title généré : "Page spécifique | Teams-up"
+  # Si aucun titre n'est défini : "Teams-up — Sport, matchs et équipes"
+  def set_default_meta_tags
+    set_meta_tags(
+      # Nom du site — apparaît après le séparateur " | " dans le title
+      site:        "Teams-up",
+      # Title par défaut utilisé si la page ne définit pas le sien
+      title:       "Sport, matchs et équipes",
+      # Description par défaut — affichée sous le titre dans les résultats Google
+      description: "Teams-up — Crée ou rejoins un match de sport amateur près de chez toi. Football, basket, tennis et plus. Inscris-toi gratuitement.",
+      # Séparateur entre le titre de la page et le nom du site
+      separator:   "|",
+      # ── OpenGraph (partage sur réseaux sociaux : Facebook, LinkedIn, WhatsApp) ──
+      og: {
+        site_name:   "Teams-up",
+        type:        "website",
+        # :title et :description font référence aux valeurs définies ci-dessus
+        title:       :title,
+        description: :description,
+        url:         -> { request.original_url }
+      },
+      # ── Twitter Card (partage sur X/Twitter) ──
+      twitter: {
+        card:        "summary",
+        title:       :title,
+        description: :description
+      },
+      # ── Canonical URL ──────────────────────────────────────────────────────
+      # Pointe toujours vers l'URL propre sans query string.
+      # Exemple : /matches?sport=2&page=3 → canonical = https://www.teams-up.fr/matches
+      # Ça évite que Google considère chaque combinaison de filtres comme une page distincte
+      # (ce qui diluerait le score SEO de la vraie page /matches).
+      canonical: -> { request.base_url + request.path }
+    )
+  end
 
   # Redirige l'utilisateur non autorisé avec un message d'alerte
   def user_not_authorized

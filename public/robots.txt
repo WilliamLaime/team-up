@@ -1,1 +1,38 @@
-# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+# robots.txt — Teams-up
+# Ce fichier dit aux moteurs de recherche quelles pages indexer ou ignorer.
+# Voir : https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+
+# ── Pages à ne PAS indexer ────────────────────────────────────────────────────
+
+# Interface d'administration — jamais publique
+Disallow: /admin/
+
+# Actions Devise — inutile d'indexer login/signup/mot-de-passe
+Disallow: /users/sign_in
+Disallow: /users/sign_up
+Disallow: /users/password
+Disallow: /users/confirmation
+Disallow: /users/auth/
+
+# Pages personnelles (profil connecté, notifications, conversations)
+# Ces pages nécessitent une connexion — Google obtiendrait une redirection vers login
+Disallow: /profil
+Disallow: /profil/edit
+Disallow: /notifications
+Disallow: /conversations
+Disallow: /private_conversations
+
+# Routes techniques
+Disallow: /up
+Disallow: /manifest
+Disallow: /service-worker
+Disallow: /offline
+
+# Paramètres de filtre inutiles à indexer (évite le duplicate content)
+Disallow: /matches?mine=1
+
+# ── Sitemap ───────────────────────────────────────────────────────────────────
+# Indique l'emplacement du sitemap aux moteurs de recherche
+Sitemap: https://www.teams-up-sport.fr/sitemap.xml.gz

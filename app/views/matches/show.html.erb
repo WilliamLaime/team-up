@@ -21,6 +21,12 @@
   <style>
     .countdown-sep { display: none !important; height: 0 !important; margin: 0 !important; }
   </style>
+  <%# JSON-LD SportsEvent — données structurées pour Google (rich results).
+      Rendu uniquement pour les matchs publics : inutile d'envoyer des données
+      structurées à Google pour un match privé qu'il ne peut pas indexer. %>
+  <% unless @match.private? %>
+    <%= render "matches/json_ld", match: @match %>
+  <% end %>
 <% end %>
 
 <%# ── Données calculées une seule fois en haut ── %>
