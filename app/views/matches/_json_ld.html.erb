@@ -1,0 +1,100 @@
+<%#
+  Données structurées JSON-LD — Schema.org SportsEvent
+  =====================================================
+  Ce bloc est lu par Google pour comprendre que cette page est un événement sportif.
+  Il n'est PAS affiché à l'utilisateur (balise <script> dans le <head>).
+
+  Résultat possible dans Google : rich result avec date, lieu et sport directement
+  dans les résultats de recherche → meilleure visibilité et plus de clics.
+
+  Documentation schema.org : https://schema.org/SportsEvent
+  Testeur Google : https://search.google.com/test/rich-results
+%>
+
+<%
+  # ── Calcul de la date/heure ISO 8601 ──────────────────────────────────────
+  # Google requiert le format ISO 8601 : "2026-04-15T15:00:00+02:00"
+  # On combine le champ date (Date) et le champ time (Time) du match en un DateTime
+  start_datetime = match.date.present? && match.time.present? \
+    ? DateTime.new(match.date.year, match.date.month, match.date.day,
+                   match.time.hour, match.time.min, 0, Time.zone.formatted_offset) \
+    : nil
+
+  # ── Lieu : on préfère le venue (établissement en BDD) sinon le champ place libre ──
+  location_name    = match.venue&.name    || match.place
+  location_address = match.venue&.address || match.place
+  location_city    = match.venue&.city
+
+  # ── Organisateur : prénom + nom depuis le profil ───────────────────────────
+  organizer_profil = match.user&.profil
+  organizer_name   = [organizer_profil&.first_name, organizer_profil&.last_name].compact.join(" ")
+  organizer_name   = "Organisateur" if organizer_name.blank?
+%>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SportsEvent",
+
+  <%# Titre du match — affiché dans le rich result %>
+  "name": <%= match.title.to_json %>,
+
+  <%# Description — résumé affiché sous le titre %>
+  <% if match.description.present? %>
+  "description": <%= match.description.to_json %>,
+  <% end %>
+
+  <%# Date et heure de début au format ISO 8601 %>
+  <% if start_datetime %>
+  "startDate": "<%= start_datetime.iso8601 %>",
+  <% end %>
+
+  <%# Sport pratiqué %>
+  <% if match.sport&.name.present? %>
+  "sport": <%= match.sport.name.to_json %>,
+  <% end %>
+
+  <%# Lieu de l'événement %>
+  <% if location_name.present? %>
+  "location": {
+    "@type": "Place",
+    "name": <%= location_name.to_json %>
+    <% if location_address.present? || location_city.present? %>,
+    "address": {
+      "@type": "PostalAddress"
+      <% if location_address.present? %>,
+      "streetAddress": <%= location_address.to_json %>
+      <% end %>
+      <% if location_city.present? %>,
+      "addressLocality": <%= location_city.to_json %>,
+      "addressCountry": "FR"
+      <% end %>
+    }
+    <% end %>
+  },
+  <% end %>
+
+  <%# Organisateur de l'événement %>
+  "organizer": {
+    "@type": "Person",
+    "name": <%= organizer_name.to_json %>
+  },
+
+  <%# Prix d'entrée — "0" si gratuit %>
+  "offers": {
+    "@type": "Offer",
+    "price": "<%= match.price_per_player || 0 %>",
+    "priceCurrency": "EUR",
+    "url": "<%= match_url(match) %>"
+  },
+
+  <%# Statut de l'événement : planifié si dans le futur, annulé si matchs complets ou terminés %>
+  "eventStatus": "https://schema.org/EventScheduled",
+
+  <%# Mode de présence : physique (pas en ligne) %>
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+
+  <%# URL canonique de la page %>
+  "url": "<%= match_url(match) %>"
+}
+</script>

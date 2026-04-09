@@ -1,7 +1,28 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Teams-up" %></title>
+    <%# Encodage déclaré explicitement — bonne pratique HTML5 et prérequis SEO %>
+    <meta charset="utf-8">
+    <%# display_meta_tags génère automatiquement :
+        - <title>Page | Teams-up</title>
+        - <meta name="description" content="...">
+        - <meta property="og:title" content="..."> (partage réseaux sociaux)
+        - <meta property="og:description" content="...">
+        - <meta property="og:url" content="...">
+        - <meta name="twitter:card" content="...">
+        Les valeurs viennent du before_action set_default_meta_tags (ApplicationController)
+        et peuvent être surchargées dans chaque controller avec set_meta_tags(). %>
+    <%= display_meta_tags site: "Teams-up" %>
+
+    <%# ── Vérification Google Search Console ──────────────────────────────────
+        Ce code prouve à Google que nous sommes propriétaires du domaine.
+        Il est stocké dans les credentials Rails (jamais en dur ici).
+        Pour l'ajouter : rails credentials:edit → google_site_verification: VOTRE_CODE
+        Pour obtenir le code : Search Console → Ajouter une propriété → Balise HTML %>
+    <% if ENV["GOOGLE_SITE_VERIFICATION"].present? %>
+      <meta name="google-site-verification" content="<%= ENV["GOOGLE_SITE_VERIFICATION"] %>">
+    <% end %>
+
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Teams-up">

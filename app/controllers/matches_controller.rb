@@ -48,6 +48,15 @@ class MatchesController < ApplicationController
         apply_filters
       end
     end
+
+    # Meta tags pour la liste des matchs — description adaptée au sport actif si filtré
+    sport_name = current_sport&.name
+    set_meta_tags(
+      title:       sport_name ? "Matchs de #{sport_name}" : "Trouver un match",
+      description: sport_name \
+        ? "Trouve et rejoins un match de #{sport_name} près de chez toi. Tous niveaux, toutes villes — inscris-toi en quelques secondes sur Teams-up." \
+        : "Trouve et rejoins un match de sport amateur près de chez toi. Football, basket, tennis et plus — Teams-up."
+    )
   end
 
   # GET /matches/:id
@@ -72,6 +81,18 @@ class MatchesController < ApplicationController
     # Récupère les participants du match avec leur profil (évite les N+1 dans la vue)
     @match_users = @match.match_users.includes(user: :profil)
     authorize @match
+
+    # Meta tags dynamiques — chaque match a son propre titre dans Google
+    # Ex: "Match de Football — Partie du dimanche à Paris | Teams-up"
+    sport_label = @match.sport&.name || "Sport"
+    place_label = @match.place.present? ? " à #{@match.place}" : ""
+    set_meta_tags(
+      title:       "Match de #{sport_label} — #{@match.title}",
+      description: "Rejoins ce match de #{sport_label}#{place_label} sur Teams-up. " \
+                   "#{@match.title} — Niveau #{@match.level}. Inscris-toi en quelques secondes.",
+      # noindex pour les matchs privés — ils ne doivent pas apparaître dans Google
+      noindex:     @match.private?
+    )
 
     # Si l'utilisateur n'est pas connecté, on mémorise l'URL du match.
     # Devise s'en servira pour rediriger automatiquement ici après la connexion.

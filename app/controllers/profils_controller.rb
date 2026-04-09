@@ -197,6 +197,20 @@ class ProfilsController < ApplicationController
     @profil_user = User.find(params[:id])
     @profil = @profil_user.profil || @profil_user.build_profil
 
+    # Meta tags dynamiques — titre et description personnalisés par joueur
+    # &. (safe navigation) : évite un crash si first_name/last_name ne sont pas encore remplis
+    player_name = [@profil&.first_name, @profil&.last_name].compact.join(" ")
+    player_name = "Joueur" if player_name.blank? # fallback si profil vide
+
+    set_meta_tags(
+      title:       "#{player_name} — Profil joueur",
+      description: "Consulte le profil de #{player_name} sur Teams-up. Ses matchs joués, son niveau et ses avis de coéquipiers.",
+      # noindex : les profils ne sont pas indexés par Google.
+      # Raisons : données personnelles (RGPD), contenu qui change souvent, pas de valeur SEO externe.
+      # À terme, prévoir un opt-in dans les paramètres du profil.
+      noindex: true
+    )
+
     # On n'affiche pas les amis d'un autre utilisateur (trop intrusif)
     @all_friends = nil
 
