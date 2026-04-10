@@ -50,10 +50,10 @@
               <%# Wrapper relatif pour pouvoir positionner la croix en absolu %>
               <div class="notif-page-wrapper">
 
-                <%# Bouton principal : marque comme lue puis redirige — ne contient plus la ligne de temps %>
+                <%# Bouton principal : marque comme lue puis redirige %>
                 <%= button_to mark_read_notification_path(notif), method: :patch,
                     class: "notif-page-item w-100 text-start border-0 p-0 #{notif.read? ? 'is-read' : 'is-unread'}" do %>
-                  <div class="d-flex align-items-start gap-3 px-4 pt-3 pb-1">
+                  <div class="d-flex align-items-start gap-3 px-4 py-3">
 
                     <%# Icône : cloche verte si non lue, check grisé si lue %>
                     <div class="notif-page-icon flex-shrink-0 mt-1">
@@ -64,11 +64,15 @@
                       <% end %>
                     </div>
 
-                    <%# Message %>
+                    <%# Message + date %>
                     <div class="flex-grow-1">
                       <div class="notif-page-message <%= notif.read? ? 'read' : 'unread' %>">
                         <%= notif.message %>
                       </div>
+                      <small class="notif-page-time">
+                        <i data-lucide="clock" style="width:11px;height:11px;"></i>
+                        <%= time_ago_in_words(notif.created_at) %>
+                      </small>
                     </div>
 
                     <%# Point vert "nouveau" à droite pour les non lues %>
@@ -79,42 +83,31 @@
                   </div>
                 <% end %>
 
-                <%#
-                  Ligne basse : temps à gauche + boutons ami à droite (si applicable).
-                  Placée EN DEHORS du button_to principal car button_to génère un <form>
-                  et les boutons ami sont aussi des <form> → on ne peut pas imbriquer des forms.
-                %>
-                <div class="d-flex align-items-center justify-content-between px-4 pb-3" style="padding-left: 3.25rem;">
-                  <%# Temps écoulé %>
-                  <small class="notif-page-time">
-                    <i data-lucide="clock" style="width:11px;height:11px;"></i>
-                    <%= time_ago_in_words(notif.created_at) %>
-                  </small>
-
-                  <%# Boutons ✓ / ✗ pour les demandes d'ami en attente — sur la même ligne que le temps %>
-                  <% if notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
-                    <div class="d-flex gap-1">
-                      <%# Accepter — juste une icône ✓ %>
-                      <%= button_to accept_user_friendship_path(notif.actor),
-                            method: :patch,
-                            style: "display:inline-flex; align-items:center; justify-content:center;
-                                    width:26px; height:26px; border-radius:50%; cursor:pointer;
-                                    color:#1EDD88; background:rgba(30,221,136,0.1);
-                                    border:1px solid rgba(30,221,136,0.3);" do %>
-                        <i data-lucide="check" style="width:13px; height:13px;"></i>
-                      <% end %>
-                      <%# Refuser — juste une icône ✗ %>
-                      <%= button_to decline_user_friendship_path(notif.actor),
-                            method: :patch,
-                            style: "display:inline-flex; align-items:center; justify-content:center;
-                                    width:26px; height:26px; border-radius:50%; cursor:pointer;
-                                    color:rgba(255,100,100,0.7); background:rgba(255,100,100,0.06);
-                                    border:1px solid rgba(255,100,100,0.2);" do %>
-                        <i data-lucide="x" style="width:13px; height:13px;"></i>
-                      <% end %>
-                    </div>
-                  <% end %>
-                </div>
+                <%# Boutons Accepter / Refuser pour les demandes d'ami en attente %>
+                <% if notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
+                  <div class="d-flex gap-2 px-4 pb-3">
+                    <%# Accepter %>
+                    <%= button_to accept_user_friendship_path(notif.actor),
+                          method: :patch,
+                          style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.75rem;
+                                  font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
+                                  border:1px solid rgba(30,221,136,0.3); border-radius:999px;
+                                  padding:0.3rem 0.9rem; cursor:pointer;" do %>
+                      <i data-lucide="check" style="width:12px; height:12px;"></i>
+                      Accepter
+                    <% end %>
+                    <%# Refuser %>
+                    <%= button_to decline_user_friendship_path(notif.actor),
+                          method: :patch,
+                          style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.75rem;
+                                  font-weight:700; color:rgba(255,100,100,0.7);
+                                  background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
+                                  border-radius:999px; padding:0.3rem 0.9rem; cursor:pointer;" do %>
+                      <i data-lucide="x" style="width:12px; height:12px;"></i>
+                      Refuser
+                    <% end %>
+                  </div>
+                <% end %>
 
                 <%# Bouton supprimer (croix) — positionné en absolu dans le wrapper %>
                 <%# C'est un formulaire séparé car button_to génère déjà un <form> %>
