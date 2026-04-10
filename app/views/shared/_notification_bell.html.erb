@@ -70,10 +70,10 @@
           pour retrouver les notifications non lues lors du "Tout lire" %>
       <div class="notif-item-wrapper <%= 'notif-unread-item' unless notif.read? %>">
 
-        <%# Cliquer marque la notif comme lue — classe "unread" = fond vert léger %>
+        <%# Cliquer marque la notif comme lue — le fond unread est géré par le wrapper parent %>
         <%# data-turbo-frame="_top" : navigation pleine page pour sortir du turbo_frame "notification_bell" %>
         <%= button_to mark_read_notification_path(notif), method: :patch,
-            class: "w-100 text-start border-0 p-0 notif-item #{notif.read? ? '' : 'unread'}",
+            class: "w-100 text-start border-0 p-0 notif-item",
             data: { turbo_frame: "_top" } do %>
           <div class="d-flex align-items-start gap-2 px-3 py-2">
             <%# Icône : check grisé si lue, cloche verte si non lue %>
@@ -111,9 +111,9 @@
           Boutons sans fond ni bordure — juste des icônes colorées alignées avec le temps.
         %>
         <% if notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
-          <%# Même fond vert que .notif-item.unread pour les notifs non lues %>
+          <%# Fond géré par le wrapper parent — pas de style inline ici %>
           <div class="d-flex align-items-center justify-content-between pb-2"
-               style="padding-left:2.4rem; padding-right:2rem; <%= 'background:rgba(30,221,136,0.07);' unless notif.read? %>"
+               style="padding-left:2.4rem; padding-right:2rem;"
                data-action="click->notification-dropdown#stopClickPropagation">
             <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
               <%= time_ago_in_words(notif.created_at) %>
