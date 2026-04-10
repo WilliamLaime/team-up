@@ -106,33 +106,33 @@
           Placés EN DEHORS du button_to principal (les forms ne s'imbriquent pas).
           On repositionne la ligne "temps" via CSS pour y intégrer les boutons à droite.
         %>
+        <%#
+          Ligne temps + boutons ✓/✗ pour les demandes d'ami.
+          Boutons sans fond ni bordure — juste des icônes colorées alignées avec le temps.
+        %>
         <% if notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
-          <div class="d-flex align-items-center justify-content-between px-3 pb-2"
-               style="margin-top:-4px; padding-left:2.4rem !important;"
+          <div class="d-flex align-items-center justify-content-between pb-2"
+               style="padding-left:2.4rem; padding-right:2rem;"
                data-action="click->notification-dropdown#stopClickPropagation">
-            <%# Temps — en vert pour les demandes d'ami %>
-            <small style="color:#1EDD88;font-size:0.75rem;">
+            <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
               <%= time_ago_in_words(notif.created_at) %>
             </small>
-            <%# Boutons icône uniquement : ✓ vert et ✗ rouge %>
-            <div class="d-flex gap-1">
+            <div class="d-flex gap-2 align-items-center">
+              <%# ✓ sans fond ni bordure %>
               <%= button_to accept_user_friendship_path(notif.actor),
                     method: :patch,
                     data: { turbo_frame: "_top" },
-                    style: "display:inline-flex; align-items:center; justify-content:center;
-                            width:22px; height:22px; border-radius:50%; cursor:pointer;
-                            color:#1EDD88; background:rgba(30,221,136,0.1);
-                            border:1px solid rgba(30,221,136,0.3);" do %>
-                <i data-lucide="check" style="width:11px; height:11px;"></i>
+                    style: "display:inline-flex; align-items:center; background:none;
+                            border:none; padding:0; cursor:pointer; color:#1EDD88;" do %>
+                <i data-lucide="check" style="width:16px; height:16px;"></i>
               <% end %>
+              <%# ✗ sans fond ni bordure %>
               <%= button_to decline_user_friendship_path(notif.actor),
                     method: :patch,
                     data: { turbo_frame: "_top" },
-                    style: "display:inline-flex; align-items:center; justify-content:center;
-                            width:22px; height:22px; border-radius:50%; cursor:pointer;
-                            color:rgba(255,100,100,0.7); background:rgba(255,100,100,0.06);
-                            border:1px solid rgba(255,100,100,0.2);" do %>
-                <i data-lucide="x" style="width:11px; height:11px;"></i>
+                    style: "display:inline-flex; align-items:center; background:none;
+                            border:none; padding:0; cursor:pointer; color:rgba(255,100,100,0.7);" do %>
+                <i data-lucide="x" style="width:16px; height:16px;"></i>
               <% end %>
             </div>
           </div>
