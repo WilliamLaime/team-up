@@ -32,7 +32,6 @@ export default class extends Controller {
     "minusBtn",          // Bouton "−" du compteur standard (pour changer sa couleur)
     "plusBtn",           // Bouton "+" du compteur standard (pour changer sa couleur)
     "levelInput",        // Input caché : niveau sélectionné (mis à jour par les boutons)
-    "validationToggle",  // Checkbox du toggle Manuel/Automatique
     "priceInput",        // Champ numérique : prix par joueur
     "bannerImageInput",  // Input caché : URL de l'image de la banner (soumise avec le formulaire)
 
@@ -527,23 +526,38 @@ export default class extends Controller {
   }
 
   // ── Validation : Manuel / Automatique ───────────────────
-  // Le toggle est dans la Section 4 du formulaire
-  // Ordre des labels : "Manuel" à gauche (index 0), "Automatique" à droite (index 1)
-  // checked = Automatique, unchecked = Manuel
+  // Source de vérité : le champ caché #match_validation_mode
+  // Synchronise uniquement la ligne "Validation" du récapitulatif
   updateValidation() {
-    // checked = Automatique → isManual est l'inverse
-    const isManual = !this.validationToggleTarget.checked
+    const hidden = document.getElementById("match_validation_mode")
+    const mode = (hidden && hidden.value) || "automatic"
+    this.recapValidationTarget.textContent = mode === "manual" ? "Manuel" : "Automatique"
+  }
 
-    // Met à jour les labels "Manuel" / "Automatique" autour du toggle
-    const labels = this.element.querySelectorAll(".toggle-label")
-    if (labels.length === 2) {
-      // Premier label = "Manuel" → actif si mode manuel
-      labels[0].classList.toggle("active-label", isManual)
-      // Deuxième label = "Automatique" → actif si mode automatique
-      labels[1].classList.toggle("active-label", !isManual)
-    }
+  // ── Clic sur un bouton Validation (Automatique / Manuel) ──
+  // Met à jour le champ caché, l'état actif des boutons, et le récap
+  selectValidation(event) {
+    const choice = event.currentTarget.dataset.validationChoice
+    const hidden = document.getElementById("match_validation_mode")
+    if (hidden) hidden.value = choice
 
-    // Met à jour la ligne "Validation" dans le récapitulatif
-    this.recapValidationTarget.textContent = isManual ? "Manuel" : "Automatique"
+    // Active/désactive la classe .active sur les deux boutons
+    this.element.querySelectorAll("[data-validation-choice]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.validationChoice === choice)
+    })
+
+    this.updateValidation()
+  }
+
+  // ── Clic sur un bouton Visibilité (Public / Privé) ──
+  // Met à jour le champ caché et l'état actif des boutons
+  selectVisibility(event) {
+    const choice = event.currentTarget.dataset.visibilityChoice
+    const hidden = document.getElementById("match_visibility")
+    if (hidden) hidden.value = choice
+
+    this.element.querySelectorAll("[data-visibility-choice]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.visibilityChoice === choice)
+    })
   }
 }
