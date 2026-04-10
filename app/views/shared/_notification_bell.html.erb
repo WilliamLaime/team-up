@@ -111,8 +111,9 @@
           Boutons sans fond ni bordure — juste des icônes colorées alignées avec le temps.
         %>
         <% if notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
+          <%# Même fond vert que .notif-item.unread pour les notifs non lues %>
           <div class="d-flex align-items-center justify-content-between pb-2"
-               style="padding-left:2.4rem; padding-right:2rem;"
+               style="padding-left:2.4rem; padding-right:2rem; <%= 'background:rgba(30,221,136,0.07);' unless notif.read? %>"
                data-action="click->notification-dropdown#stopClickPropagation">
             <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
               <%= time_ago_in_words(notif.created_at) %>
