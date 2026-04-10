@@ -256,6 +256,10 @@ class MatchesController < ApplicationController
       UserMailer.match_cancelled(@match, mu.user).deliver_now
     end
 
+    # Envoie également l'email de confirmation d'annulation à l'organisateur lui-même.
+    # Il est exclu de participants (role: "organisateur") mais doit recevoir un récapitulatif.
+    UserMailer.match_cancelled(@match, @match.user).deliver_now
+
     @match.destroy
     redirect_to matches_path, notice: "Match supprimé."
   end
