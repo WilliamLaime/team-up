@@ -42,6 +42,10 @@
         <% pending_invitations = current_user.team_invitations_received.pending.includes(:inviter, :team, inviter: :profil) %>
         <%= render "team_invitations/pending_invitations", invitations: pending_invitations %>
 
+        <%# ── Demandes d'amis en attente ── %>
+        <% pending_friend_requests = current_user.inverse_friendships.pending.includes(:user) %>
+        <%= render "friendships/pending_requests", pending_requests: pending_friend_requests %>
+
         <%# ── Liste des notifications ── %>
         <% if @notifications.any? %>
           <div class="notif-page-list">
