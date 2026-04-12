@@ -243,26 +243,30 @@
     &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
   }
 
-  // Wrapper relatif pour positionner la croix de suppression
+  // Wrapper relatif pour positionner la croix de suppression.
+  // Le hover et le fond unread sont appliqués ici pour englober
+  // à la fois le button_to principal ET la ligne temps+boutons ami.
   .notif-item-wrapper {
     position: relative;
     border-bottom: 1px solid rgba(255,255,255,0.06);
 
     &:last-child { border-bottom: none; }
+
+    // Fond vert léger pour les notifs non lues — couvre toute la carte
+    &.notif-unread-item {
+      background: rgba($green, 0.07);
+    }
+
+    // Hover sur toute la carte
+    &:hover {
+      background: rgba(255,255,255,0.06);
+    }
   }
 
   .notif-item {
     background: transparent;
     color: rgba(255,255,255,0.8);
     font-size: 0.82rem;
-
-    &.unread {
-      background: rgba($green, 0.07);
-    }
-
-    &:hover {
-      background: rgba(255,255,255,0.06);
-    }
   }
 
   // Poubelle de suppression dans le dropdown — coin haut droit

@@ -1,0 +1,45 @@
+<%# ── Demandes d'amis reçues et en attente ──────────────────────────────────── %>
+<%# Rendu dans la page notifications, identique aux invitations d'équipes %>
+<%# Variable attendue : pending_requests (collection de Friendship) %>
+
+<% if pending_requests.any? %>
+  <div class="team-invitations-received">
+    <h3 style="font-size:0.9rem;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:0.75rem;">
+      <i data-lucide="user-plus" style="width:14px;height:14px;margin-right:4px;"></i>
+      Demandes d'amis (<%= pending_requests.size %>)
+    </h3>
+
+    <% pending_requests.each do |friendship| %>
+      <%# friendship.user = celui qui a envoyé la demande %>
+      <div class="team-invitation-card">
+        <div class="team-invitation-card-body">
+          <p style="font-size:0.85rem;margin:0;color:rgba(255,255,255,0.85);">
+            <strong><%= friendship.user.display_name %></strong>
+            vous a envoyé une demande d'ami.
+          </p>
+          <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin:0;">
+            <%= time_ago_in_words(friendship.created_at) %>
+          </p>
+        </div>
+
+        <div class="team-invitation-card-actions">
+          <%# Accepter %>
+          <%= button_to accept_user_friendship_path(friendship.user),
+              method: :patch,
+              class: "btn btn-sm btn-primary btn-cta-primary" do %>
+            <i data-lucide="check" style="width:12px;height:12px;margin-right:4px;"></i>
+            Accepter
+          <% end %>
+
+          <%# Refuser %>
+          <%= button_to decline_user_friendship_path(friendship.user),
+              method: :patch,
+              class: "btn btn-sm btn-outline-danger" do %>
+            <i data-lucide="x" style="width:12px;height:12px;margin-right:4px;"></i>
+            Refuser
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

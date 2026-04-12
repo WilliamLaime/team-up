@@ -71,10 +71,10 @@
           pour retrouver les notifications non lues lors du "Tout lire" %>
       <div class="notif-item-wrapper <%= 'notif-unread-item' unless notif.read? %>">
 
-        <%# Cliquer marque la notif comme lue — classe "unread" = fond vert léger %>
+        <%# Cliquer marque la notif comme lue — le fond unread est géré par le wrapper parent %>
         <%# data-turbo-frame="_top" : navigation pleine page pour sortir du turbo_frame "notification_bell" %>
         <%= button_to mark_read_notification_path(notif), method: :patch,
-            class: "w-100 text-start border-0 p-0 notif-item #{notif.read? ? '' : 'unread'}",
+            class: "w-100 text-start border-0 p-0 notif-item",
             data: { turbo_frame: "_top" } do %>
           <div class="d-flex align-items-start gap-2 px-3 py-2">
             <%# Icône : check grisé si lue, cloche verte si non lue %>
@@ -92,39 +92,51 @@
                    style="font-size:0.82rem;white-space:normal;line-height:1.3;color:<%= notif.read? ? 'rgba(255,255,255,0.5)' : '#fff' %>;">
                 <%= notif.message %>
               </div>
-              <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
-                <%= time_ago_in_words(notif.created_at) %>
-              </small>
+              <%# On masque le temps pour les demandes d'ami — il est réaffiché avec les boutons ✓/✗ en dessous %>
+              <% unless notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
+                <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
+                  <%= time_ago_in_words(notif.created_at) %>
+                </small>
+              <% end %>
             </div>
           </div>
         <% end %>
 
-        <%# Boutons Accepter / Refuser pour les demandes d'ami en attente %>
+        <%#
+          Boutons ✓/✗ pour les demandes d'ami — sur la même ligne que le temps.
+          Placés EN DEHORS du button_to principal (les forms ne s'imbriquent pas).
+          On repositionne la ligne "temps" via CSS pour y intégrer les boutons à droite.
+        %>
+        <%#
+          Ligne temps + boutons ✓/✗ pour les demandes d'ami.
+          Boutons sans fond ni bordure — juste des icônes colorées alignées avec le temps.
+        %>
         <% if notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
-          <div class="d-flex gap-2 px-3 pb-2"
+          <%# Fond géré par le wrapper parent — pas de style inline ici %>
+          <div class="d-flex align-items-center justify-content-between pb-2"
+               style="padding-left:2.4rem; padding-right:2rem;"
                data-action="click->notification-dropdown#stopClickPropagation">
-            <%# Accepter — navigation pleine page (data-turbo-frame="_top") %>
-            <%= button_to accept_user_friendship_path(notif.actor),
-                  method: :patch,
-                  data: { turbo_frame: "_top" },
-                  style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                          font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
-                          border:1px solid rgba(30,221,136,0.3); border-radius:999px;
-                          padding:0.2rem 0.65rem; cursor:pointer;" do %>
-              <i data-lucide="check" style="width:10px; height:10px;"></i>
-              Accepter
-            <% end %>
-            <%# Refuser — navigation pleine page %>
-            <%= button_to decline_user_friendship_path(notif.actor),
-                  method: :patch,
-                  data: { turbo_frame: "_top" },
-                  style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                          font-weight:700; color:rgba(255,100,100,0.7);
-                          background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
-                          border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
-              <i data-lucide="x" style="width:10px; height:10px;"></i>
-              Refuser
-            <% end %>
+            <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
+              <%= time_ago_in_words(notif.created_at) %>
+            </small>
+            <div class="d-flex gap-2 align-items-center">
+              <%# ✓ sans fond ni bordure %>
+              <%= button_to accept_user_friendship_path(notif.actor),
+                    method: :patch,
+                    data: { turbo_frame: "_top" },
+                    style: "display:inline-flex; align-items:center; background:none;
+                            border:none; padding:0; cursor:pointer; color:#1EDD88;" do %>
+                <i data-lucide="check" style="width:16px; height:16px;"></i>
+              <% end %>
+              <%# ✗ sans fond ni bordure %>
+              <%= button_to decline_user_friendship_path(notif.actor),
+                    method: :patch,
+                    data: { turbo_frame: "_top" },
+                    style: "display:inline-flex; align-items:center; background:none;
+                            border:none; padding:0; cursor:pointer; color:rgba(255,100,100,0.7);" do %>
+                <i data-lucide="x" style="width:16px; height:16px;"></i>
+              <% end %>
+            </div>
           </div>
         <% end %>
 
