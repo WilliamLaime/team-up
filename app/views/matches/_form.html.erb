@@ -529,7 +529,7 @@
 
           </div><%# fin niveau %>
 
-          <%# ── Toggle : Validation Manuel / Automatique ── %>
+          <%# ── Validation des joueurs : Manuel / Automatique (boutons classiques) ── %>
           <div class="mb-0">
             <label class="form-label d-block">
               Validation des joueurs
@@ -540,58 +540,30 @@
               </span>
             </label>
 
-            <%# Champ caché : contient la vraie valeur envoyée avec le formulaire.
-                Mis à jour via onchange du toggle ci-dessous. %>
-            <%= f.hidden_field :validation_mode, value: (@match.validation_mode || "automatic"),
+            <%# Champ caché : source de vérité envoyée au serveur. Par défaut "automatic". %>
+            <%= f.hidden_field :validation_mode,
+                value: (@match.validation_mode || "automatic"),
                 id: "match_validation_mode" %>
 
-            <%# Conteneur compact : fond + bordure, inline pour ne pas prendre toute la largeur %>
-            <div style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
-                        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
-                        border-radius:10px; padding:0.55rem 0.9rem;">
-
-              <%# Label gauche : Manuel — cliquable, vert si sélectionné %>
-              <span id="label_manuel"
-                    onclick="document.getElementById('validation_toggle').checked = false; document.getElementById('validation_toggle').dispatchEvent(new Event('change'));"
-                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= @match.manual_validation? ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
-                           transition:color 0.15s;">
-                ✋ Manuel
-              </span>
-
-              <%# Toggle pill %>
-              <label class="pill-toggle" for="validation_toggle" style="flex-shrink:0;">
-                <%= check_box_tag :validation_mode_toggle,
-                    "automatic",
-                    !@match.manual_validation?,
-                    class: "pill-toggle-input",
-                    id: "validation_toggle",
-                    data: {
-                      "match-form-target": "validationToggle",
-                      "action": "change->match-form#updateValidation"
-                    },
-                    onchange: "
-                      document.getElementById('match_validation_mode').value = this.checked ? 'automatic' : 'manual';
-                      document.getElementById('label_manuel').style.color      = this.checked ? 'rgba(255,255,255,0.4)' : '#1EDD88';
-                      document.getElementById('label_automatique').style.color = this.checked ? '#1EDD88' : 'rgba(255,255,255,0.4)';
-                    " %>
-                <span class="pill-toggle-track"></span>
-              </label>
-
-              <%# Label droit : Automatique — cliquable, vert si sélectionné %>
-              <span id="label_automatique"
-                    onclick="document.getElementById('validation_toggle').checked = true; document.getElementById('validation_toggle').dispatchEvent(new Event('change'));"
-                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= @match.manual_validation? ? 'rgba(255,255,255,0.4)' : '#1EDD88' %>;
-                           transition:color 0.15s;">
+            <%# Groupe de boutons classiques (même style que les boutons de niveau) %>
+            <div class="match-level-buttons" style="margin-top:0.6rem;">
+              <button type="button"
+                      class="match-level-btn <%= 'active' unless @match.manual_validation? %>"
+                      data-validation-choice="automatic"
+                      data-action="click->match-form#selectValidation">
                 ⚡ Automatique
-              </span>
-
+              </button>
+              <button type="button"
+                      class="match-level-btn <%= 'active' if @match.manual_validation? %>"
+                      data-validation-choice="manual"
+                      data-action="click->match-form#selectValidation">
+                ✋ Manuel
+              </button>
             </div>
-          </div><%# fin toggle validation %>
+          </div><%# fin validation %>
 
-          <%# ── Toggle : Visibilité Public / Privé ── %>
-          <%# Champ caché mis à jour par JS selon la position du toggle %>
+          <%# ── Visibilité du match : Public / Privé (boutons classiques) ── %>
+          <%# Champ caché : source de vérité. Par défaut "public". %>
           <%= hidden_field_tag "match[visibility]", @match.visibility.presence || "public", id: "match_visibility" %>
 
           <div class="mb-0 mt-3">
@@ -603,45 +575,22 @@
               </span>
             </label>
 
-            <div style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
-                        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
-                        border-radius:10px; padding:0.55rem 0.9rem;">
-
-              <%# Label gauche : Privé — cliquable, vert si sélectionné %>
-              <span id="label_prive"
-                    onclick="document.getElementById('visibility_toggle').checked = false; document.getElementById('visibility_toggle').dispatchEvent(new Event('change'));"
-                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= @match.private? ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
-                           transition:color 0.15s;">
-                🔒 Privé
-              </span>
-
-              <%# Toggle pill — coché = public (par défaut), décoché = privé %>
-              <label class="pill-toggle" for="visibility_toggle" style="flex-shrink:0;">
-                <%= check_box_tag :visibility_toggle,
-                    "public",
-                    !@match.private?,
-                    class: "pill-toggle-input",
-                    id: "visibility_toggle",
-                    onchange: "
-                      document.getElementById('match_visibility').value   = this.checked ? 'public' : 'private';
-                      document.getElementById('label_prive').style.color  = this.checked ? 'rgba(255,255,255,0.4)' : '#1EDD88';
-                      document.getElementById('label_public').style.color = this.checked ? '#1EDD88' : 'rgba(255,255,255,0.4)';
-                    " %>
-                <span class="pill-toggle-track"></span>
-              </label>
-
-              <%# Label droit : Public — cliquable, vert si sélectionné %>
-              <span id="label_public"
-                    onclick="document.getElementById('visibility_toggle').checked = true; document.getElementById('visibility_toggle').dispatchEvent(new Event('change'));"
-                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= @match.private? ? 'rgba(255,255,255,0.4)' : '#1EDD88' %>;
-                           transition:color 0.15s;">
+            <%# Groupe de boutons classiques (même style que les boutons de niveau) %>
+            <div class="match-level-buttons" style="margin-top:0.6rem;">
+              <button type="button"
+                      class="match-level-btn <%= 'active' unless @match.private? %>"
+                      data-visibility-choice="public"
+                      data-action="click->match-form#selectVisibility">
                 🌍 Public
-              </span>
-
+              </button>
+              <button type="button"
+                      class="match-level-btn <%= 'active' if @match.private? %>"
+                      data-visibility-choice="private"
+                      data-action="click->match-form#selectVisibility">
+                🔒 Privé
+              </button>
             </div>
-          </div><%# fin toggle visibilité %>
+          </div><%# fin visibilité %>
 
           <%# ── Sélecteur d'équipe (optionnel, visible si l'user est capitaine d'une équipe) ── %>
           <% if @my_captained_teams&.any? %>
@@ -667,6 +616,10 @@
                          style="accent-color:#1EDD88;"
                          onchange="
                            document.getElementById('match_team_id').value = '';
+                           document.getElementById('match_visibility').value = 'public';
+                           document.querySelectorAll('[data-visibility-choice]').forEach(function(btn) {
+                             btn.classList.toggle('active', btn.dataset.visibilityChoice === 'public');
+                           });
                          ">
                   <span style="font-size:0.82rem; color:rgba(255,255,255,0.6);">Aucune équipe</span>
                 </label>
@@ -680,9 +633,9 @@
                            onchange="
                              document.getElementById('match_team_id').value = '<%= team.id %>';
                              document.getElementById('match_visibility').value = 'private';
-                             document.getElementById('visibility_toggle').checked = false;
-                             document.getElementById('label_prive').style.color = '#1EDD88';
-                             document.getElementById('label_public').style.color = 'rgba(255,255,255,0.4)';
+                             document.querySelectorAll('[data-visibility-choice]').forEach(function(btn) {
+                               btn.classList.toggle('active', btn.dataset.visibilityChoice === 'private');
+                             });
                            ">
                     <%# Mini blason %>
                     <div style="flex-shrink:0; width:26px; height:26px; border-radius:5px; overflow:hidden; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center;">
