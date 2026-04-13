@@ -94,4 +94,6 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  # Stub des requêtes HTTP dans les tests (utilisé pour les tests de l'adapter Sightengine)
+  gem "webmock"
 end

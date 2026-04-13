@@ -1,0 +1,11 @@
+# Profils minimalistes pour les tests de modération d'image et autres.
+# Les champs first_name/last_name sont requis par les validations du modèle.
+one:
+  user: one
+  first_name: Alice
+  last_name: Testeur
+
+two:
+  user: two
+  first_name: Bob
+  last_name: Testeur

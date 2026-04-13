@@ -1,0 +1,270 @@
+<%# ── Admin — Modération d'images IA ───────────────────────────────────────── %>
+<%# KPIs quota Sightengine + tableau détaillé de toutes les modérations %>
+
+<%# Fond pleine largeur identique aux autres pages admin %>
+<div style="background-color:#111111; min-height:100vh;">
+<div class="container py-4">
+
+  <%# ── En-tête ──────────────────────────────────────────────────────────── %>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <i data-lucide="layout-dashboard" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
+      Espace <span style="color:#1EDD88;">Admin</span>
+    </h1>
+  </div>
+
+  <%# ── Navigation par onglets ── %>
+  <%= render "admin/shared/nav", active_tab: :moderation %>
+
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+  <%# SECTION 1 — QUOTA SIGHTENGINE %>
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i data-lucide="gauge" style="width:15px; height:15px; color:#1EDD88;"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+      Quota Sightengine
+    </span>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <%# Card — Quota utilisé / total avec barre de progression %>
+    <div class="col-12 col-md-6">
+      <div class="match-block h-100">
+        <div class="d-flex justify-content-between align-items-end mb-2">
+          <div>
+            <div style="font-size:2rem; font-weight:800; color:<%= @quota_alert ? '#E67E22' : '#1EDD88' %>;">
+              <%= @quota_used %>
+            </div>
+            <div style="font-size:0.78rem; color:rgba(255,255,255,0.5);">
+              sur <%= @quota_total %> ops/mois
+            </div>
+          </div>
+          <div style="font-size:1.2rem; font-weight:700; color:rgba(255,255,255,0.4);">
+            <%= (@quota_used.to_f / @quota_total * 100).round(1) %>%
+          </div>
+        </div>
+        <%# Barre de progression %>
+        <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+          <% pct = [(@quota_used.to_f / @quota_total * 100).round(1), 100].min %>
+          <div style="width:<%= pct %>%; height:100%; border-radius:3px;
+                       background:<%= @quota_alert ? '#E67E22' : '#1EDD88' %>;
+                       transition: width 0.3s ease;"></div>
+        </div>
+        <% if @quota_alert %>
+          <div class="mt-2 d-flex align-items-center gap-1" style="font-size:0.75rem; color:#E67E22;">
+            <i data-lucide="alert-triangle" style="width:12px; height:12px;"></i>
+            Attention — seuil d'alerte 80% dépassé
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Card — Rejets récents %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:<%= @rejected_today > 0 ? '#FD1015' : '#fff' %>;">
+          <%= @rejected_today %>
+        </div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Rejets aujourd'hui</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:<%= @rejected_this_week > 0 ? '#FD1015' : '#fff' %>;">
+          <%= @rejected_this_week %>
+        </div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Rejets cette semaine</div>
+      </div>
+    </div>
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+  <%# SECTION 2 — KPIs PAR STATUT %>
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i data-lucide="bar-chart-3" style="width:15px; height:15px; color:#1EDD88;"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+      Répartition
+    </span>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <%# Card — Total %>
+    <div class="col-6 col-lg">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:1.6rem; font-weight:800; color:#1EDD88;"><%= @count_total %></div>
+        <div style="font-size:0.72rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Total</div>
+      </div>
+    </div>
+    <%# Card — Approved %>
+    <div class="col-6 col-lg">
+      <%= link_to admin_image_moderations_path(status: "approved"), style: "text-decoration:none;" do %>
+        <div class="match-block h-100 text-center">
+          <div style="font-size:1.6rem; font-weight:800; color:#1EDD88;"><%= @count_approved %></div>
+          <div style="font-size:0.72rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Approuvées</div>
+        </div>
+      <% end %>
+    </div>
+    <%# Card — Rejected %>
+    <div class="col-6 col-lg">
+      <%= link_to admin_image_moderations_path(status: "rejected"), style: "text-decoration:none;" do %>
+        <div class="match-block h-100 text-center">
+          <div style="font-size:1.6rem; font-weight:800; color:#FD1015;"><%= @count_rejected %></div>
+          <div style="font-size:0.72rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Rejetées</div>
+        </div>
+      <% end %>
+    </div>
+    <%# Card — Pending %>
+    <div class="col-6 col-lg">
+      <%= link_to admin_image_moderations_path(status: "pending"), style: "text-decoration:none;" do %>
+        <div class="match-block h-100 text-center">
+          <div style="font-size:1.6rem; font-weight:800; color:#FFC65A;"><%= @count_pending %></div>
+          <div style="font-size:0.72rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">En attente</div>
+        </div>
+      <% end %>
+    </div>
+    <%# Card — Errored %>
+    <div class="col-6 col-lg">
+      <%= link_to admin_image_moderations_path(status: "errored"), style: "text-decoration:none;" do %>
+        <div class="match-block h-100 text-center">
+          <div style="font-size:1.6rem; font-weight:800; color:#E67E22;"><%= @count_errored %></div>
+          <div style="font-size:0.72rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Erreurs</div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+  <%# SECTION 3 — TABLEAU DES MODÉRATIONS %>
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <i data-lucide="list" style="width:15px; height:15px; color:#1EDD88;"></i>
+      <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+        Historique
+      </span>
+    </div>
+
+    <%# Filtres rapides %>
+    <div class="d-flex gap-2 flex-wrap">
+      <%= link_to "Tous", admin_image_moderations_path,
+          class: "badge",
+          style: "font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:4px; text-decoration:none;
+                  background:#{params[:status].blank? && params[:type].blank? ? 'rgba(30,221,136,0.25)' : 'rgba(255,255,255,0.08)'};
+                  color:#{params[:status].blank? && params[:type].blank? ? '#1EDD88' : 'rgba(255,255,255,0.5)'};" %>
+      <%= link_to "Profils", admin_image_moderations_path(type: "Profil", status: params[:status]),
+          class: "badge",
+          style: "font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:4px; text-decoration:none;
+                  background:#{params[:type] == 'Profil' ? 'rgba(30,221,136,0.25)' : 'rgba(255,255,255,0.08)'};
+                  color:#{params[:type] == 'Profil' ? '#1EDD88' : 'rgba(255,255,255,0.5)'};" %>
+      <%= link_to "Teams", admin_image_moderations_path(type: "Team", status: params[:status]),
+          class: "badge",
+          style: "font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:4px; text-decoration:none;
+                  background:#{params[:type] == 'Team' ? 'rgba(30,221,136,0.25)' : 'rgba(255,255,255,0.08)'};
+                  color:#{params[:type] == 'Team' ? '#1EDD88' : 'rgba(255,255,255,0.5)'};" %>
+    </div>
+  </div>
+
+  <div class="match-block mb-4" style="overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0;">
+    <% if @moderations.any? %>
+      <table class="table table-dark table-hover mb-0" style="font-size:0.85rem; min-width:700px;">
+        <thead>
+          <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <th style="border-color:rgba(255,255,255,0.07); padding:0.75rem 1rem;">Statut</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding:0.75rem 1rem;">Type</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding:0.75rem 1rem;">Image</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding:0.75rem 1rem;">Propriétaire</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding:0.75rem 1rem;">Score</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding:0.75rem 1rem;">Raison</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding:0.75rem 1rem;">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @moderations.each do |mod| %>
+            <tr>
+              <%# Statut — badge coloré selon le verdict %>
+              <td style="border-color:rgba(255,255,255,0.07); padding:0.6rem 1rem;">
+                <% status_colors = { "approved" => "#1EDD88", "rejected" => "#FD1015", "pending" => "#FFC65A", "errored" => "#E67E22" } %>
+                <% status_labels = { "approved" => "Approuvée", "rejected" => "Rejetée", "pending" => "En attente", "errored" => "Erreur" } %>
+                <span class="badge" style="background:rgba(255,255,255,0.1); color:<%= status_colors[mod.status] %>; font-size:0.72rem; font-weight:700;">
+                  <%= status_labels[mod.status] %>
+                </span>
+              </td>
+
+              <%# Type de record + nom d'attachement %>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); padding:0.6rem 1rem;">
+                <div><%= mod.moderatable_type %></div>
+                <div style="font-size:0.72rem; color:rgba(255,255,255,0.35);"><%= mod.attachment_name %></div>
+              </td>
+
+              <%# Nom du modèle (nom d'équipe ou prénom+nom du profil) %>
+              <td style="border-color:rgba(255,255,255,0.07); padding:0.6rem 1rem;">
+                <% record = mod.moderatable %>
+                <% if record.is_a?(Profil) && record.avatar.attached? %>
+                  <%= image_tag record.avatar, style: "width:32px; height:32px; border-radius:50%; object-fit:cover;" %>
+                <% elsif record.is_a?(Team) && mod.attachment_name == "badge_image" && record.badge_image.attached? %>
+                  <%= image_tag record.badge_image, style: "width:32px; height:32px; border-radius:4px; object-fit:cover;" %>
+                <% elsif record.is_a?(Team) && mod.attachment_name == "cover_image" && record.cover_image.attached? %>
+                  <%= image_tag record.cover_image, style: "width:32px; height:20px; border-radius:4px; object-fit:cover;" %>
+                <% else %>
+                  <span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">purgée</span>
+                <% end %>
+              </td>
+
+              <%# Propriétaire — lien vers le profil %>
+              <td style="border-color:rgba(255,255,255,0.07); padding:0.6rem 1rem;">
+                <% if record.is_a?(Profil) %>
+                  <%= link_to "#{record.first_name} #{record.last_name}", user_profil_path(record.user), style: "color:#fff; text-decoration:none;" %>
+                <% elsif record.is_a?(Team) %>
+                  <%= link_to record.name, team_path(record), style: "color:#fff; text-decoration:none;" %>
+                  <div style="font-size:0.72rem; color:rgba(255,255,255,0.35);">
+                    cap. <%= record.captain&.profil&.first_name %>
+                  </div>
+                <% end %>
+              </td>
+
+              <%# Score NSFW %>
+              <td style="border-color:rgba(255,255,255,0.07); padding:0.6rem 1rem; font-weight:700;
+                          color:<%= mod.score && mod.score >= ImageModeration::NSFW_THRESHOLD ? '#FD1015' : 'rgba(255,255,255,0.6)' %>;">
+                <%= mod.score ? "%.3f" % mod.score : "—" %>
+              </td>
+
+              <%# Raison %>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.5); padding:0.6rem 1rem; font-size:0.78rem;">
+                <%= mod.reason || "—" %>
+              </td>
+
+              <%# Date de vérification %>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.5); padding:0.6rem 1rem; font-size:0.78rem;">
+                <% if mod.checked_at %>
+                  <%= mod.checked_at.strftime("%d/%m/%Y") %>
+                  <div style="font-size:0.68rem; color:rgba(255,255,255,0.3);"><%= mod.checked_at.strftime("%H:%M") %></div>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="text-center py-4" style="color:rgba(255,255,255,0.3);">
+        <i data-lucide="scan-eye" style="width:32px; height:32px;"></i>
+        <p class="mt-2 mb-0" style="font-size:0.85rem;">Aucune modération enregistrée.</p>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Pagination ── %>
+  <% if @pagy.pages > 1 %>
+    <div class="d-flex justify-content-center">
+      <%== pagy_bootstrap_nav(@pagy) %>
+    </div>
+  <% end %>
+
+</div>
+</div>

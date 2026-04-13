@@ -222,6 +222,10 @@ Rails.application.routes.draw do
     # GET /admin/security_logs => tableau avec filtres par type et date
     resources :security_logs, only: [:index]
 
+    # Modération d'images IA — KPIs quota + tableau de toutes les modérations
+    # GET /admin/image_moderations => liste filtrable par statut et type de record
+    resources :image_moderations, only: [:index]
+
     # Messages reçus via le formulaire /contact
     # GET  /admin/contact_messages          => liste tous les messages
     # PATCH /admin/contact_messages/:id/toggle_lu => bascule lu/non-lu
