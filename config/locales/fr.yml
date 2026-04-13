@@ -136,3 +136,26 @@ fr:
       almost_x_years:
         one: "presque 1 an"
         other: "presque %{count} ans"
+
+  # ── Notifications de modération d'image ──────────────────────────────────
+  # Messages affichés à l'utilisateur quand une image est automatiquement
+  # retirée par le système de modération IA. Ton pédagogique, pas punitif,
+  # avec porte de sortie vers le support en cas de faux positif.
+  image_moderation:
+    notifications:
+      avatar: >-
+        Votre photo de profil a été automatiquement retirée car notre système
+        de modération a détecté un contenu potentiellement inapproprié. Vous
+        pouvez en uploader une nouvelle à tout moment. Si vous pensez qu'il
+        s'agit d'une erreur, contactez-nous via le formulaire de contact.
+      badge_image: >-
+        Le blason de votre équipe a été automatiquement retiré car notre
+        système de modération a détecté un contenu potentiellement inapproprié.
+        Vous pouvez en uploader un nouveau ou générer un blason via l'éditeur.
+        Si vous pensez qu'il s'agit d'une erreur, contactez-nous via le
+        formulaire de contact.
+      cover_image: >-
+        La bannière de votre équipe a été automatiquement retirée car notre
+        système de modération a détecté un contenu potentiellement inapproprié.
+        Vous pouvez en uploader une nouvelle à tout moment. Si vous pensez
+        qu'il s'agit d'une erreur, contactez-nous via le formulaire de contact.

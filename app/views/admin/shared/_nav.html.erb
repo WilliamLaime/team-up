@@ -28,6 +28,13 @@
       </span>
     <% end %>
 
+    <%# ── Onglet Modération (modération IA des images) ── %>
+    <%= link_to admin_image_moderations_path,
+                class: "admin-nav-tab #{active_tab == :moderation ? "admin-nav-tab--active" : ""}" do %>
+      <i data-lucide="scan-eye" style="width:15px; height:15px;"></i>
+      Modération
+    <% end %>
+
     <%# ── Onglet Sécurité (logs de connexions et d'actions suspectes) ── %>
     <%= link_to admin_security_logs_path,
                 class: "admin-nav-tab #{active_tab == :security ? "admin-nav-tab--active" : ""}" do %>

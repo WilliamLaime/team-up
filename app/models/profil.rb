@@ -1,4 +1,6 @@
 class Profil < ApplicationRecord
+  include Moderatable
+
   belongs_to :user
 
   # Prénom et nom sont obligatoires
@@ -8,6 +10,11 @@ class Profil < ApplicationRecord
   # Active Storage — permet d'attacher une photo de profil
   # La photo est stockée sur Cloudinary (configuré dans config/storage.yml)
   has_one_attached :avatar
+
+  # Modération IA automatique de l'avatar. À chaque changement d'image, un
+  # ModerateImageJob est enfilé après commit. Voir Moderatable et
+  # ImageModeration::Checker pour le détail du flux.
+  moderated_attachments :avatar
 
   # Validation de l'avatar — uniquement si un nouveau fichier est attaché (optionnel sinon)
   # content_type : bloque tout ce qui n'est pas JPG, PNG ou GIF

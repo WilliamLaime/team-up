@@ -1,4 +1,6 @@
 class Team < ApplicationRecord
+  include Moderatable
+
   # ── Associations ───────────────────────────────────────────────────────────
   belongs_to :captain, class_name: "User"
 
@@ -17,6 +19,13 @@ class Team < ApplicationRecord
 
   # Image de couverture (bannière en haut de la page équipe)
   has_one_attached :cover_image
+
+  # Modération IA automatique des deux images uploadées par l'équipe. À
+  # chaque changement, un ModerateImageJob est enfilé après commit. Voir
+  # Moderatable et ImageModeration::Checker pour le détail du flux.
+  # Note : le blason SVG généré via l'éditeur (badge_svg) n'est pas modéré
+  # ici — seule la version image uploadée passe par la modération IA.
+  moderated_attachments :badge_image, :cover_image
 
   validates :cover_image,
             content_type: { in: %w[image/jpeg image/png image/webp], message: "doit être un JPG, PNG ou WebP" },
