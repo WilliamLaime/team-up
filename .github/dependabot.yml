@@ -5,6 +5,10 @@ updates:
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+  ignore:
+    # Pagy 10+ a retiré Pagy::Backend/Frontend et pagy/extras/bootstrap — on reste sur v9
+    - dependency-name: "pagy"
+      update-types: ["version-update:semver-major"]
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
