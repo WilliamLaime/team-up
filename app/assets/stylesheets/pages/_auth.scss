@@ -180,9 +180,8 @@
   // ── Titre du formulaire ──────────────────────────
   h2 {
     color: var(--theme-text-primary); // Titre selon le thème
-    font-family: $headers-font;
+    font-family: $display-font;
     font-size: 1.75rem;
-    font-weight: 700;
     margin-bottom: 1.75rem;
 
     .accent { color: $green; }
