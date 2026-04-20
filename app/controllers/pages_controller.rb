@@ -68,6 +68,16 @@ class PagesController < ApplicationController
     @matches = load_upcoming_matches
     @hero_match = load_hero_match
 
+    # Précompute le statut d'inscription de l'utilisateur connecté pour les matchs affichés en home.
+    # Même logique que dans MatchesController#index → une seule requête, pas de N+1.
+    # hash { match_id => status } disponible dans la vue pour passer aux partials _match_card.
+    if user_signed_in? && @matches.any?
+      @user_match_statuses = MatchUser
+        .where(user: current_user, match_id: @matches.map(&:id))
+        .pluck(:match_id, :status)
+        .to_h
+    end
+
     # La page d'accueil a un titre complet sans séparateur — on veut "Teams-up" seul, pas "X | Teams-up"
     set_meta_tags(
       site:        "Teams-up",

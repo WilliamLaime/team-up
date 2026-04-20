@@ -240,8 +240,13 @@
       <div class="row row-cols-1 row-cols-md-3 g-4">
         <% @matches.each do |match| %>
           <div class="col">
-            <%# Utilise le composant partagé — btn_label "Voir le match" pour la home %>
-            <%= render "shared/match_card", match: match, btn_label: "Voir le match" %>
+            <%# Utilise le composant partagé — btn_label "Voir le match" pour la home
+                user_registration_status : statut d'inscription de current_user pour ce match
+                (hash précomputé dans PagesController#home, une seule requête SQL) %>
+            <%= render "shared/match_card",
+                  match: match,
+                  btn_label: "Voir le match",
+                  user_registration_status: @user_match_statuses&.fetch(match.id, nil) %>
           </div>
         <% end %>
       </div>

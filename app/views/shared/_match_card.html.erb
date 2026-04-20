@@ -6,6 +6,9 @@
     btn_label  (optional) — texte du bouton principal, défaut : "Rejoindre"
 %>
 <% btn_label ||= "Voir le match" %>
+<%# user_registration_status : passé depuis la vue parente (String ou nil)
+    Valeurs possibles : "approved", "pending", "waiting", "rejected", nil %>
+<% user_registration_status ||= nil %>
 
 <%# Calculs réutilisés dans la carte %>
 <%
@@ -50,12 +53,60 @@
       </div>
     <% end %>
 
-    <%# Bandeau "TERMINÉ" sur l'image si le match est terminé (> 1h après le début) %>
+    <%#
+      ── Overlays d'état sur l'image ─────────────────────────────────────────
+      Priorité (du plus important au moins important) :
+        1. TERMINÉ        — match passé, plus rien à faire
+        2. INSCRIT        — current_user est accepté dans ce match (approved)
+        3. EN ATTENTE     — current_user attend la validation du capitaine (pending)
+        4. FILE D'ATTENTE — match complet, current_user est en liste d'attente (waiting)
+        5. COMPLET        — match plein, current_user non inscrit
+
+      On calcule une seule variable `registration_overlay` pour éviter les conditions imbriquées.
+      Elle vaut nil si l'user n'est pas connecté, est l'organisateur, ou n'est pas inscrit.
+    %>
+    <%
+      # Statut d'inscription de l'utilisateur courant pour cet affichage
+      # nil si non connecté, ou si c'est l'organisateur (le brassard C suffit)
+      reg_status = user_signed_in? && match.user != current_user ? user_registration_status : nil
+    %>
+
     <% if match.completed? %>
+      <%# Match terminé — priorité absolue, tout le reste est secondaire %>
       <div class="match-completed-overlay">Terminé</div>
-    <%# Bandeau "COMPLET" sur l'image si le match est plein (et pas encore terminé) %>
+
+    <% elsif reg_status == "approved" %>
+      <%# Inscrit et accepté — fond vert translucide %>
+      <div class="match-status-overlay match-status-overlay--inscrit">
+        <i data-lucide="check-circle" style="width:22px;height:22px;" aria-hidden="true"></i>
+        Inscrit
+      </div>
+
+    <% elsif reg_status == "pending" %>
+      <%# En attente de validation du capitaine — fond orange translucide %>
+      <div class="match-status-overlay match-status-overlay--pending">
+        <i data-lucide="clock" style="width:22px;height:22px;" aria-hidden="true"></i>
+        En attente du capitaine
+      </div>
+
+    <% elsif reg_status == "waiting" %>
+      <%# File d'attente (match complet) — fond gris + "COMPLET" visible en dessous %>
+      <div class="match-status-overlay match-status-overlay--waiting">
+        <i data-lucide="hourglass" style="width:22px;height:22px;" aria-hidden="true"></i>
+        File d'attente
+      </div>
+
+    <% elsif reg_status == "rejected" %>
+      <%# Candidature refusée par le capitaine — fond rouge sombre %>
+      <div class="match-status-overlay match-status-overlay--rejected">
+        <i data-lucide="x-circle" style="width:22px;height:22px;" aria-hidden="true"></i>
+        Non retenu
+      </div>
+
     <% elsif match.full? %>
+      <%# Match complet — uniquement pour les non-inscrits %>
       <div class="match-full-overlay">Complet</div>
+
     <% end %>
 
     <%# Overlay organisateur : brassard capitaine OU "Prénom N." %>

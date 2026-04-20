@@ -6,5 +6,12 @@
   Le contenu visuel est délégué au composant partagé shared/_match_card.
 %>
 <div id="<%= dom_id(match) %>" class="col" data-load-more-target="card">
-  <%= render "shared/match_card", match: match, btn_label: "Voir le match" %>
+  <%# user_registration_status : statut d'inscription de current_user pour ce match.
+      user_match_statuses est un hash { match_id => status } passé comme local depuis
+      l'index (render partial: "match", locals: { user_match_statuses: ... }).
+      nil si non connecté ou pas inscrit à ce match. %>
+  <%= render "shared/match_card",
+        match: match,
+        btn_label: "Voir le match",
+        user_registration_status: user_match_statuses&.fetch(match.id, nil) %>
 </div>

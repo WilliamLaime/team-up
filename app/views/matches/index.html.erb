@@ -388,7 +388,11 @@
           Quand un nouveau match est créé, Turbo l'insère ici automatiquement (prepend).
         %>
         <div id="matches" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-          <%= render @matches %>
+          <%# partial: + collection: + locals: permet de passer user_match_statuses
+              sans utiliser de variable d'instance dans le partial _match.html.erb %>
+          <%= render partial: "match",
+                     collection: @matches,
+                     locals: { user_match_statuses: @user_match_statuses } %>
         </div>
 
         <%# Bouton "Afficher plus" — géré par le Stimulus load-more controller %>

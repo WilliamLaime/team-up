@@ -95,6 +95,47 @@
     text-transform: uppercase;
   }
 
+  // ── Overlays d'état d'inscription ─────────────────
+  // Style de base partagé — même gabarit que match-full-overlay et match-completed-overlay.
+  // Couvre toute l'image (inset: 0), texte centré, icône au-dessus du label.
+  .match-status-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    // Déclinaison "Inscrit" — fond vert translucide, texte sombre pour le contraste
+    &--inscrit {
+      background: rgba(darken(#1EDD88, 10%), 0.72);
+      color: #0a2a1a;
+    }
+
+    // Déclinaison "En attente du capi" — fond orange translucide
+    &--pending {
+      background: rgba(#E67E22, 0.72);
+      color: #2a1500;
+    }
+
+    // Déclinaison "File d'attente" — fond gris sombre, même tonalité que "Complet"
+    &--waiting {
+      background: rgba(0, 0, 0, 0.65);
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    // Déclinaison "Non retenu" — fond rouge sombre, candidature refusée par le capitaine
+    &--rejected {
+      background: rgba(#FD1015, 0.65);
+      color: #fff;
+    }
+  }
+
   // ── Overlay organisateur ───────────────────────────
   // Positionné en haut à droite de l'image
   .match-organizer-overlay {

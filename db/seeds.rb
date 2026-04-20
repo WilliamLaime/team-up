@@ -474,8 +474,8 @@ invitable_data.each do |data|
   profil.save!
 
   # Attache l'avatar DiceBear (skippé si déjà présent)
-  avatar_url = "https://api.dicebear.com/7.x/#{data[:avatar_style]}/png?seed=#{data[:first_name]}&size=200"
-  attach_seed_avatar(profil, avatar_url, "#{data[:first_name].downcase}_avatar.png")
+  # Correction : attach_seed_avatar attend 4 args (profil, style, seed, filename)
+  attach_seed_avatar(profil, data[:avatar_style], data[:first_name], "#{data[:first_name].downcase}_avatar.png")
 
   # Lie comme ami accepté avec le main_user (pour apparaître dans "Proposer un joueur")
   if main_user
@@ -490,3 +490,412 @@ invitable_data.each do |data|
 end
 
 puts "✅ Joueurs invitables créés."
+
+# ── Matchs de test avec acceptation automatique ──────────────────────────────
+# Ces matchs sont créés en mode "automatic" : tout joueur qui rejoint est
+# immédiatement accepté (status "approved") sans intervention de l'organisateur.
+# Utile pour tester le flux d'inscription, le chat, les votes, etc.
+puts "Création des matchs de test (acceptation automatique)..."
+
+# On récupère le premier utilisateur disponible comme organisateur
+organizer = User.joins(:profil).first
+
+if organizer.nil?
+  puts "⚠️  Aucun utilisateur avec profil trouvé. Les matchs de test ne seront pas créés."
+else
+  # On récupère les sports Football et Basketball qui ont des niveaux simples
+  football   = Sport.find_by(slug: "football")
+  basketball = Sport.find_by(slug: "basketball")
+  padel      = Sport.find_by(slug: "padel")
+
+  # Liste des matchs à créer
+  # Les dates sont dans le futur (≥ 30 min à l'avance, validation du modèle Match)
+  test_matches_data = [
+    {
+      title:           "Match football test — 5v5",
+      description:     "Match de test pour la démo. Ambiance détendue, venez nombreux !",
+      place:           "Stade Jean-Bouin, Paris",
+      date:            Date.today + 3.days,   # Dans 3 jours → passe la validation 30min
+      time:            Time.zone.parse("10:00"), # 10h du matin
+      format:          "5v5",
+      level:           "Amateur",
+      player_left:     8,                     # 8 places restantes (sur 9 total, organisateur compris)
+      players_present: nil,                   # Pas utilisé pour le format 5v5
+      price_per_player: 5,
+      validation_mode: "automatic",           # Acceptation automatique → pas besoin d'approuver manuellement
+      visibility:      "public",
+      genre_restriction: "tous",
+      sport:           football
+    },
+    {
+      title:           "Basket 3v3 test — niveau intermédiaire",
+      description:     "Partie de basket détendue pour tester le système de matchs.",
+      place:           "Gymnase Charléty, Paris 13",
+      date:            Date.today + 5.days,
+      time:            Time.zone.parse("18:30"),
+      format:          "3v3",
+      level:           "Intermédiaire",
+      player_left:     5,
+      players_present: nil,
+      price_per_player: 0,
+      validation_mode: "automatic",
+      visibility:      "public",
+      genre_restriction: "tous",
+      sport:           basketball
+    },
+    {
+      title:           "Padel confirmé — match test",
+      description:     "Match de padel en mode test. Niveau confirmé requis.",
+      place:           "Court Padel Nation, Paris 12",
+      date:            Date.today + 7.days,
+      time:            Time.zone.parse("14:00"),
+      format:          "2v2",
+      level:           "Confirmé",
+      player_left:     3,
+      players_present: nil,
+      price_per_player: 10,
+      validation_mode: "automatic",
+      visibility:      "public",
+      genre_restriction: "tous",
+      sport:           padel
+    }
+  ]
+
+  test_matches_data.each do |data|
+    # On saute si le sport n'existe pas en base (protection contre des seeds incomplets)
+    unless data[:sport]
+      puts "  ⚠️  Sport introuvable pour « #{data[:title]} », skippé."
+      next
+    end
+
+    # Vérifie si un match du même titre existe déjà (idempotent)
+    if Match.exists?(title: data[:title])
+      puts "  → Déjà existant : #{data[:title]}"
+      next
+    end
+
+    # Crée le match — validation_mode "automatic" = le créateur n'a pas à approuver les joueurs
+    match = Match.new(
+      title:             data[:title],
+      description:       data[:description],
+      place:             data[:place],
+      date:              data[:date],
+      time:              data[:time],
+      format:            data[:format],
+      level:             data[:level],
+      player_left:       data[:player_left],
+      price_per_player:  data[:price_per_player],
+      validation_mode:   data[:validation_mode],   # "automatic" → inscription directe
+      visibility:        data[:visibility],
+      genre_restriction: data[:genre_restriction],
+      sport:             data[:sport],
+      user:              organizer                 # L'organisateur est le premier user en base
+    )
+
+    # players_present n'est obligatoire que pour le format "Libre"
+    match.players_present = data[:players_present] if data[:players_present]
+
+    match.save!
+
+    # Crée l'inscription de l'organisateur avec le rôle "organisateur" et statut "approved"
+    # En production, c'est le MatchesController#create qui le fait automatiquement.
+    # Ici on le recrée manuellement pour que le match soit complet dès le seed.
+    MatchUser.find_or_create_by!(match: match, user: organizer) do |mu|
+      mu.role   = "organisateur"
+      mu.status = "approved"  # L'organisateur est toujours approuvé d'emblée
+    end
+
+    # Ajoute 2 participants supplémentaires avec statut "approved" (acceptation automatique simulée)
+    # On prend les amis du main_user s'ils existent
+    participants = User.joins(:profil)
+                       .where.not(id: organizer.id)
+                       .limit(2)
+
+    participants.each do |participant|
+      # Vérifie qu'il n'est pas déjà inscrit à ce match
+      next if MatchUser.exists?(match: match, user: participant)
+
+      MatchUser.create!(
+        match:  match,
+        user:   participant,
+        role:   "joueur",
+        status: "approved"  # Simulé comme si le mode "automatic" avait déjà approuvé
+      )
+      puts "    + Participant ajouté : #{participant.profil.first_name} #{participant.profil.last_name}"
+    end
+
+    puts "  ✓ Match créé : « #{match.title} » (#{match.sport.name}, #{match.date}, #{match.level})"
+  end
+
+  puts "✅ #{Match.where(validation_mode: 'automatic').count} matchs en mode automatique en base."
+end
+
+# ── Matchs badminton — un par statut d'inscription ───────────────────────────
+# Crée 4 matchs de badminton où le 2ème user (main_user ou premier non-organisateur)
+# est inscrit avec chacun des 4 statuts possibles : approved, pending, waiting, rejected.
+# Utile pour tester visuellement les badges sur les cards.
+puts "Création des matchs badminton (un par statut)..."
+
+badminton = Sport.find_by(slug: "badminton")
+
+# L'organisateur de ces matchs = 2ème user en base (différent du "main_user" pour que
+# le 1er user (main_user) puisse être inscrit comme joueur avec chaque statut)
+organizer_for_badminton = User.joins(:profil).offset(1).first
+# Le joueur à inscrire = le 1er user (celui qui se connecte pour voir les badges)
+test_player = User.joins(:profil).first
+
+if badminton.nil?
+  puts "⚠️  Sport badminton introuvable — vérifie que les sports ont été créés."
+elsif organizer_for_badminton.nil? || test_player.nil?
+  puts "⚠️  Pas assez d'utilisateurs avec profil pour les matchs badminton."
+elsif organizer_for_badminton == test_player
+  puts "⚠️  Il faut au moins 2 utilisateurs distincts pour ces matchs de test."
+else
+  # Chaque entrée = { statut d'inscription du test_player, données du match }
+  badminton_status_matches = [
+    {
+      player_status: "approved",             # test_player inscrit et accepté
+      title:         "[TEST] Badminton — Inscrit (approved)",
+      description:   "Match de test : le joueur est inscrit et accepté.",
+      level:         "Intermédiaire",
+      format:        "2v2",
+      player_left:   2,                      # encore de la place
+      date:          Date.today + 4.days,
+      time:          Time.zone.parse("09:00"),
+      validation_mode: "manual"              # mode manuel pour que les autres statuts aient du sens
+    },
+    {
+      player_status: "pending",              # test_player en attente de validation
+      title:         "[TEST] Badminton — En attente (pending)",
+      description:   "Match de test : le joueur attend la validation du capitaine.",
+      level:         "Confirmé",
+      format:        "1v1",
+      player_left:   1,
+      date:          Date.today + 6.days,
+      time:          Time.zone.parse("11:00"),
+      validation_mode: "manual"
+    },
+    {
+      player_status: "waiting",              # test_player en file d'attente (match complet)
+      title:         "[TEST] Badminton — File d'attente (waiting)",
+      description:   "Match de test : le match est complet, le joueur est en file d'attente.",
+      level:         "Débutant",
+      format:        "2v2",
+      # player_left: 1 à la création (la validation interdit 0).
+      # On forcera à 0 avec update_column après le save! pour simuler un match complet.
+      player_left:   1,
+      date:          Date.today + 8.days,
+      time:          Time.zone.parse("14:00"),
+      validation_mode: "manual",
+      force_full: true                       # flag interne pour déclencher le update_column
+    },
+    {
+      player_status: "rejected",             # test_player refusé par le capitaine
+      title:         "[TEST] Badminton — Refusé (rejected)",
+      description:   "Match de test : la candidature du joueur a été refusée.",
+      level:         "Expert",
+      format:        "1v1",
+      player_left:   1,
+      date:          Date.today + 10.days,
+      time:          Time.zone.parse("16:00"),
+      validation_mode: "manual"
+    }
+  ]
+
+  badminton_status_matches.each do |data|
+    # Idempotent : on ne recrée pas si le titre existe déjà
+    if Match.exists?(title: data[:title])
+      puts "  → Déjà existant : #{data[:title]}"
+      next
+    end
+
+    # Crée le match — l'organisateur est un user différent de test_player
+    match = Match.new(
+      title:             data[:title],
+      description:       data[:description],
+      place:             "Gymnase du Palais des Sports, Paris",
+      date:              data[:date],
+      time:              data[:time],
+      format:            data[:format],
+      level:             data[:level],
+      player_left:       data[:player_left],
+      price_per_player:  0,
+      validation_mode:   data[:validation_mode],
+      visibility:        "public",
+      genre_restriction: "tous",
+      sport:             badminton,
+      user:              organizer_for_badminton  # pas le test_player → les badges s'affichent
+    )
+    match.save!
+
+    # Cas particulier "waiting" : player_left = 0 est refusé par la validation du modèle.
+    # On contourne avec update_column (bypass validations) uniquement pour ce match de test.
+    match.update_column(:player_left, 0) if data[:force_full]
+
+    # Inscrit l'organisateur (rôle "organisateur", toujours approuvé)
+    MatchUser.find_or_create_by!(match: match, user: organizer_for_badminton) do |mu|
+      mu.role   = "organisateur"
+      mu.status = "approved"
+    end
+
+    # Inscrit test_player avec le statut voulu — c'est ce statut qui déclenchera le badge
+    MatchUser.create!(
+      match:  match,
+      user:   test_player,
+      role:   "joueur",
+      status: data[:player_status]   # "approved" | "pending" | "waiting" | "rejected"
+    )
+
+    puts "  ✓ #{data[:title]} → #{test_player.profil.first_name} = #{data[:player_status]}"
+  end
+
+  puts "✅ Matchs badminton de test créés."
+end
+
+# ── Matchs tennis — tous les statuts pour Marvin COHEN ───────────────────────
+# Crée 5 matchs de tennis couvrant chaque situation possible sur une card :
+#   approved, pending, waiting, rejected + organisateur (brassard C)
+# Marvin COHEN (id 10) est le joueur cible pour les 4 premiers, et l'organisateur du 5ème.
+puts "Création des matchs tennis (tous statuts) pour Marvin COHEN..."
+
+tennis  = Sport.find_by(slug: "tennis")
+marvin  = User.find_by(email: "marvincohen95@gmail.com")
+
+# L'organisateur des matchs où Marvin est joueur = un autre user existant
+other_organizer = User.joins(:profil).where.not(id: marvin&.id).first
+
+if tennis.nil?
+  puts "⚠️  Sport tennis introuvable."
+elsif marvin.nil?
+  puts "⚠️  Utilisateur marvincohen95@gmail.com introuvable."
+elsif other_organizer.nil?
+  puts "⚠️  Pas d'autre utilisateur disponible comme organisateur."
+else
+
+  tennis_matches = [
+    # ── 1. Marvin inscrit et ACCEPTÉ ──────────────────────────────────────────
+    {
+      player_status:   "approved",
+      title:           "[TEST] Tennis — Inscrit (approved)",
+      description:     "Marvin est inscrit et accepté. Overlay vert INSCRIT.",
+      level:           "Intermédiaire",
+      format:          "1v1",
+      player_left:     1,
+      date:            Date.today + 3.days,
+      time:            Time.zone.parse("09:00"),
+      validation_mode: "manual",
+      organizer:       other_organizer,
+      player:          marvin
+    },
+    # ── 2. Marvin EN ATTENTE de validation ────────────────────────────────────
+    {
+      player_status:   "pending",
+      title:           "[TEST] Tennis — En attente (pending)",
+      description:     "Marvin attend la validation du capitaine. Overlay orange EN ATTENTE.",
+      level:           "Confirmé",
+      format:          "2v2",
+      player_left:     3,
+      date:            Date.today + 5.days,
+      time:            Time.zone.parse("11:00"),
+      validation_mode: "manual",
+      organizer:       other_organizer,
+      player:          marvin
+    },
+    # ── 3. Marvin en FILE D'ATTENTE (match complet) ───────────────────────────
+    {
+      player_status:   "waiting",
+      title:           "[TEST] Tennis — File d'attente (waiting)",
+      description:     "Match complet, Marvin est en file d'attente. Overlay gris FILE D'ATTENTE.",
+      level:           "Débutant",
+      format:          "1v1",
+      player_left:     1,     # Sera forcé à 0 via update_column après save
+      date:            Date.today + 7.days,
+      time:            Time.zone.parse("14:00"),
+      validation_mode: "manual",
+      organizer:       other_organizer,
+      player:          marvin,
+      force_full:      true   # player_left → 0 après save (bypass validation)
+    },
+    # ── 4. Marvin REFUSÉ par le capitaine ─────────────────────────────────────
+    {
+      player_status:   "rejected",
+      title:           "[TEST] Tennis — Refusé (rejected)",
+      description:     "Candidature refusée. Overlay rouge NON RETENU.",
+      level:           "Expert",
+      format:          "2v2",
+      player_left:     3,
+      date:            Date.today + 9.days,
+      time:            Time.zone.parse("16:00"),
+      validation_mode: "manual",
+      organizer:       other_organizer,
+      player:          marvin
+    },
+    # ── 5. Marvin est l'ORGANISATEUR ──────────────────────────────────────────
+    {
+      player_status:   nil,    # Pas de joueur à inscrire — Marvin est le créateur
+      title:           "[TEST] Tennis — Organisateur (ton match)",
+      description:     "Marvin a créé ce match. Brassard C + label 'Ton match'.",
+      level:           "Avancé",
+      format:          "1v1",
+      player_left:     1,
+      date:            Date.today + 11.days,
+      time:            Time.zone.parse("10:00"),
+      validation_mode: "automatic",
+      organizer:       marvin,  # Marvin est l'organisateur ici
+      player:          nil
+    }
+  ]
+
+  tennis_matches.each do |data|
+    # Idempotent
+    if Match.exists?(title: data[:title])
+      puts "  → Déjà existant : #{data[:title]}"
+      next
+    end
+
+    # Crée le match avec l'organisateur désigné
+    match = Match.new(
+      title:             data[:title],
+      description:       data[:description],
+      place:             "Tennis Club de Paris, Paris 16",
+      date:              data[:date],
+      time:              data[:time],
+      format:            data[:format],
+      level:             data[:level],
+      player_left:       data[:player_left],
+      price_per_player:  0,
+      validation_mode:   data[:validation_mode],
+      visibility:        "public",
+      genre_restriction: "tous",
+      sport:             tennis,
+      user:              data[:organizer]
+    )
+    match.save!
+
+    # Cas "waiting" : force player_left à 0 pour simuler un match complet
+    match.update_column(:player_left, 0) if data[:force_full]
+
+    # Inscrit l'organisateur
+    MatchUser.find_or_create_by!(match: match, user: data[:organizer]) do |mu|
+      mu.role   = "organisateur"
+      mu.status = "approved"
+    end
+
+    # Inscrit Marvin avec le statut voulu (sauf s'il est l'organisateur)
+    if data[:player].present?
+      MatchUser.create!(
+        match:  match,
+        user:   data[:player],
+        role:   "joueur",
+        status: data[:player_status]
+      )
+      puts "  ✓ #{data[:title]}"
+      puts "       └─ Marvin = #{data[:player_status]}"
+    else
+      puts "  ✓ #{data[:title]}"
+      puts "       └─ Marvin = organisateur"
+    end
+  end
+
+  puts "✅ Matchs tennis créés pour Marvin COHEN."
+end

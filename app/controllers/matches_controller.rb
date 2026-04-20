@@ -47,6 +47,19 @@ class MatchesController < ApplicationController
       else
         apply_filters
       end
+
+      # Précompute le statut d'inscription de l'utilisateur connecté pour chaque match affiché.
+      # Une seule requête SQL → pas de N+1 dans le partial _match_card.
+      # Résultat : hash { match_id (Integer) => status (String) }
+      # Ex : { 12 => "approved", 47 => "pending" }
+      # Utilisé dans _match_card pour afficher les badges "Inscrit" / "En attente".
+      if user_signed_in?
+        match_ids = @matches.map(&:id)
+        @user_match_statuses = MatchUser
+          .where(user: current_user, match_id: match_ids)
+          .pluck(:match_id, :status)
+          .to_h
+      end
     end
 
     # Meta tags pour la liste des matchs — description adaptée au sport actif si filtré
