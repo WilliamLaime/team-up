@@ -14,12 +14,22 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   color: $dark-muted;
   // Le padding bottom est géré par .footer-bottom qui a son propre fond
-  padding: 20px 0 0;
+  // padding géré par py-3 sur la row
+  padding: 0;
+
+  // Hauteur minimum pour que l'alignement vertical soit visible sur desktop
+  .row {
+    min-height: 80px;
+  }
 
   // ── Gap entre les colonnes sur mobile ─────────────
   @media (max-width: 767.98px) {
     .row > [class*="col-"] {
       margin-bottom: 24px; // espace vertical entre logo, liens et réseaux sociaux
+    }
+    // Supprimer le margin du dernier col pour éviter l'espace excessif avant .footer-bottom
+    .row > [class*="col-"]:last-child {
+      margin-bottom: 0;
     }
   }
 
@@ -59,7 +69,7 @@
     padding: 0;
     margin: 0;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; // tous les liens sur une seule ligne sur desktop
     gap: 0.5rem 1.5rem;
 
     // Sur mobile : liens empilés verticalement et centrés
@@ -74,6 +84,7 @@
       text-decoration: none;
       font-size: 0.85rem;
       transition: color 0.15s;
+      white-space: nowrap; // empêche "Plan du site" de se couper en plusieurs lignes
 
       &:hover { color: #fff; }
     }
@@ -84,7 +95,7 @@
   // margin-top pour séparer visuellement du contenu au-dessus
   .footer-bottom {
     background-color: #111111;  // $dark-bg : nettement plus sombre
-    margin-top: 20px;           // espace entre le contenu et cette bande
+    margin-top: 12px;           // espace réduit, py-3 gère l'espace interne
     padding: 12px 0;            // hauteur de la bande
     font-size: 0.78rem;
     color: rgba(255, 255, 255, 0.25);
