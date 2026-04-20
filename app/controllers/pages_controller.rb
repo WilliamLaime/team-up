@@ -1,6 +1,6 @@
 class PagesController < ApplicationController
   # Ces pages sont publiques (pas besoin d'être connecté)
-  skip_before_action :authenticate_user!, only: %i[home about contact partenariat confidentialite conditions offline email_confirmation]
+  skip_before_action :authenticate_user!, only: %i[home about contact partenariat confidentialite conditions offline email_confirmation sitemap]
 
   # Rails 7.1 vérifie au chargement que les actions dans `only:` existent.
   # PagesController n'a pas d'action `index`, donc on désactive les callbacks Pundit.
@@ -59,6 +59,16 @@ class PagesController < ApplicationController
     set_meta_tags(
       title:   "Conditions générales d'utilisation",
       # noindex : cette page légale ne doit pas apparaître dans Google
+      noindex: true
+    )
+  end
+
+  def sitemap
+    # Page plan du site — liste de tous les liens importants
+    # Charge les sports pour la section dédiée
+    @sports = Sport.order(:name)
+    set_meta_tags(
+      title:   "Plan du site",
       noindex: true
     )
   end
