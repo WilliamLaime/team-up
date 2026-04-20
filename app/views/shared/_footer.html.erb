@@ -12,10 +12,10 @@
       <%# justify-content-center sur mobile, justify-content-md-start sur desktop %>
       <div class="col-md-4 d-flex justify-content-center justify-content-md-start">
         <%= link_to root_path, class: "footer-logo" do %>
-          <%# Icône picto blanc Teams-Up %>
-          <%= image_tag "img_footer/teamsup_picto_blanc.svg", alt: "", height: 32, class: "footer-logo-picto" %>
-          <%# Texte "TEAMS-UP" en SVG %>
-          <%= image_tag "img_footer/teamsup_texte.svg", alt: "Teams-Up", height: 18, class: "footer-logo-texte" %>
+          <%# Icône picto blanc Teams-Up — RGESN 5.2 (dimensions HTML) + RGESN 6.4 (lazy loading) %>
+          <%= image_tag "img_footer/teamsup_picto_blanc.svg", alt: "", height: 32, width: 32, class: "footer-logo-picto", loading: "lazy" %>
+          <%# Texte "TEAMS-UP" en SVG — RGESN 5.2 (dimensions HTML) + RGESN 6.4 (lazy loading) %>
+          <%= image_tag "img_footer/teamsup_texte.svg", alt: "Teams-Up", height: 18, width: 72, class: "footer-logo-texte", loading: "lazy" %>
         <% end %>
       </div>
 
@@ -31,6 +31,8 @@
           <li><%= link_to "Partenariat", partenariat_path %></li>
           <%# "Qui sommes-nous ?" visible uniquement sur mobile (d-md-none) %>
           <li class="d-md-none"><%= link_to "Qui sommes-nous ?", about_path %></li>
+          <%# Plan du site — deuxième système de navigation pour RGAA 12.1 %>
+          <li><%= link_to "Plan du site", sitemap_path %></li>
         </ul>
       </div>
 
@@ -38,17 +40,18 @@
       <%# justify-content-center sur mobile, justify-content-md-end sur desktop %>
       <div class="col-md-4 d-flex justify-content-center justify-content-md-end">
         <%# Font Awesome pour les réseaux sociaux (Lucide n'a pas TikTok) %>
+        <%# RGAA 13.2 — tous les liens target="_blank" ont rel="noopener noreferrer" et indication textuelle %>
         <div class="footer-social d-flex gap-4">
-          <a href="https://www.instagram.com/teamsup33?igsh=dGs2d3F6MDBmZDJ6" target="_blank" rel="noopener" aria-label="Instagram">
+          <a href="https://www.instagram.com/teamsup33?igsh=dGs2d3F6MDBmZDJ6" target="_blank" rel="noopener noreferrer" aria-label="Instagram (nouvelle fenêtre)">
             <i class="fa-brands fa-instagram fa-lg"></i>
           </a>
-          <a href="https://www.tiktok.com/@teamsup33" target="_blank" rel="noopener" aria-label="TikTok">
+          <a href="https://www.tiktok.com/@teamsup33" target="_blank" rel="noopener noreferrer" aria-label="TikTok (nouvelle fenêtre)">
             <i class="fa-brands fa-tiktok fa-lg"></i>
           </a>
-          <a href="https://www.youtube.com/@Teams-up33" target="_blank" rel="noopener" aria-label="YouTube">
+          <a href="https://www.youtube.com/@Teams-up33" target="_blank" rel="noopener noreferrer" aria-label="YouTube (nouvelle fenêtre)">
             <i class="fa-brands fa-youtube fa-lg"></i>
           </a>
-          <a href="https://www.twitch.tv/teamsup33" target="_blank" rel="noopener" aria-label="Twitch">
+          <a href="https://www.twitch.tv/teamsup33" target="_blank" rel="noopener noreferrer" aria-label="Twitch (nouvelle fenêtre)">
             <i class="fa-brands fa-twitch fa-lg"></i>
           </a>
         </div>

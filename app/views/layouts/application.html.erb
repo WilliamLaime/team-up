@@ -146,15 +146,16 @@
         on attend donc que `lucide` soit défini avant d'appeler createIcons(). %>
     <script>
       // Initialisation au premier chargement de la page (Lucide chargé avec defer)
+      // RGAA 4.8 — tous les SVG Lucide doivent avoir aria-hidden=true pour les masquer aux lecteurs d'écran
       document.addEventListener("DOMContentLoaded", () => {
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide) lucide.createIcons({ attrs: { "aria-hidden": "true" } });
       });
 
       // Ré-initialisation après chaque mise à jour Turbo (navigation, turbo_frame, turbo_stream)
       // Sans ça, les icônes dans les frames remplacées par Turbo disparaissent
       // Garde-fou window.lucide : protège contre les rendus Turbo très précoces (avant defer)
-      document.addEventListener("turbo:render", () => { if (window.lucide) lucide.createIcons(); });
-      document.addEventListener("turbo:frame-render", () => { if (window.lucide) lucide.createIcons(); });
+      document.addEventListener("turbo:render", () => { if (window.lucide) lucide.createIcons({ attrs: { "aria-hidden": "true" } }); });
+      document.addEventListener("turbo:frame-render", () => { if (window.lucide) lucide.createIcons({ attrs: { "aria-hidden": "true" } }); });
 
       // Turbo Stream (ex: nouvelle notification via ActionCable) — on intercepte la fonction
       // de rendu pour appeler lucide.createIcons() et ouvrir les modals APRÈS que le DOM a été modifié.
@@ -164,7 +165,7 @@
         event.detail.render = function(streamElement) {
           originalRender(streamElement); // mise à jour du DOM
 
-          if (window.lucide) lucide.createIcons(); // ré-initialise les icônes APRÈS le DOM
+          if (window.lucide) lucide.createIcons({ attrs: { "aria-hidden": "true" } }); // ré-initialise les icônes APRÈS le DOM
 
           // Ouvre automatiquement toute modal marquée data-auto-open="true"
           // (injectée via Turbo Stream depuis les partials de notification)

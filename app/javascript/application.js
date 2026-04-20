@@ -6,8 +6,10 @@ import * as bootstrap from "bootstrap"
 
 // Ré-initialise les icônes Lucide après chaque mise à jour d'un turbo_frame
 // (ex: le bouton ami se met à jour en live → les nouveaux <i data-lucide="..."> doivent être convertis en SVG)
+// RGAA 4.8 — masquer tous les SVG Lucide des lecteurs d'écran avec aria-hidden=true
+// Car les icônes décoratives ne doivent pas être annoncées aux utilisateurs de technologies d'assistance
 document.addEventListener("turbo:frame-render", () => {
-  if (window.lucide) window.lucide.createIcons()
+  if (window.lucide) window.lucide.createIcons({ attrs: { "aria-hidden": "true" } })
 })
 
 // Initialise les tooltips Bootstrap sur chaque navigation Turbo
@@ -16,6 +18,9 @@ document.addEventListener("turbo:load", () => {
   // Sélectionne tous les éléments avec l'attribut data-bs-toggle="tooltip"
   const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]')
   tooltipElements.forEach(el => new bootstrap.Tooltip(el))
+
+  // RGAA 4.8 — masquer les SVG Lucide au chargement initial
+  if (window.lucide) window.lucide.createIcons({ attrs: { "aria-hidden": "true" } })
 })
 
 // ── Gestion hcaptcha + Turbo Drive ──────────────────────────────────────────

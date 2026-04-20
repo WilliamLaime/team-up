@@ -85,7 +85,10 @@ module ApplicationHelper
   #   css_class  – classes CSS à appliquer (ex: "avatar", "match-avatar")
   #   style      – styles CSS inline supplémentaires
   #   alt        – texte alternatif (par défaut : nom d'affichage)
-  def user_avatar_tag(user, css_class: nil, style: nil, alt: nil)
+  #   loading    – "lazy" ou "eager", défaut "lazy" (RGESN 6.4)
+  #   width      – largeur HTML en px, défaut 40
+  #   height     – hauteur HTML en px, défaut 40
+  def user_avatar_tag(user, css_class: nil, style: nil, alt: nil, loading: "lazy", width: 40, height: 40)
     # Palette de couleurs vives pour les avatars à initiales
     colors = %w[#E63946 #2A9D8F #E76F51 #457B9D #6A4C93 #F4A261 #264653 #2B9348 #C77DFF #FF6B6B]
 
@@ -101,7 +104,14 @@ module ApplicationHelper
       # Dans les contextes Turbo Stream broadcast, url_for peut générer une URL absolue
       # avec un mauvais host (ex: example.com). rails_blob_path évite ce problème
       # car il génère un chemin relatif qui fonctionne partout.
-      image_tag rails_blob_path(profil.avatar.blob), class: css_class, alt: alt_text, style: style
+      # RGESN 6.4 (lazy loading) + RGESN 5.2 (dimensions) — évite les reflows (CLS)
+      image_tag rails_blob_path(profil.avatar.blob),
+                class: css_class,
+                alt: alt_text,
+                style: style,
+                loading: loading,
+                width: width,
+                height: height
     else
       # ── Cas 2 : initiales sur fond coloré ───────────────────────────────
       first    = profil&.first_name&.first&.upcase
@@ -109,14 +119,17 @@ module ApplicationHelper
       initials = [first, last].compact.join
       initials = user.email&.first&.upcase || "?" if initials.blank?
 
+      # Fallback avatar div avec initialer — ajouter role="img" pour l'accessibilité
       content_tag :div, initials,
                   class: css_class,
-                  alt: alt_text,
+                  role: "img",
+                  aria_label: alt_text,
                   style: [
                     "background-color:#{color};",
                     "color:#fff;",
                     "display:flex;align-items:center;justify-content:center;",
                     "font-weight:400;font-size:0.7em;",
+                    "width:#{width}px;height:#{height}px;",
                     style
                   ].compact.join(" ")
     end
@@ -125,13 +138,16 @@ module ApplicationHelper
   # ── Icônes de sport ───────────────────────────────────────────────────────
   # Affiche l'icône d'un sport : image si c'est un fichier, emoji sinon
   # Utilisé partout où on affiche l'icône d'un sport
-  def sport_icon(sport, size: "1.1em", css_class: nil)
+  # RGESN 5.2 Frontend — ajouter width/height HTML attrs pour éviter le CLS
+  def sport_icon(sport, size: "1.1em", css_class: nil, px_size: 18)
     return "" unless sport
 
     if sport.icon.match?(/\.(png|jpg|svg|gif|webp)$/i)
       image_tag sport.icon,
                 alt: sport.name,
                 class: css_class,
+                width: px_size,
+                height: px_size,
                 style: "width:#{size}; height:#{size}; object-fit:contain; vertical-align:middle;"
     else
       content_tag :span, sport.icon, class: css_class
