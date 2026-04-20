@@ -214,11 +214,16 @@
       color: rgba(255, 255, 255, 0.25);
     }
 
-    // Focus : bordure verte + halo vert subtil
+    // Focus : bordure verte + halo vert subtil + outline visible en High Contrast Mode
     &:focus {
       border-color: $green !important;
       box-shadow: 0 0 0 3px rgba($green, 0.15) !important;
-      outline: none;
+      outline: 2px solid transparent;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $green !important;
+      outline-offset: 2px;
     }
 
     // Autofill navigateur : le navigateur force un fond blanc/bleu clair

@@ -58,11 +58,13 @@
           <%# ── 3. Finalités et bases légales ── %>
           <div class="legal-section">
             <h2 class="legal-section-title">3. Pourquoi nous utilisons vos données</h2>
+            <%# RGAA 5.4 & 5.7 — tableau avec caption et scope sur th %>
             <table class="legal-table">
+              <caption class="visually-hidden">Finalités d'utilisation des données et bases légales</caption>
               <thead>
                 <tr>
-                  <th>Finalité</th>
-                  <th>Base légale</th>
+                  <th scope="col">Finalité</th>
+                  <th scope="col">Base légale</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,7 +163,7 @@
             <p>
               Vous avez également le droit de déposer une réclamation auprès de la
               <strong>CNIL</strong> (Commission Nationale de l'Informatique et des Libertés) :
-              <a href="https://www.cnil.fr" target="_blank" rel="noopener">www.cnil.fr</a>.
+              <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer">www.cnil.fr<span class="visually-hidden"> (nouvelle fenêtre)</span></a>.
             </p>
           </div>
 

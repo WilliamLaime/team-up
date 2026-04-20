@@ -115,11 +115,16 @@
     .filter-date-input {
       background: transparent;
       border: none;
-      outline: none;
+      outline: 2px solid transparent; // Invisible en normal, visible en High Contrast Mode (WCAG)
       color: rgba(255, 255, 255, 0.9);
       font-size: 0.82rem;
       width: 120px;
       cursor: pointer;
+
+      &:focus-visible {
+        outline: 2px solid $green;
+        outline-offset: 2px;
+      }
 
       // Couleur du texte jj/mm/aaaa dans Chrome (pseudo-élément interne)
       &::-webkit-datetime-edit { color: rgba(255, 255, 255, 0.9); }
@@ -152,19 +157,26 @@
       color: rgba(255, 255, 255, 0.8);
     }
 
-    &:focus { outline: none; }
+    &:focus-visible {
+      outline: 2px solid $green;
+      outline-offset: 2px;
+    }
   }
 
   // Input texte ville dans la pill
   .filter-pill-group .filter-text-input {
     background: transparent;
     border: none;
-    outline: none;
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.82rem;
     width: 100px;
 
     &::placeholder { color: rgba(255, 255, 255, 0.35); }
+
+    &:focus-visible {
+      outline: 2px solid $green;
+      outline-offset: 2px;
+    }
   }
 
   // Bouton "Effacer" (réinitialise les filtres)
@@ -208,12 +220,16 @@
       font-size: 0.82rem;
       padding: 0.4rem 1rem 0.4rem 2.25rem; // padding-left pour l'icône
       width: 200px;
-      outline: none;
       transition: border-color 0.15s;
 
       &::placeholder { color: rgba(255, 255, 255, 0.3); }
 
       &:focus { border-color: $green; }
+
+      &:focus-visible {
+        outline: 2px solid $green;
+        outline-offset: 2px;
+      }
     }
   }
 

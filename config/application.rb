@@ -16,6 +16,12 @@ module TeamUp
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
 
+    # Compression gzip pour réduire le poids des ressources textuelles (HTML, CSS, JS, SVG)
+    # RGESN 8.2 — économie réseau 60–80% sur les assets textuels
+    # insert_before 0 = placer en tête de stack (outermost) pour intercepter TOUTES les réponses
+    # config.middleware.use l'ajoute à la fin (innermost), ce qui ne compresse pas les assets statiques
+    config.middleware.insert_before 0, Rack::Deflater
+
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.

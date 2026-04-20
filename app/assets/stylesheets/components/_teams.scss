@@ -603,8 +603,12 @@
   height: 4px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.15);
-  outline: none;
   cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $green;
+    outline-offset: 2px;
+  }
 
   // Thumb webkit (Chrome, Safari)
   &::-webkit-slider-thumb {
@@ -741,12 +745,16 @@
   flex: 1;
   background: transparent;
   border: none;
-  outline: none;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.83rem;
   padding: 0.55rem 0.85rem;
 
   &::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+  &:focus-visible {
+    outline: 2px solid $green;
+    outline-offset: 2px;
+  }
 }
 
 // Bouton "Inviter" intégré à droite de l'input

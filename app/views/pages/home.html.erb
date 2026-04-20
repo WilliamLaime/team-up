@@ -146,7 +146,8 @@
                hero_src = asset_path("img banner/banner_tennis.avif")
                hero_alt = "Joueur de tennis"
              end %>
-          <%= image_tag hero_src, alt: hero_alt, class: "hero-img" %>
+          <%# RGESN 5.2 — dimensions HTML pour éviter les reflows (CLS) du LCP image %>
+          <%= image_tag hero_src, alt: hero_alt, class: "hero-img", width: 600, height: 400 %>
 
           <%# Carte overlay : affiche le prochain match disponible (jamais complet)
               @hero_match est calculé dans le controller — exclut les matchs full? %>
@@ -363,7 +364,8 @@
 
       <%# ── Colonne droite : image de la fenêtre de dialogue ── %>
       <div class="col-lg-6 d-flex justify-content-center align-items-center">
-        <%= image_tag "fenetre_dialogue_home.png", class: "cta-chat-image", alt: "Aperçu du chat Team Up", style: "width: 450px; max-width: 100%; height: auto; display: block;" %>
+        <%# RGESN 6.4 — lazy loading sur image below fold %>
+        <%= image_tag "fenetre_dialogue_home.png", class: "cta-chat-image", alt: "Aperçu du chat Team Up", style: "width: 450px; max-width: 100%; height: auto; display: block;", loading: "lazy", width: 450, height: 400 %>
       </div>
 
     </div>

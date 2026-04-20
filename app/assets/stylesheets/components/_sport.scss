@@ -84,7 +84,11 @@
     border-color: rgba($green, 0.6) !important;
     color: $green !important;
     text-decoration: none !important;
-    outline: none !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $green !important;
+    outline-offset: 2px;
   }
 
   .sport-switcher-icon {
@@ -299,8 +303,9 @@
     color: $dark-text;
   }
 
-  &:focus {
-    outline: none;
+  &:focus-visible {
+    outline: 2px solid $green;
+    outline-offset: 2px;
     box-shadow: none;
   }
 }
