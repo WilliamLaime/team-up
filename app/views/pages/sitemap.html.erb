@@ -3,132 +3,62 @@
     Route : GET /sitemap
     Page publique — accessible sans connexion
     RGAA 12.1 — deuxième système de navigation
+    Design : fond #111111 (dark), titre Bebas Neue blanc,
+    liens verts uppercase, séparateurs horizontaux
     ===================================================== %>
 
 <div class="sitemap-page">
+  <div class="container-fluid sitemap-inner">
 
-  <%# ── Bannière ────────────────────────────────────── %>
-  <section class="legal-banner">
-    <div class="container">
-      <h1 class="legal-banner-title">Plan du site</h1>
-      <p class="legal-banner-subtitle">
-        Retrouvez tous les liens importants de Teams-Up.
-      </p>
-    </div>
-  </section>
+    <h1 class="sitemap-title">PLAN DU SITE</h1>
+    <p class="sitemap-subtitle">Retrouvez tous les liens importants de Teams-Up.</p>
 
-  <%# ── Contenu principal ───────────────────────────── %>
-  <section class="legal-content">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-lg-8">
+    <%# ── Section 1 — Navigation principale ────────────── %>
+    <h2 class="sitemap-section-title">NAVIGATION</h2>
+    <hr class="sitemap-divider">
+    <nav class="sitemap-section" aria-label="Navigation principale">
+      <%= link_to "ACCUEIL", root_path, class: "sitemap-link" %>
+      <%= link_to "TROUVER UN MATCH", matches_path, class: "sitemap-link" %>
+      <%= link_to "MES MATCHS", matches_path(mine: true), class: "sitemap-link" %>
+      <%= link_to "MES ÉQUIPES", teams_path, class: "sitemap-link" %>
+      <% if user_signed_in? %>
+        <%= link_to "MON PROFIL", user_profil_path(current_user), class: "sitemap-link" %>
+      <% else %>
+        <%= link_to "SE CONNECTER", new_user_session_path, class: "sitemap-link" %>
+      <% end %>
+    </nav>
 
-          <%# Sections de navigation ──────────────────── %>
+    <%# ── Section 2 — Informations légales ───────────── %>
+    <h2 class="sitemap-section-title">LÉGAL</h2>
+    <hr class="sitemap-divider">
+    <nav class="sitemap-section" aria-label="Informations légales">
+      <%= link_to "POLITIQUE DE CONFIDENTIALITÉ", confidentialite_path, class: "sitemap-link" %>
+      <%= link_to "CONDITIONS GÉNÉRALES D'UTILISATION", conditions_path, class: "sitemap-link" %>
+      <%= link_to "MENTIONS LÉGALES", contact_path, class: "sitemap-link" %>
+      <%= link_to "NOUS CONTACTER", contact_path, class: "sitemap-link" %>
+    </nav>
 
-          <%# Principal %>
-          <nav class="sitemap-section">
-            <h2 class="sitemap-section-title">Navigation principale</h2>
-            <ul class="sitemap-list">
-              <li><%= link_to "Accueil", root_path %></li>
-              <li><%= link_to "Trouver un match", matches_path %></li>
-              <li><%= link_to "Mes matchs", matches_path(mine: true) %></li>
-              <li><%= link_to "Mes équipes", teams_path %></li>
-              <li><% if user_signed_in? %>
-                  <%= link_to "Mon profil", user_profil_path(current_user) %>
-                <% else %>
-                  <%= link_to "Se connecter", new_user_session_path %>
-                <% end %>
-              </li>
-            </ul>
-          </nav>
+    <%# ── Section 3 — Sports disponibles ─────────────── %>
+    <h2 class="sitemap-section-title">SPORTS</h2>
+    <hr class="sitemap-divider">
+    <nav class="sitemap-section" aria-label="Sports disponibles">
+      <% @sports.each do |sport| %>
+        <%= link_to sport.name.upcase, matches_path(sport: sport.id), class: "sitemap-link" %>
+      <% end %>
+    </nav>
 
-          <%# Informations légales %>
-          <nav class="sitemap-section">
-            <h2 class="sitemap-section-title">Légal</h2>
-            <ul class="sitemap-list">
-              <li><%= link_to "Politique de confidentialité", confidentialite_path %></li>
-              <li><%= link_to "Conditions générales d'utilisation", conditions_path %></li>
-              <li><%= link_to "Mentions légales", contact_path %></li>
-              <li><%= link_to "Nous contacter", contact_path %></li>
-            </ul>
-          </nav>
+    <%# ── Section 4 — Administration (si admin) ─────── %>
+    <% if user_signed_in? && current_user.admin? %>
 
-          <%# Sports ──────────────────────────────────── %>
-          <% if Sport.any? %>
-            <nav class="sitemap-section">
-              <h2 class="sitemap-section-title">Sports disponibles</h2>
-              <ul class="sitemap-list">
-                <% Sport.order(:name).limit(10).each do |sport| %>
-                  <li><%= link_to sport.name, matches_path(sport: sport.id) %></li>
-                <% end %>
-                <% if Sport.count > 10 %>
-                  <li><%= link_to "... et #{Sport.count - 10} autres", matches_path %></li>
-                <% end %>
-              </ul>
-            </nav>
-          <% end %>
+      <h2 class="sitemap-section-title">ADMINISTRATION</h2>
+      <hr class="sitemap-divider">
+      <nav class="sitemap-section" aria-label="Administration">
+        <%= link_to "TABLEAU DE BORD", admin_dashboard_path, class: "sitemap-link" %>
+        <%= link_to "MESSAGES DE CONTACT", admin_contact_messages_path, class: "sitemap-link" %>
+        <%= link_to "MODÉRATION D'IMAGES", admin_image_moderations_path, class: "sitemap-link" %>
+        <%= link_to "LOGS DE SÉCURITÉ", admin_security_logs_path, class: "sitemap-link" %>
+      </nav>
+    <% end %>
 
-          <%# Admin (connecté uniquement) ───────────── %>
-          <% if user_signed_in? && current_user.admin? %>
-            <nav class="sitemap-section">
-              <h2 class="sitemap-section-title">Administration</h2>
-              <ul class="sitemap-list">
-                <li><%= link_to "Tableau de bord", admin_dashboard_path %></li>
-                <li><%= link_to "Messages de contact", admin_contact_messages_path %></li>
-                <li><%= link_to "Modération d'images", admin_image_moderations_path %></li>
-                <li><%= link_to "Logs de sécurité", admin_security_logs_path %></li>
-              </ul>
-            </nav>
-          <% end %>
-
-        </div>
-      </div>
-    </div>
-  </section>
-
+  </div>
 </div>
-
-<style>
-  .sitemap-page {
-    margin-top: 0;
-  }
-
-  .sitemap-section {
-    margin-bottom: 2.5rem;
-  }
-
-  .sitemap-section-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #f0f0f0;
-    margin-bottom: 1rem;
-    font-family: "Nunito", sans-serif;
-  }
-
-  .sitemap-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .sitemap-list li {
-    margin-bottom: 0.5rem;
-  }
-
-  .sitemap-list a {
-    color: #1EDD88;
-    text-decoration: none;
-    transition: color 0.15s;
-  }
-
-  .sitemap-list a:hover,
-  .sitemap-list a:focus-visible {
-    color: #4de49e;
-    text-decoration: underline;
-  }
-
-  .sitemap-list a:focus-visible {
-    outline: 2px solid #1EDD88;
-    outline-offset: 2px;
-  }
-</style>

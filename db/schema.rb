@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_16_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_104616) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -58,11 +58,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_100000) do
     t.text "content"
     t.datetime "created_at", null: false
     t.bigint "match_id", null: false
+    t.boolean "mutual", default: false, null: false
     t.integer "rating", null: false
     t.bigint "reviewed_user_id", null: false
     t.bigint "reviewer_id", null: false
     t.datetime "updated_at", null: false
     t.index ["match_id"], name: "index_avis_on_match_id"
+    t.index ["mutual"], name: "index_avis_on_mutual"
+    t.index ["reviewed_user_id", "created_at"], name: "index_avis_on_reviewed_user_id_created_at"
     t.index ["reviewed_user_id"], name: "index_avis_on_reviewed_user_id"
     t.index ["reviewer_id", "reviewed_user_id", "match_id"], name: "index_avis_on_reviewer_id_and_reviewed_user_id_and_match_id", unique: true
     t.index ["reviewer_id"], name: "index_avis_on_reviewer_id"
@@ -116,6 +119,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_100000) do
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["match_id", "status"], name: "index_match_users_on_match_id_status"
     t.index ["match_id"], name: "index_match_users_on_match_id"
     t.index ["user_id"], name: "index_match_users_on_user_id"
   end
@@ -159,6 +163,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_100000) do
     t.index ["private_token"], name: "index_matches_on_private_token", unique: true
     t.index ["sport_id"], name: "index_matches_on_sport_id"
     t.index ["team_id"], name: "index_matches_on_team_id"
+    t.index ["user_id", "created_at"], name: "index_matches_on_user_id_created_at"
     t.index ["user_id"], name: "index_matches_on_user_id"
     t.index ["venue_id"], name: "index_matches_on_venue_id"
   end
