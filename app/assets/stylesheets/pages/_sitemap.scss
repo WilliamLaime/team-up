@@ -3,9 +3,11 @@
 // séparateurs horizontaux entre sections
 
 .sitemap-page {
+  --bs-body-color: #{$dark-text};
+  --bs-heading-color: #{$dark-text};
   min-height: 100vh;
   background-color: #0a110d;
-  padding: 2.5rem 3.5rem;
+  padding: 2.5rem 0;
 }
 
 .sitemap-inner {
@@ -27,6 +29,11 @@
   font-size: 1rem;
   color: $dark-muted;
   margin: 0 0 1rem 0;
+
+  // Pousse le premier bloc de section 20px plus bas
+  + .sitemap-section-title {
+    margin-top: 20px;
+  }
 }
 
 .sitemap-divider {
@@ -47,10 +54,10 @@
   font-family: $display-font;   // Bebas Neue — cohérent avec les liens
   font-size: 1.4rem;
   font-weight: 400;
-  color: $dark-text;            // #f0f0f0 — blanc comme PLAN DU SITE
+           // #f0f0f0 — blanc comme PLAN DU SITE
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.8rem 0;
 }
 
 .sitemap-link {
