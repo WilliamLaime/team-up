@@ -154,11 +154,16 @@
       caret-color: var(--theme-text-primary);
     }
 
-    // Focus : bordure verte + léger glow
+    // Focus : bordure verte + léger glow + outline visible en High Contrast Mode
     &:focus {
-      outline: none;
       border-color: $green;
       box-shadow: 0 0 0 3px rgba(30, 221, 136, 0.15);
+      outline: 2px solid transparent;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $green !important;
+      outline-offset: 2px;
     }
 
     // Placeholder discret

@@ -72,14 +72,16 @@
   <%# overflow-x directement sur match-block (plus fiable que table-responsive imbriqué sur mobile) %>
   <div class="match-block" style="overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0;">
     <div>
+      <%# RGAA 5.4 & 5.7 — tableau avec caption et scope %>
       <table class="table table-dark table-hover mb-0" style="font-size:0.82rem; min-width: 600px;">
+        <caption class="visually-hidden">Logs de sécurité : date, type, IP, utilisateur et détails</caption>
         <thead>
           <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
-            <th style="padding:0.75rem 1rem;">Date</th>
-            <th style="padding:0.75rem 1rem;">Type</th>
-            <th style="padding:0.75rem 1rem;">IP</th>
-            <th style="padding:0.75rem 1rem;">Utilisateur</th>
-            <th style="padding:0.75rem 1rem;">Détails</th>
+            <th scope="col" style="padding:0.75rem 1rem;">Date</th>
+            <th scope="col" style="padding:0.75rem 1rem;">Type</th>
+            <th scope="col" style="padding:0.75rem 1rem;">IP</th>
+            <th scope="col" style="padding:0.75rem 1rem;">Utilisateur</th>
+            <th scope="col" style="padding:0.75rem 1rem;">Détails</th>
           </tr>
         </thead>
         <tbody>

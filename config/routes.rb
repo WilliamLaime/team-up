@@ -36,6 +36,9 @@ Rails.application.routes.draw do
   # Page Conditions générales d'utilisation
   get "conditions", to: "pages#conditions", as: :conditions
 
+  # Page Plan du site — RGAA 12.1 (deuxième système de navigation)
+  get "sitemap", to: "pages#sitemap", as: :sitemap
+
   # ── Équipes ────────────────────────────────────────────────────────────────
   # GET    /equipes              → mes équipes
   # GET    /equipes/new          → formulaire création

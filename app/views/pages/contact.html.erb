@@ -96,13 +96,13 @@
                 <%= f.label :prenom, class: "contact-label" do %>
                   Prénom <span class="contact-required">*</span>
                 <% end %>
-                <%= f.text_field :prenom, class: "contact-input", placeholder: "Ton prénom", required: true %>
+                <%= f.text_field :prenom, class: "contact-input", placeholder: "Ton prénom", required: true, autocomplete: "given-name" %>
               </div>
               <div class="col-sm-6">
                 <%= f.label :nom, class: "contact-label" do %>
                   Nom <span class="contact-required">*</span>
                 <% end %>
-                <%= f.text_field :nom, class: "contact-input", placeholder: "Ton nom", required: true %>
+                <%= f.text_field :nom, class: "contact-input", placeholder: "Ton nom", required: true, autocomplete: "family-name" %>
               </div>
             </div>
 
@@ -115,7 +115,8 @@
               <%= f.email_field :email,
                     class: "contact-input #{"is-invalid" if @contact_message.errors[:email].any?}",
                     placeholder: "ton@email.com",
-                    required: true %>
+                    required: true,
+                    autocomplete: "email" %>
               <%# Message d'erreur affiché directement sous le champ %>
               <% if @contact_message.errors[:email].any? %>
                 <div class="invalid-feedback d-block">

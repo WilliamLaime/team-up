@@ -515,7 +515,6 @@
   padding: 0.5rem 0.85rem;
   background: transparent !important;
   border: none !important;
-  outline: none;
   border-radius: 6px;
   color: var(--theme-text-muted); // Texte des heures selon le thème
   font-size: 0.88rem;
@@ -524,6 +523,11 @@
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
   box-shadow: none !important;
+
+  &:focus-visible {
+    outline: 2px solid $green;
+    outline-offset: 2px;
+  }
 
   &:hover {
     background: rgba($green, 0.12) !important;
