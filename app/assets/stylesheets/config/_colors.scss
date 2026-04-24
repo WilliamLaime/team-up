@@ -71,6 +71,10 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
   --theme-footer-copy-bg:    #111111;
   --theme-footer-copy-color: rgba(255, 255, 255, 0.25);
   --theme-footer-link-hover: #ffffff;
+
+  // Toggle restriction de genre (formulaire match)
+  // Couleur du label NON sélectionné — rgba blanc pour fond sombre
+  --genre-inactive-color: rgba(255, 255, 255, 0.4);
 }
 
 // ── Mode clair ────────────────────────────────────────────────────────────────
@@ -118,4 +122,8 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
   --theme-footer-copy-bg:    #e9ecef;
   --theme-footer-copy-color: rgba(0, 0, 0, 0.45);
   --theme-footer-link-hover: #{$gray};
+
+  // Toggle restriction de genre (formulaire match)
+  // Couleur du label NON sélectionné — rgba noir pour fond clair
+  --genre-inactive-color: rgba(0, 0, 0, 0.35);
 }

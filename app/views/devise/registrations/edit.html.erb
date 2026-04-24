@@ -14,11 +14,12 @@
     <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-4" %>
 
     <%# ── En-tête de page ────────────────────────────────────────────────── %>
+    <%# .profil-page-title / .profil-page-subtitle : couleurs gérées par _theme.scss en light mode %>
     <div class="mb-4">
-      <h1 style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; font-family:'Nunito', sans-serif;">
+      <h1 class="profil-page-title" style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; font-family:'Nunito', sans-serif;">
         Mon compte
       </h1>
-      <p style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin:0.3rem 0 0;">
+      <p class="profil-page-subtitle" style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin:0.3rem 0 0;">
         Modifie ton adresse email ou ton mot de passe
       </p>
     </div>
@@ -99,7 +100,8 @@
 
           <div class="match-block mb-4">
 
-            <p style="font-size:0.78rem; color:rgba(255,255,255,0.35); margin:0 0 1rem;">
+            <%# .edit-block-hint : couleur gérée par _theme.scss en light mode %>
+            <p class="edit-block-hint" style="font-size:0.78rem; color:rgba(255,255,255,0.35); margin:0 0 1rem;">
               Laisse ces champs vides si tu ne veux pas changer ton mot de passe.
             </p>
 
@@ -144,7 +146,8 @@
 
             <div style="display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.75rem; background:rgba(30,221,136,0.06); border:1px solid rgba(30,221,136,0.15); border-radius:8px; margin-bottom:1rem;">
               <i data-lucide="info" style="width:13px; height:13px; color:#1EDD88; flex-shrink:0;"></i>
-              <span style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
+              <%# .edit-block-hint : couleur gérée par _theme.scss en light mode %>
+              <span class="edit-block-hint" style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
                 Ton mot de passe actuel est requis pour valider les modifications.
               </span>
             </div>
@@ -198,15 +201,16 @@
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
 
               <div>
-                <p style="font-size:0.9rem; font-weight:700; color:#fff; margin:0 0 0.3rem;">
+                <%# .danger-zone-title / .danger-zone-text : couleurs gérées par _theme.scss en light mode %>
+                <p class="danger-zone-title" style="font-size:0.9rem; font-weight:700; color:#fff; margin:0 0 0.3rem;">
                   Supprimer mon compte
                 </p>
-                <p style="font-size:0.78rem; color:rgba(255,255,255,0.4); margin:0; max-width:380px; line-height:1.55;">
+                <p class="danger-zone-text" style="font-size:0.78rem; color:rgba(255,255,255,0.4); margin:0; max-width:380px; line-height:1.55;">
                   Cette action est irréversible. Toutes tes données, matchs et messages seront définitivement supprimés.
                 </p>
               </div>
 
-              <%# Bouton de suppression — ouvre la modal Bootstrap %}
+              <%# Bouton de suppression — ouvre la modal Bootstrap %>
               <button type="button"
                   class="btn btn-sm"
                   data-bs-toggle="modal"

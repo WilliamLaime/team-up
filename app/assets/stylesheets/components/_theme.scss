@@ -267,6 +267,25 @@
   }
 
 
+  // État vide des matchs (.matches-empty-state est dans .matches-index-page mais
+  // pas couvert par le bloc existant car niché différemment)
+  .matches-empty-state {
+    color: rgba(0, 0, 0, 0.55) !important;
+    i { color: rgba(0, 0, 0, 0.35) !important; }
+  }
+
+  // Bouton "Afficher plus" — blanc sur fond blanc → sombre
+  .matches-load-more-btn {
+    border-color: rgba(0, 0, 0, 0.18) !important;
+    color: rgba(0, 0, 0, 0.55) !important;
+
+    &:hover {
+      border-color: $green !important;
+      color: $green !important;
+    }
+  }
+
+
   // ── 5. PAGE MATCH SHOW ────────────────────────────────────────────────────
 
   // Fond de la page de détail d'un match
@@ -501,6 +520,53 @@
   }
 
 
+  // ── Chat block (match show) ───────────────────────────────────────────────
+  // Les textes et bordures dans .match-chat-block sont hardcodés dark mode.
+
+  // Séparateur header chat : rgba blanc → rgba noir
+  .match-chat-block .match-chat-header {
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+  }
+
+  // Noms et textes de prévisualisation : $dark-text/$dark-muted → sombres
+  .match-chat-preview-name  { color: $gray !important; }
+  .match-chat-preview-text  { color: rgba(0, 0, 0, 0.55) !important; }
+  .match-chat-empty-hint    { color: rgba(0, 0, 0, 0.55) !important; }
+
+  // Overlay de flou du chat (fond dégradé sombre → fond clair neutre)
+  // En light mode, le dégradé sombre sur fond blanc est trop visible
+  .match-chat-blur-overlay {
+    background: linear-gradient(
+      to bottom,
+      rgba(244, 244, 244, 0.05) 0%,
+      rgba(244, 244, 244, 0.80) 100%
+    ) !important;
+  }
+
+
+  // ── Toggle restriction de genre (formulaire match) ────────────────────────
+  // Le wrapper utilise des couleurs hardcodées pour le dark mode en inline style.
+  // En light mode, on les écrase pour rendre le composant visible.
+  .genre-toggle-wrapper {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+  }
+
+  // Couleur du label inactif dans le toggle genre (remplace rgba(255,255,255,0.4))
+  .genre-label--inactive { color: rgba(0, 0, 0, 0.35) !important; }
+
+  // Piste du toggle pill — fond blanc translucide (dark mode) → gris sombre visible (light mode)
+  // Sans cet override, la track est invisible sur fond blanc.
+  .pill-toggle .pill-toggle-track {
+    background: rgba(0, 0, 0, 0.18) !important;
+  }
+
+  // Quand coché, la track passe en vert (inchangé, reste lisible en light)
+  .pill-toggle .pill-toggle-input:checked + .pill-toggle-track {
+    background: $green !important;
+  }
+
+
   // ── Sélecteur d'équipe (formulaire match) ────────────────────────────────
   // Couleurs hardcodées blanc → remplacées par du sombre sur fond blanc
   .team-picker-option {
@@ -659,6 +725,62 @@
   // Textes muted globaux sur fond sombre → adapté au fond clair
   // On applique sur les éléments qui ont explicitement la classe text-muted
   // Bootstrap gère déjà color: rgba(0,0,0,0.55) pour text-muted en mode clair.
+
+  // ── Page Plan du site (sitemap) ───────────────────────────────────────────
+  // La page sitemap est 100% dark : fond #0a110d, texte blanc, titre Bebas Neue.
+  // En light mode on adapte le fond et tous les textes pour rester lisibles.
+  .sitemap-page {
+    background-color: $light-gray !important;
+    --bs-body-color: #{$gray};
+    --bs-heading-color: #{$gray};
+  }
+
+  .sitemap-title,
+  .sitemap-section-title { color: $gray !important; }
+
+  .sitemap-subtitle { color: rgba(0, 0, 0, 0.55) !important; }
+
+  // Séparateur horizontal — blanc → gris sombre visible
+  .sitemap-divider { border-top-color: rgba(0, 0, 0, 0.2) !important; }
+
+
+  // ── Pills de niveau par sport (page modifier profil) ──────────────────────
+  // .level-pill est hardcodé pour le dark mode dans _sport.scss.
+  // En light mode : fond blanc/border blanc → invisible sur fond blanc.
+  .level-pill {
+    border-color: rgba(0, 0, 0, 0.18) !important;
+    background: rgba(0, 0, 0, 0.03) !important;
+    color: rgba(0, 0, 0, 0.55) !important;
+
+    &:hover {
+      border-color: rgba($green, 0.5) !important;
+      color: $green !important;
+      background: rgba($green, 0.08) !important;
+    }
+
+    // Pill sélectionnée → reste verte (déjà lisible en light)
+    &.level-pill--active {
+      background: rgba($green, 0.12) !important;
+      border-color: rgba($green, 0.55) !important;
+      color: $green !important;
+    }
+  }
+
+
+  // ── Titres et sous-titres des pages profil/compte ─────────────────────────
+  // Les vues profils/edit.html.erb et devise/registrations/edit.html.erb
+  // utilisaient color:#fff / rgba(255,255,255,0.4) en inline style.
+  // On leur a ajouté les classes .profil-page-title / .profil-page-subtitle.
+  .profil-page-title    { color: $gray !important; }
+  .profil-page-subtitle { color: rgba(0, 0, 0, 0.5) !important; }
+
+  // Textes hints dans les blocs de formulaire (ex: "Laisse ces champs vides...")
+  .edit-block-hint { color: rgba(0, 0, 0, 0.45) !important; }
+
+  // Zone dangereuse "Supprimer mon compte"
+  .danger-zone-title { color: $gray !important; }
+  .danger-zone-text  { color: rgba(0, 0, 0, 0.55) !important; }
+
 
   // ── Grille de sélection des sports (inscription / onboarding) ────────────
   // Les items sont codés en rgba blanc (pour fond sombre).
