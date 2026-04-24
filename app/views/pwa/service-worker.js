@@ -78,6 +78,13 @@ self.addEventListener("fetch", (event) => {
     return; // le navigateur gère la requête normalement
   }
 
+  // ── CAS 2b : Requêtes push_subscriptions (JSON) ──────────────────────────
+  // On ignore les requêtes vers notre endpoint de souscription — elles passent
+  // toujours en réseau (create/destroy subscription).
+  if (url.pathname.startsWith("/push_subscriptions")) {
+    return;
+  }
+
   // ── CAS 3 : Assets statiques (JS, CSS, fonts, images de l'app) ───────────
   // Network First : on essaie le réseau, on met en cache si succès.
   // En cas d'échec réseau → on utilise le cache (mode offline).
@@ -100,5 +107,40 @@ self.addEventListener("fetch", (event) => {
         const cached = await caches.match(event.request);
         return cached || Response.error();
       })
+  );
+});
+
+// ── Événement "push" ─────────────────────────────────────────────────────────
+// Déclenché quand le serveur envoie une notification Web Push.
+// Affiche la notification système même si l'app est en arrière-plan ou fermée.
+self.addEventListener("push", (event) => {
+  const data = event.data?.json() ?? {};
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? "Teams-up", {
+      body:  data.body  ?? "Un nouveau match vous correspond !",
+      icon:  "/icon-192.png",
+      badge: "/icon-192.png",
+      data:  { url: data.url ?? "/matchs" }
+    })
+  );
+});
+
+// ── Événement "notificationclick" ────────────────────────────────────────────
+// Clic sur la notification → ferme la notification et ouvre la page du match.
+self.addEventListener("notificationclick", (event) => {
+  const path = event.notification.data?.url || "/matchs";
+  const url  = path.startsWith("http") ? path : self.location.origin + path;
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      // Si un onglet Teams-up est déjà ouvert → on le focus et on navigue dedans
+      const existing = clientList.find((c) => c.url.startsWith(self.location.origin));
+      if (existing) {
+        existing.focus();
+        return existing.navigate(url);
+      }
+      // Sinon → nouvel onglet
+      return clients.openWindow(url);
+    })
   );
 });
