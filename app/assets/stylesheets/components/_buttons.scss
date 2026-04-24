@@ -68,6 +68,48 @@
 }
 
 
+// ── Boutons Web Push ─────────────────────────────────
+// Trois états gérés par push_notification_controller.js
+.btn-push-inactive {
+  background: var(--theme-bg-card);
+  color: $green;
+  border: 1.5px solid $green;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba($green, 0.1); }
+}
+
+.btn-push-active {
+  background: rgba($green, 0.12);
+  color: $green;
+  border: 1.5px solid $green;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.85rem;
+  cursor: pointer;
+
+  &:hover { background: rgba($red, 0.1); color: $red; border-color: $red; }
+}
+
+.btn-push-blocked {
+  background: var(--theme-bg-card);
+  color: var(--theme-text-muted);
+  border: 1.5px solid var(--theme-border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.85rem;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+
 // ── Bouton Secondaire ────────────────────────────────
 // Fond adaptatif (sombre en dark, clair en light), bordure verte, texte vert
 // Hover : légère surbrillance + bordure forte

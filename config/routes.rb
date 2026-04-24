@@ -39,6 +39,12 @@ Rails.application.routes.draw do
   # Page Plan du site — RGAA 12.1 (deuxième système de navigation)
   get "sitemap", to: "pages#sitemap", as: :sitemap
 
+  # ── Web Push Subscriptions ─────────────────────────────────────────────────
+  # POST   /push_subscriptions → enregistre une subscription navigateur
+  # DELETE /push_subscriptions → supprime la subscription (endpoint dans le body)
+  post   "push_subscriptions",        to: "push_subscriptions#create",  as: :push_subscriptions
+  delete "push_subscriptions",        to: "push_subscriptions#destroy"
+
   # ── Équipes ────────────────────────────────────────────────────────────────
   # GET    /equipes              → mes équipes
   # GET    /equipes/new          → formulaire création

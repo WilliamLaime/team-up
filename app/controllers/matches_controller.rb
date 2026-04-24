@@ -208,6 +208,10 @@ class MatchesController < ApplicationController
       reminder_time = @match.build_datetime - 24.5.hours
       MatchReminderJob.set(wait_until: reminder_time).perform_later(@match.id) if reminder_time > Time.current
 
+      # Notifie en Web Push les utilisateurs dont le profil correspond à ce match
+      # (sport + niveau + localisation). Exécuté en arrière-plan via SolidQueue.
+      MatchWebPushJob.perform_later(@match.id)
+
       redirect_to @match, notice: "Match créé avec succès !"
     else
       @my_captained_teams = current_user.captained_teams.order(:name)

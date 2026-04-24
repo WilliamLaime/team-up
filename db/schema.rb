@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_21_100002) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_23_064149) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -251,6 +251,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_100002) do
     t.index ["user_id"], name: "index_profils_on_user_id"
   end
 
+  create_table "push_subscriptions", force: :cascade do |t|
+    t.string "auth", null: false
+    t.datetime "created_at", null: false
+    t.string "endpoint", null: false
+    t.string "p256dh", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "endpoint"], name: "index_push_subscriptions_on_user_id_and_endpoint", unique: true
+    t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
+  end
+
   create_table "security_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.jsonb "details", default: {}
@@ -409,6 +420,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_100002) do
   add_foreign_key "profil_favorite_venues", "profils"
   add_foreign_key "profil_favorite_venues", "venues"
   add_foreign_key "profils", "users"
+  add_foreign_key "push_subscriptions", "users"
   add_foreign_key "security_logs", "users", on_delete: :nullify
   add_foreign_key "sport_profils", "profils"
   add_foreign_key "sport_profils", "sports"

@@ -61,6 +61,7 @@ gem "pagy", "~> 9.3" # Pagination légère pour les tableaux admin (v9 = derniè
 gem "active_storage_validations" # Validation du type et de la taille des fichiers uploadés
 gem "valid_email2" # Validation format + existence MX record des emails
 gem "csv"
+gem "web-push" # Envoi de notifications push navigateur (PWA) via protocole Web Push + VAPID
 
 # SEO — gestion centralisée des balises <title>, <meta description>, OpenGraph, Twitter Card
 gem "meta-tags"
