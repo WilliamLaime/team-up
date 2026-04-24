@@ -9,11 +9,12 @@
     <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-4" %>
 
     <%# ── En-tête de page ────────────────────────────────────────────────── %>
+    <%# .profil-page-title / .profil-page-subtitle : couleurs gérées par _theme.scss en light mode %>
     <div class="mb-4">
-      <h1 style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; font-family:'Nunito', sans-serif;">
+      <h1 class="profil-page-title" style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; font-family:'Nunito', sans-serif;">
         Modifier mon profil
       </h1>
-      <p style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin:0.3rem 0 0;">
+      <p class="profil-page-subtitle" style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin:0.3rem 0 0;">
         Mets à jour tes informations personnelles
       </p>
     </div>

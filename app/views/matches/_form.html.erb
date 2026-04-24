@@ -679,15 +679,15 @@
             </label>
 
             <%# Toggle : coché = féminin, décoché = tous (par défaut) %>
-            <div style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
-                        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
-                        border-radius:10px; padding:0.55rem 0.9rem;">
+            <%# .genre-toggle-wrapper : fond/bordure gérés par _theme.scss selon le thème %>
+            <div class="genre-toggle-wrapper" style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
+                        border-radius:10px; padding:0.55rem 0.9rem; border:1px solid;">
 
-              <%# Label gauche : Tous — cliquable, vert si sélectionné %>
+              <%# Label gauche : Tous — cliquable, vert si sélectionné, sinon couleur inactive thème %>
               <span id="label_genre_tous"
                     onclick="document.getElementById('genre_restriction_toggle').checked = false; document.getElementById('genre_restriction_toggle').dispatchEvent(new Event('change'));"
                     style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= (@match.genre_restriction.presence || 'tous') == 'tous' ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
+                           color:<%= (@match.genre_restriction.presence || 'tous') == 'tous' ? '#1EDD88' : 'var(--genre-inactive-color)' %>;
                            transition:color 0.15s;">
                 🌍 Tous
               </span>
@@ -700,18 +700,18 @@
                     class: "pill-toggle-input",
                     id: "genre_restriction_toggle",
                     onchange: "
-                      document.getElementById('match_genre_restriction').value         = this.checked ? 'feminin' : 'tous';
-                      document.getElementById('label_genre_tous').style.color     = this.checked ? 'rgba(255,255,255,0.4)' : '#1EDD88';
-                      document.getElementById('label_genre_feminin').style.color  = this.checked ? '#1EDD88' : 'rgba(255,255,255,0.4)';
+                      document.getElementById('match_genre_restriction').value        = this.checked ? 'feminin' : 'tous';
+                      document.getElementById('label_genre_tous').style.color    = this.checked ? 'var(--genre-inactive-color)' : '#1EDD88';
+                      document.getElementById('label_genre_feminin').style.color = this.checked ? '#1EDD88' : 'var(--genre-inactive-color)';
                     " %>
                 <span class="pill-toggle-track"></span>
               </label>
 
-              <%# Label droit : Féminin — cliquable, vert si sélectionné %>
+              <%# Label droit : Féminin — cliquable, vert si sélectionné, sinon couleur inactive thème %>
               <span id="label_genre_feminin"
                     onclick="document.getElementById('genre_restriction_toggle').checked = true; document.getElementById('genre_restriction_toggle').dispatchEvent(new Event('change'));"
                     style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= @match.genre_restriction == 'feminin' ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
+                           color:<%= @match.genre_restriction == 'feminin' ? '#1EDD88' : 'var(--genre-inactive-color)' %>;
                            transition:color 0.15s;">
                 ♀ Femme uniquement
               </span>
